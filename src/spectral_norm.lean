@@ -1,39 +1,12 @@
 import rank_one_valuation
-import analysis.normed.normed_field
-import ring_theory.algebraic
+import seminormed_rings
+
 import field_theory.minpoly
 import topology.algebra.valuation
 
 noncomputable theory
 
 open_locale polynomial
-
-class normed_field' (α : Type*) extends has_norm α, field α, metric_space α :=
-(dist_eq : ∀ x y, dist x y = norm (x - y))
-(norm_mul : ∀ a b, norm (a * b) ≤ norm a * norm b)
-
-@[priority 100] -- see Note [lower instance priority]
-instance normed_field'.to_normed_comm_ring {α : Type*} [normed_field' α] :
-  normed_comm_ring α :=
-{ norm_mul := λ a b, normed_field'.norm_mul a b,
-  ..‹normed_field' α› }
-
-structure is_pow_mult {α : Type*} [ring α] (f : α → ℝ) : Prop :=
-(f_pow_mult : ∀ (a : α) (n : ℕ), f (a^n) = f a ^ n)
-
-structure is_semi_norm {α : Type*} [ring α] (f : α → ℝ) : Prop :=
-(f_zero : f 0 = 0)
-(f_mul : ∀ a b, f (a * b) ≤ f a * f b)
-
-structure is_norm {α : Type*} [ring α] (f : α → ℝ) extends (is_semi_norm f) :=
-(f_ne_zero : ∀ a, a ≠ 0 → 0 < f a)
-
-structure is_algebra_norm (α : Type*) [normed_comm_ring α] {β : Type*} [ring β] [algebra α β]
-  (f : β → ℝ) extends (is_norm f) :=
-(f_smul : ∀ (a : α) (x : β) , f (a • x) ≤ ∥ a ∥ * f x)
-
-def is_nonarchimedean {α : Type*} [ring α] (f : α → ℝ) : Prop := 
-∀ a b, f (a + b) ≤ max (f a) (f b)
 
 variables {R : Type*} [semi_normed_ring R]
 
@@ -187,7 +160,6 @@ instance valued_field.to_normed_field : normed_field' K :=
   ..hK }
 
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
-
 
 lemma spectral_valued_unique {f : L → ℝ} (hf_norm : is_algebra_norm K f) 
   (hf_pow : is_pow_mult f) (x : L) : f x = spectral_norm h_alg x := sorry
