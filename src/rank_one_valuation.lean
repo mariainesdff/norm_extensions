@@ -353,7 +353,7 @@ def mult_with_top_R_to_nnreal_monoid_hom {e : nnreal} (he : 0 ≠ e) :
         }},   
   end, }
 
-  def mult_with_top_R_to_R {e : nnreal} (he : 0 ≠ e) :
+def mult_with_top_R_to_R {e : ℝ} (he : 0 ≠ e) :
   multiplicative (order_dual (with_top ℝ)) → ℝ := λ x,
 begin
   let y : order_dual (with_top ℝ) := to_add x,
@@ -371,11 +371,11 @@ begin
 end
 
 
-lemma mult_with_top_R_to_R_strict_mono {e : nnreal} (he0 : 0 < e) (he1 : e < 1) :
-  strict_mono (mult_with_top_R_to_nnreal (ne_of_lt he0)) :=
+lemma mult_with_top_R_to_R_strict_mono {e : ℝ} (he0 : 0 < e) (he1 : e < 1) :
+  strict_mono (mult_with_top_R_to_R (ne_of_lt he0)) :=
 begin
   intros x y hxy,
-  simp only [mult_with_top_R_to_nnreal],
+  simp only [mult_with_top_R_to_R],
   by_cases hy  : order_dual.of_dual (y.to_add) = ⊤,
     { have hxy' : x.to_add < y .to_add := hxy,
       have hy' : y.to_add = ⊥ := hy,
@@ -384,28 +384,28 @@ begin
       exact hxy' },
     { by_cases hx : order_dual.of_dual (x.to_add) = ⊤,
       { rw [dif_neg hy, dif_pos hx],
-        exact nnreal.rpow_pos he0, },
+        exact real.rpow_pos_of_pos he0 _, },
       { have hxy' : x.to_add < y .to_add := hxy,
         rw [dif_neg hx, dif_neg hy],
-        apply nnreal.rpow_lt_rpow_of_exponent_gt he0 he1,
+        apply real.rpow_lt_rpow_of_exponent_gt he0 he1,
         have hx' := classical.some_spec (with_bot.ne_bot_iff_exists.mp hx),
         rw [← with_top.coe_lt_coe,
           classical.some_spec (with_bot.ne_bot_iff_exists.mp hx),
           classical.some_spec (with_bot.ne_bot_iff_exists.mp hy)], 
-        exact hxy }}, 
+        exact hxy, }}, 
 end
 
-def mult_with_top_R_to_R_monoid_hom {e : nnreal} (he : 0 ≠ e) :
-  multiplicative (order_dual (with_top ℝ)) →* nnreal :=
-{ to_fun   := mult_with_top_R_to_nnreal he,
+def mult_with_top_R_to_R_monoid_hom {e : ℝ} (he : 0 < e) :
+  multiplicative (order_dual (with_top ℝ)) →* ℝ :=
+{ to_fun   := mult_with_top_R_to_R (ne_of_lt he),
   map_one' := begin
-    simp only [mult_with_top_R_to_nnreal, to_add_one],
+    simp only [mult_with_top_R_to_R, to_add_one],
     erw [dif_neg (with_bot.coe_ne_bot (0 : ℝ)), mult_with_top_apply (0 : ℝ)],
-    exact nnreal.rpow_zero e,
+    exact real.rpow_zero e,
   end,
   map_mul' := λ x y,
   begin
-    simp only [mult_with_top_R_to_nnreal],
+    simp only [mult_with_top_R_to_R],
     by_cases  hx : order_dual.of_dual (x.to_add) = ⊤,
     { have hxy : order_dual.of_dual ((x * y).to_add) = ⊤,
       { rw [with_top.of_dual_eq_top_iff, to_add_mul, with_top.of_dual_eq_top_iff.mp hx,
@@ -419,13 +419,12 @@ def mult_with_top_R_to_R_monoid_hom {e : nnreal} (he : 0 ≠ e) :
       { have hxy : order_dual.of_dual ((x * y).to_add) ≠ ⊤,
         { rw [ne.def, with_top.of_dual_eq_top_iff, to_add_mul, with_bot.add_eq_bot],
           exact not_or hx hy, },
-        rw [dif_neg hx, dif_neg hy, dif_neg hxy, ← nnreal.rpow_add (ne.symm he)],
+        rw [dif_neg hx, dif_neg hy, dif_neg hxy, ← real.rpow_add he],
         apply congr_arg,
         rw [← with_bot.coe_eq_coe, with_bot.coe_add],
         rw [classical.some_spec (with_bot.ne_bot_iff_exists.mp hx),
           classical.some_spec (with_bot.ne_bot_iff_exists.mp hy),
           classical.some_spec (with_bot.ne_bot_iff_exists.mp hxy), to_add_mul],
-        refl,
-        }},   
+        refl, }},   
   end, }
 

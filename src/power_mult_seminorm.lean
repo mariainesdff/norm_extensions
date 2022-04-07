@@ -78,8 +78,8 @@ lemma c_seminorm_zero (hc : 0 ≠ f c) (hsm : is_seminorm f) (hpm : is_pow_mult 
 tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsm hpm 0) 
   (by simpa [c_seminorm_seq_zero c hsm.zero] using tendsto_const_nhds)
 
-lemma c_seminorm_one (hc : 0 ≠ f c) (hsm : is_seminorm f) (hpm : is_pow_mult f) :
-  c_seminorm hc hsm hpm 1 = 1 :=
+lemma c_seminorm_is_norm_one_class (hc : 0 ≠ f c) (hsm : is_seminorm f) (hpm : is_pow_mult f) :
+  is_norm_one_class (c_seminorm hc hsm hpm) :=
 tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsm hpm 1)
   (by simpa [c_seminorm_seq_one hc hpm] using tendsto_const_nhds)
 
@@ -104,7 +104,8 @@ lemma c_seminorm_is_seminorm (hc : 0 ≠ f c) (hsm : is_seminorm f) (hpm : is_po
   is_seminorm (c_seminorm hc hsm hpm)  :=
 { nonneg := c_seminorm_nonneg hc hsm hpm,
   zero   := c_seminorm_zero hc hsm hpm,
-  mul    := c_seminorm_mul hc hsm hpm }
+  mul    := c_seminorm_mul hc hsm hpm,
+  one    := le_of_eq (c_seminorm_is_norm_one_class hc hsm hpm) }
 
 lemma c_seminorm_is_nonarchimedean (hc : 0 ≠ f c) (hsm : is_seminorm f) (hpm : is_pow_mult f)
   (hna : is_nonarchimedean f) :
@@ -194,6 +195,22 @@ begin
   exact tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsm hpm (c * x)) hlim,
 end
 
+def ring_hom.is_bounded {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
+  (f : α →+* β) : Prop := ∃ C : ℝ, 0 ≤ C ∧ ∀ x : α, norm (f x) ≤ C * norm x
 
+lemma contraction_of_is_pm {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
+  (hβ : is_pow_mult (@semi_normed_ring.to_has_norm β _).norm) {f : α →+* β} (hf : f.is_bounded)
+  (x : α) : norm (f x) ≤ norm x :=
+begin
+  obtain ⟨C, hC0, hC⟩ := hf,
+  have hn : ∀ n : ℕ, (norm (f x))^n ≤ C * (norm x)^n,
+  { intro n,
+    rw ← hβ,
+    rw ← ring_hom.map_pow,
+    refine le_trans (hC (x^n)) _,
+    apply mul_le_mul (le_refl C) _ (norm_nonneg (x ^ n)) hC0,
+    sorry, },
+  sorry
+end
 
 --#lint

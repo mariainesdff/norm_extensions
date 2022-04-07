@@ -1,5 +1,7 @@
 import analysis.normed.normed_field
 
+noncomputable theory
+
 class normed_field' (α : Type*) extends has_norm α, field α, metric_space α :=
 (dist_eq : ∀ x y, dist x y = norm (x - y))
 (norm_mul : ∀ a b, norm (a * b) ≤ norm a * norm b)
@@ -17,6 +19,25 @@ structure is_seminorm {α : Type*} [ring α] (f : α → ℝ) : Prop :=
 (nonneg : ∀ a, 0 ≤ f a)
 (zero : f 0 = 0)
 (mul : ∀ a b, f (a * b) ≤ f a * f b)
+(one : f 1 ≤ 1)
+
+def is_norm_one_class {α : Type*} [ring α] (f : α → ℝ) : Prop := f 1 = 1
+
+lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] (f : α → ℝ) :
+  is_norm_one_class f ↔ ∃ x : α, f x ≠ 0 :=
+begin
+  rw is_norm_one_class,
+  refine ⟨λ h, _, λ h, _⟩,
+  { use 1,
+    rw h, exact one_ne_zero, },
+  { obtain ⟨x, hx⟩ := h,
+    have h1 : f 1 = 0 ∨ f 1 = 1,
+    { sorry },
+    cases h1,
+    { sorry },
+    { exact h1} 
+  }
+end
 
 structure is_norm {α : Type*} [ring α] (f : α → ℝ) extends (is_seminorm f) :=
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
@@ -27,3 +48,18 @@ structure is_algebra_norm (α : Type*) [normed_comm_ring α] {β : Type*} [ring 
 
 def is_nonarchimedean {α : Type*} [ring α] (f : α → ℝ) : Prop := 
 ∀ a b, f (a + b) ≤ max (f a) (f b)
+
+lemma field.is_norm_of_is_seminorm {α : Type*} [field α] {f : α → ℝ} (hf : is_seminorm f)
+  (hnt : ∃ x : α, 0 ≠ f x) : is_norm f := 
+{ ne_zero := λ x hx, begin
+    obtain ⟨c, hc⟩ := hnt,
+    have hfx : 0 ≠ f x,
+    { intro h0,
+      have hc' : f c ≤ 0,
+      { rw [← mul_one c, ← mul_inv_cancel hx, ← mul_assoc, mul_comm c, mul_assoc],
+        refine le_trans (hf.mul x _) _,
+        rw [← h0, zero_mul] },
+      exact hc (ge_antisymm hc' (hf.nonneg c)), },
+    exact lt_of_le_of_ne (hf.nonneg _) hfx,
+  end,
+  ..hf }

@@ -161,7 +161,7 @@ instance valued_field.to_normed_field : normed_field' K :=
 
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
 
-lemma spectral_valued_unique {f : L → ℝ} (hf_norm : is_algebra_norm K f) 
+lemma spectral_value_unique {f : L → ℝ} (hf_norm : is_algebra_norm K f) 
   (hf_pow : is_pow_mult f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 --instance spectral_valued_complete (hKL : finite_dimensional K L) : complete_space L := sorry
