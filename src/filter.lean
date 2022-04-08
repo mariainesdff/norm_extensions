@@ -2,6 +2,8 @@ import data.real.basic
 import order.filter.at_top_bot
 import order.liminf_limsup
 import topology.metric_space.basic
+import topology.algebra.order.monotone_convergence
+
 
 open_locale filter topological_space
 
@@ -15,42 +17,23 @@ begin
   simpa [← is_lub_neg] using (classical.some_spec (real.exists_is_lub T hT_ne hT_bdd)),
 end
 
-lemma le_of_is_lub {α : Type*} [preorder α] (S : set α) (B : α) (hB : is_lub S B) :
+/- lemma le_of_is_lub {α : Type*} [preorder α] (S : set α) (B : α) (hB : is_lub S B) :
   ∀ s ∈ S, s ≤ B := 
 begin
   intros s hs,
   simp [is_lub, is_least, mem_upper_bounds] at hB,
   exact hB.1 s hs,
 end
-
+ -/
 lemma filter.tendsto_of_is_bounded_monotone {f : ℕ → ℝ} (h_bdd : bdd_above (set.range f))
   (h_mon : monotone f) : ∃ r : ℝ, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
   obtain ⟨B, hB⟩ := (real.exists_is_lub ((set.range f)) (set.range_nonempty f) h_bdd),
   use B,
-  rw metric.tendsto_at_top,
-  intros ε hε,
-  have hN : ∃ N : ℕ, B - ε < f N,
-  { by_contra' h_contr,
-    have h_bound : (B - ε) ∈ upper_bounds (set.range f) ,
-    { rw mem_upper_bounds,
-      intros x hx,
-      cases (set.mem_range.mpr hx) with n hn,
-      rw ← hn,
-      exact h_contr n, },
-    rw ← (is_lub_iff_le_iff.mp hB) (B - ε) at h_bound,
-    linarith,},
-  cases hN with N hN,
-  use N,
-  intros n hn,
-  simp only [dist, abs_lt],
-  refine ⟨by linarith [h_mon hn], lt_of_le_of_lt _ (gt_iff_lt.mp hε)⟩,
-  { rw [sub_nonpos],
-    apply le_of_is_lub ((set.range f)) B hB,
-    simp only [set.image_univ, set.mem_range_self], }
+  exact tendsto_at_top_is_lub h_mon hB,
 end
 
-lemma antitone.neg {α β : Type*} [preorder α] [preorder β] [add_group β]
+/- lemma antitone.neg {α β : Type*} [preorder α] [preorder β] [add_group β]
   [covariant_class β β (+) (preorder.to_has_le β).le]
   [covariant_class  β β (function.swap (+)) (preorder.to_has_le β).le] {f : α → β}
   (h_ant : antitone f) : monotone (-f) :=
@@ -63,13 +46,12 @@ begin
   simp only [set.mem_range, pi.neg_apply, set.mem_neg],
   split; rintro ⟨y, hy⟩; use y,
   exacts [eq_neg_iff_eq_neg.mpr (eq.symm hy), (neg_eq_iff_neg_eq.mpr (eq.symm hy))],
-end
+end -/
 
 lemma filter.tendsto_of_is_bounded_antitone {f : ℕ → ℝ} (h_bdd : bdd_below (set.range f)) 
   (h_ant : antitone f) : ∃ r : ℝ, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
-  have h_bdd_ab : bdd_above (set.range (-f)),
-  { simpa [set.range_neg f, bdd_above_neg] using h_bdd },
-  obtain ⟨r, hr⟩ := filter.tendsto_of_is_bounded_monotone h_bdd_ab (antitone.neg h_ant),
-  exact ⟨-r, by simpa [pi.neg_apply, neg_neg] using (filter.tendsto.neg hr)⟩
+  obtain ⟨B, hB⟩ := (real.exists_is_glb ((set.range f)) (set.range_nonempty f) h_bdd),
+  use B,
+  exact tendsto_at_top_is_glb h_ant hB,
 end
