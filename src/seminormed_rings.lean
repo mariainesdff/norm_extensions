@@ -23,7 +23,7 @@ structure is_seminorm {α : Type*} [ring α] (f : α → ℝ) : Prop :=
 
 def is_norm_one_class {α : Type*} [ring α] (f : α → ℝ) : Prop := f 1 = 1
 
-lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] (f : α → ℝ) :
+lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] {f : α → ℝ} (hsn : is_seminorm f) :
   is_norm_one_class f ↔ ∃ x : α, f x ≠ 0 :=
 begin
   rw is_norm_one_class,
@@ -31,12 +31,18 @@ begin
   { use 1,
     rw h, exact one_ne_zero, },
   { obtain ⟨x, hx⟩ := h,
-    have h1 : f 1 = 0 ∨ f 1 = 1,
-    { sorry },
-    cases h1,
-    { sorry },
-    { exact h1} 
-  }
+    by_cases hf1 : f 1 = 0,
+    { have hx' : f x ≤ 0,
+      { rw ← mul_one x,
+        apply le_trans (hsn.mul x 1) _,
+        rw [hf1, mul_zero], },
+      exact absurd (le_antisymm hx' (hsn.nonneg _) ) hx, },
+    { have h1 : f 1 * 1 ≤ f 1 * f 1,
+      { conv_lhs{ rw ← one_mul (1 : α)},
+        convert hsn.mul 1 1,
+        rw mul_one, },
+      rw mul_le_mul_left (lt_of_le_of_ne (hsn.nonneg _) (ne.symm hf1)) at h1,
+      exact le_antisymm hsn.one h1, }}
 end
 
 structure is_norm {α : Type*} [ring α] (f : α → ℝ) extends (is_seminorm f) :=

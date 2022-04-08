@@ -87,7 +87,6 @@ tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsn hpm 1)
 lemma c_seminorm_mul (hc : 0 ≠ f c) (hsn : is_seminorm f) (hpm : is_pow_mult f) (x y : α) :
   c_seminorm hc hsn hpm (x * y) ≤ c_seminorm hc hsn hpm x * c_seminorm hc hsn hpm y :=
 begin
-  simp only [c_seminorm],
   have hlim : filter.tendsto (λ n, c_seminorm_seq c f (x * y) (2 *n)) filter.at_top
     (𝓝 (c_seminorm_seq_lim hc hsn hpm (x * y) )),
   { refine filter.tendsto.comp (c_seminorm_seq_lim_is_limit hc hsn hpm (x * y)) _,
@@ -204,46 +203,58 @@ end
 lemma c_seminorm_c_is_mult (hc : 0 ≠ f c) (hsn : is_seminorm f) (hpm : is_pow_mult f) (x : α) :
   c_seminorm hc hsn hpm (c * x) = c_seminorm hc hsn hpm c * c_seminorm hc hsn hpm x :=
 begin
-  have hlim : filter.tendsto (c_seminorm_seq c f (c * x)) filter.at_top
-    (𝓝 (c_seminorm hc hsn hpm c * c_seminorm hc hsn hpm x)),
-  { sorry },
-  exact tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsn hpm (c * x)) hlim,
+  have hlim : filter.tendsto (λ n, c_seminorm_seq c f x (n + 1)) filter.at_top
+    (𝓝 (c_seminorm_seq_lim hc hsn hpm x)),
+  { refine filter.tendsto.comp (c_seminorm_seq_lim_is_limit hc hsn hpm x) _,
+    apply filter.tendsto_at_top_at_top_of_monotone,
+    { intros n m hnm, exact succ_order.succ_le_succ_iff.mpr hnm },
+    { rintro n, use n, linarith, }}, 
+  rw c_seminorm_apply_c hc hsn hpm,
+  apply tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hc hsn hpm (c * x)),
+  have hterm: c_seminorm_seq c f (c * x) = (λ n, f c * (c_seminorm_seq c f x (n + 1))),
+  { simp only [c_seminorm_seq],
+    ext n,
+    rw [mul_comm c, pow_succ, pow_succ, mul_div_comm, div_eq_mul_inv _ (f c * f c ^ n), mul_inv₀,
+      ← mul_assoc (f c), mul_inv_cancel hc.symm, one_mul, mul_assoc, div_eq_mul_inv] },
+  simpa [hterm] using filter.tendsto.mul tendsto_const_nhds hlim,
 end
 
 def ring_hom.is_bounded {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
-  (f : α →+* β) : Prop := ∃ C : ℝ, 0 ≤ C ∧ ∀ x : α, norm (f x) ≤ C * norm x
+  (f : α →+* β) : Prop := ∃ C : ℝ, 0 < C ∧ ∀ x : α, norm (f x) ≤ C * norm x
+
+example {C : ℝ} (hC : 0 < C) : filter.tendsto (λ n : ℕ, C ^ (1 / (n : ℝ))) filter.at_top (𝓝 1) :=
+begin
+  apply filter.tendsto.comp _ (tendsto_const_div_at_top_nhds_0_nat 1),
+  rw ← real.rpow_zero C,
+  apply continuous_at.tendsto (real.continuous_at_const_rpow (ne_of_gt hC)),
+end 
 
 lemma contraction_of_is_pm {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
   (hβ : is_pow_mult (@semi_normed_ring.to_has_norm β _).norm) {f : α →+* β} (hf : f.is_bounded)
   (x : α) : norm (f x) ≤ norm x :=
 begin
   obtain ⟨C, hC0, hC⟩ := hf,
-  /- have hterm : ∀ (n : ℕ) (hn : 0 < n), (norm (f x))^n ≤ C * (norm x)^n,
-  { intros n hn,
-    rw [← hβ, ← ring_hom.map_pow],
+  have hlim : filter.tendsto (λ n : ℕ, C ^ (1 / (n : ℝ)) * ∥x∥) filter.at_top (𝓝 ∥x∥),
+  { have : (𝓝 ∥x∥) = (𝓝 (1 * ∥x∥)) := by rw one_mul,
+    rw this,
+    apply filter.tendsto.mul,
+    { apply filter.tendsto.comp _ (tendsto_const_div_at_top_nhds_0_nat 1),
+      rw ← real.rpow_zero C,
+      apply continuous_at.tendsto (real.continuous_at_const_rpow (ne_of_gt hC0)), },
+    exact tendsto_const_nhds, },
+  apply ge_of_tendsto hlim,
+  simp only [filter.eventually_at_top, ge_iff_le],
+  use 1,
+  intros n hn,
+  have h : (C^(1/n : ℝ))^n  = C,
+  { have hn0 : (n : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt hn),
+      rw [← real.rpow_nat_cast, ← real.rpow_mul (le_of_lt hC0), one_div, inv_mul_cancel hn0,
+        real.rpow_one] },
+  apply le_of_pow_le_pow n _ hn,
+  { rw [mul_pow, h, ← hβ, ← ring_hom.map_pow],
     refine le_trans (hC (x^n)) (mul_le_mul (le_refl C) (norm_pow_le' x hn)
-      (norm_nonneg (x ^ n)) hC0) }, -/
-  have hterm : ∀ (n : ℕ) (hn : 0 < n), (norm (f x)) ≤ (C^(1/n : ℝ)) * (norm x),
-  { intros n hn,
-    have h : (C^(1/n : ℝ))^n  = C,
-    { 
-      rw ← real.rpow_nat_cast,
-      rw ← real.rpow_mul ,
-      --rw mul_comm,
-      rw [one_div],
-      rw inv_mul_cancel _,
-      sorry },
-    /- specialize hterm n hn,
-    rw h at hterm, -/
-
-    apply le_of_pow_le_pow n _ hn,
-    { rw mul_pow,
-      rw h,
-      rw [← hβ, ← ring_hom.map_pow],
-      refine le_trans (hC (x^n)) (mul_le_mul (le_refl C) (norm_pow_le' x hn)
-       (norm_nonneg (x ^ n)) hC0), },
-    { sorry } },
-  sorry
+      (norm_nonneg (x ^ n)) (le_of_lt hC0)), },
+    { apply mul_nonneg (real.rpow_nonneg_of_nonneg (le_of_lt hC0) _) (norm_nonneg x), },
 end
 
 --#lint
