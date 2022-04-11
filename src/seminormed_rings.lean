@@ -21,6 +21,12 @@ structure is_seminorm {α : Type*} [ring α] (f : α → ℝ) : Prop :=
 (mul : ∀ a b, f (a * b) ≤ f a * f b)
 (one : f 1 ≤ 1)
 
+lemma is_seminorm.pow_le {α : Type*} [ring α] {f : α → ℝ} (hf : is_seminorm f) (a : α) :
+  ∀ {n : ℕ}, 0 < n → f (a ^ n) ≤ (f a) ^ n
+| 1 h := by simp only [pow_one]
+| (n + 2) h :=  by simpa [pow_succ _ (n + 1)] using le_trans (hf.mul a _) ( mul_le_mul (le_refl _)
+    (is_seminorm.pow_le n.succ_pos) (hf.nonneg _) (hf.nonneg _))
+
 def is_norm_one_class {α : Type*} [ring α] (f : α → ℝ) : Prop := f 1 = 1
 
 lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] {f : α → ℝ} (hsn : is_seminorm f) :
