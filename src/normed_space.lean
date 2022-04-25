@@ -21,5 +21,16 @@ variables {K : Type*} [normed_field K]
 
 -- Lemma 3.2.1./3
 lemma finite_extension_pow_mul_seminorm {L : Type*} [field L] [algebra K L] 
-  [finite_dimensional K L] : ∃ f : L → ℝ, is_algebra_norm K f ∧ is_pow_mult f ∧ norm_extends K f :=
-sorry
+  (hfd : finite_dimensional K L) :
+  ∃ f : L → ℝ, is_algebra_norm K f ∧ is_pow_mult f ∧ norm_extends K f :=
+begin
+  have h1 : linear_independent K (λ x, x : ({1} : set L) → L),
+  { exact linear_independent_singleton one_ne_zero },
+  set ι := ↥(h1.extend (set.subset_univ ({1} : set L))) with hι,
+  set B : basis ι K L  := basis.extend h1 with hB,
+  haveI hfin : fintype ι := finite_dimensional.fintype_basis_index B,
+  haveI hem : nonempty ι := B.index_nonempty,
+  set g : L → ℝ := λ x,
+   ∥B.equiv_fun x (classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥,
+  sorry
+end

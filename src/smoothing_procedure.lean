@@ -124,6 +124,7 @@ lemma seminorm_from_bounded_is_nonarchimedean (hna : is_nonarchimedean f) :
 
 --TODO : same topology
 
+--TODO: I think I don't need f_ne_zero 
 lemma seminorm_from_bounded_of_mul_apply (f_nonneg : ∀ (x : α), 0 ≤ f x)
   (f_ne_zero : ∃ (x : α), f x ≠ 0) (f_mul : ∃ (c : ℝ) (hc : 0 < c), ∀ (x y : α),
   f (x * y) ≤ c * f x * f y) {x : α} (hx : ∀ (y : α), f (x * y) = f x * f y) :
@@ -150,8 +151,24 @@ begin
   exact le_antisymm h_le h_ge,
 end
 
-lemma seminorm_from_bounded_of_mul_le {x : α} (hx : ∀ (y : α), f (x * y) ≤ f x * f y)
-  (h_one : f 1 ≤ 1) : seminorm_from_bounded f x = f x := sorry
+lemma seminorm_from_bounded_of_mul_le {x : α} (f_nonneg : ∀ (x : α), 0 ≤ f x)
+  (hx : ∀ (y : α), f (x * y) ≤ f x * f y) (h_one : f 1 ≤ 1) : seminorm_from_bounded f x = f x :=
+begin
+  simp_rw [seminorm_from_bounded],
+  have h_le : (⨆ (y : α), f (x * y) / f y) ≤ f x,
+  { apply csupr_le,
+    intro y, by_cases hy : f y = 0,
+    { rw [hy, div_zero], exact f_nonneg _, },
+    { rw div_le_iff (lt_of_le_of_ne (f_nonneg _) (ne_comm.mp hy)), exact hx _, }},
+  have h_ge : f x ≤ (⨆ (y : α), f (x * y) / f y),
+  { have h_bdd : bdd_above (set.range (λ y, f (x * y) / f y)),
+    sorry,
+    convert le_csupr h_bdd (1 : α),
+    by_cases h1 : f 1 = 0,
+    { sorry},
+    { sorry } },
+  exact le_antisymm h_le h_ge,
+end
 
 lemma seminorm_from_bounded_ker :
   (seminorm_from_bounded f)⁻¹' {0} = f⁻¹' {0} := sorry
