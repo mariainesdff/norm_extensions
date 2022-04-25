@@ -8,13 +8,25 @@ noncomputable theory
 
 open_locale polynomial
 
-variables {R : Type*} [semi_normed_ring R]
+variables {R : Type*} [normed_ring R]
 
 def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat_degree)
 
 -- This should be max |p_i|^1/(n-i), i = 0, ..., n - 1 = deg(p) -1
-def spectral_value {p : R[X]} (hp : p.monic) : ℝ :=  list.foldr max 0
-  (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree))
+/- def spectral_value {p : R[X]} (hp : p.monic) : ℝ :=  list.foldr max 0
+  (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)) -/
+
+
+def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
+λ (n : ℕ), if n < p.nat_degree then ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ)) else 0
+
+def spectral_value {p : R[X]} (hp : p.monic) : ℝ := supr (spectral_value_terms hp)
+
+lemma spectral_value_terms_bdd_above {p : R[X]} (hp : p.monic) :
+  bdd_above (set.range (spectral_value_terms hp)) := sorry
+
+lemma spectral_value_terms_nonempty {p : R[X]} (hp : p.monic) :
+  (set.range (spectral_value_terms hp)).nonempty := sorry
 
 variable [nontrivial R]
 
@@ -34,7 +46,7 @@ begin
   sorry
 end
 
-lemma spectral_value_X_pow (n : ℕ) :
+/- lemma spectral_value_X_pow (n : ℕ) :
   spectral_value (@polynomial.monic_X_pow R _ n) = 0 := 
 begin
   rw spectral_value,
@@ -48,6 +60,23 @@ begin
       exact hl, },
     rw [if_neg (ne_of_lt hl), norm_zero, real.zero_rpow h_exp], },
   rw [list.map_congr h, list.map_const, list.length_range, list.max_repeat],
+end -/
+
+lemma spectral_value_X_pow (n : ℕ) :
+  spectral_value (@polynomial.monic_X_pow R _ n) = 0 := 
+begin
+  rw spectral_value, rw spectral_value_terms,
+  simp_rw [polynomial.coeff_X_pow n, polynomial.nat_degree_X_pow],
+  convert csupr_const,
+  ext m,
+  by_cases hmn : m < n,
+  { rw if_pos hmn, rw if_neg (ne_of_lt hmn), rw norm_zero, rw real.zero_rpow,
+    refine div_ne_zero one_ne_zero _,
+    rw [← nat.cast_sub (le_of_lt hmn), ← nat.cast_zero, ne.def, nat.cast_inj, 
+      nat.sub_eq_zero_iff_le],
+    exact not_le_of_lt hmn,},
+  { rw if_neg hmn,},
+  apply_instance,
 end
 
 lemma spectral_value_eq_zero_iff [nontrivial R] {p : R[X]} (hp : p.monic) :
@@ -61,8 +90,18 @@ begin
     { rw [if_pos hn, hn, polynomial.coeff_nat_degree], exact hp, },
     { rw if_neg hn,
       { by_cases hn' : n < p.nat_degree,
-        { 
-          sorry },
+        { have h_le : supr (spectral_value_terms hp) ≤ 0 := le_of_eq h,
+          have h_exp : 0 < 1 / ((p.nat_degree : ℝ) - n),
+          { rw [one_div_pos, ← nat.cast_sub (le_of_lt hn'), nat.cast_pos],
+            exact nat.sub_pos_of_lt hn', },
+          have h0 : (0 : ℝ) = 0^(1 / ((p.nat_degree : ℝ) - n)),
+          { rw real.zero_rpow (ne_of_gt h_exp), },
+          rw [supr, cSup_le_iff (spectral_value_terms_bdd_above hp)
+            (spectral_value_terms_nonempty hp)] at h_le,
+          specialize h_le (spectral_value_terms hp n) ⟨n, rfl⟩,
+          simp only [spectral_value_terms, if_pos hn'] at h_le,
+          rw [h0, real.rpow_le_rpow_iff (norm_nonneg (p.coeff n)) (le_refl 0) h_exp] at h_le,
+          exact norm_eq_zero.mp (le_antisymm h_le (norm_nonneg _)), },
         { exact polynomial.coeff_eq_zero_of_nat_degree_lt 
             (lt_of_le_of_ne (le_of_not_lt hn') (ne_comm.mpr hn)) }}}},
   { convert spectral_value_X_pow p.nat_degree,
@@ -96,13 +135,26 @@ begin
   sorry
 end
 
-lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
+/- lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
 begin
   have h_lr: list.range 1 = [0] := rfl,
   rw [spectral_norm, spectral_value, minpoly.zero, polynomial.nat_degree_X, h_lr],
   simp only [list.map],
   rw [polynomial.coeff_X_zero, norm_zero, nat.cast_one, nat.cast_zero, sub_zero, div_one,
     real.rpow_one, list.foldr_cons, list.foldr_nil, max_eq_right (le_refl _)],
+end -/
+
+lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
+begin
+  have h_lr: list.range 1 = [0] := rfl,
+  rw [spectral_norm, spectral_value, spectral_value_terms, minpoly.zero, polynomial.nat_degree_X],
+  convert csupr_const,
+  ext m,
+  by_cases hm : m < 1,
+  { rw [if_pos hm, nat.lt_one_iff.mp hm, polynomial.coeff_X_zero, norm_zero, nat.cast_one,
+      nat.cast_zero, sub_zero, div_one, real.rpow_one] },
+  { rw if_neg hm },
+  apply_instance,
 end
 
 lemma spectral_norm_zero_le (y : L) : 0 ≤ spectral_norm h_alg y := 
@@ -131,7 +183,7 @@ begin
   sorry
 end
 
-lemma spectral_norm_extends (k : K) : ∥ k ∥  = spectral_norm h_alg (algebra_map K L k) :=
+lemma spectral_norm_extends (k : K) : ∥ k ∥ = spectral_norm h_alg (algebra_map K L k) :=
 begin
 
   sorry

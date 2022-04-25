@@ -13,7 +13,7 @@ instance normed_field'.to_normed_comm_ring {α : Type*} [normed_field' α] :
   ..‹normed_field' α› }
 
 def is_pow_mult {α : Type*} [ring α] (f : α → ℝ) :=
-∀ (a : α) (n : ℕ), f (a^n) = (f a) ^ n
+∀ (a : α) {n : ℕ} (hn : 1 ≤ n), f (a^n) = (f a) ^ n
 
 structure is_seminorm {α : Type*} [ring α] (f : α → ℝ) : Prop :=
 (nonneg : ∀ a, 0 ≤ f a)
@@ -29,7 +29,8 @@ lemma is_seminorm.pow_le {α : Type*} [ring α] {f : α → ℝ} (hf : is_semino
 
 def is_norm_one_class {α : Type*} [ring α] (f : α → ℝ) : Prop := f 1 = 1
 
-lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] {f : α → ℝ} (hsn : is_seminorm f) :
+lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] {f : α → ℝ} (hsn : is_seminorm f)
+  (hf1 : f 1 ≤ 1) :
   is_norm_one_class f ↔ ∃ x : α, f x ≠ 0 :=
 begin
   rw is_norm_one_class,
@@ -37,26 +38,30 @@ begin
   { use 1,
     rw h, exact one_ne_zero, },
   { obtain ⟨x, hx⟩ := h,
-    by_cases hf1 : f 1 = 0,
+    by_cases hf0 : f 1 = 0,
     { have hx' : f x ≤ 0,
       { rw ← mul_one x,
         apply le_trans (hsn.mul x 1) _,
-        rw [hf1, mul_zero], },
+        rw [hf0, mul_zero], },
       exact absurd (le_antisymm hx' (hsn.nonneg _) ) hx, },
     { have h1 : f 1 * 1 ≤ f 1 * f 1,
       { conv_lhs{ rw ← one_mul (1 : α)},
         convert hsn.mul 1 1,
         rw mul_one, },
-      rw mul_le_mul_left (lt_of_le_of_ne (hsn.nonneg _) (ne.symm hf1)) at h1,
-      exact le_antisymm hsn.one h1, }}
+      rw mul_le_mul_left (lt_of_le_of_ne (hsn.nonneg _) (ne.symm hf0)) at h1,
+      exact le_antisymm hf1 h1, }}
 end
 
-structure is_norm {α : Type*} [ring α] (f : α → ℝ) extends (is_seminorm f) :=
+structure is_norm {α : Type*} [ring α] (f : α → ℝ) extends (is_seminorm f) : Prop :=
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
 
 structure is_algebra_norm (α : Type*) [normed_comm_ring α] {β : Type*} [ring β] [algebra α β]
-  (f : β → ℝ) extends (is_norm f) :=
+  (f : β → ℝ) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f (a • x) ≤ ∥ a ∥ * f x)
+
+def norm_extends (α : Type*) [normed_comm_ring α] {β : Type*} [ring β] [algebra α β]
+  (f : β → ℝ) : Prop :=
+∀ x : α, f (algebra_map α β x) = ∥x∥
 
 def is_nonarchimedean {α : Type*} [ring α] (f : α → ℝ) : Prop := 
 ∀ a b, f (a + b) ≤ max (f a) (f b)
