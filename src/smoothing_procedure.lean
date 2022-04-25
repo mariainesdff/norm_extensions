@@ -144,11 +144,49 @@ begin
       rw mem_upper_bounds,
       rintros r ⟨y, hy⟩,
       simp_rw [← hy],
-      by_cases hy : f y = 0,
-    { rw [hy, div_zero, mul_zero], exact f_nonneg _ },
-    { rw [div_self hy, mul_one] }},
+      by_cases hy0 : f y = 0,
+    { rw [hy0, div_zero, mul_zero], exact f_nonneg _ },
+    { rw [div_self hy0, mul_one] }},
     exact le_csupr h_bdd (1 : α), },
   exact le_antisymm h_le h_ge,
+end
+
+lemma seminorm_from_bounded_le (x : α) (f_nonneg : ∀ (x : α), 0 ≤ f x)
+  (f_mul : ∃ (c : ℝ) (hc : 0 < c), ∀ (x y : α), f (x * y) ≤ c * f x * f y) :
+  seminorm_from_bounded f x ≤ (classical.some f_mul) * f x :=
+begin
+  have h := classical.some_spec(classical.some_spec f_mul),
+  apply csupr_le,
+  intro y, by_cases hy : 0 = f y,
+  { rw [← hy, div_zero],
+    exact mul_nonneg (le_of_lt (classical.some (classical.some_spec f_mul))) (f_nonneg _), },
+  { rw div_le_iff (lt_of_le_of_ne (f_nonneg _) hy),
+    exact (classical.some_spec (classical.some_spec f_mul)) x y }
+end
+
+lemma seminorm_from_bounded_ge (x : α) (f_nonneg : ∀ (x : α), 0 ≤ f x)
+  (f_mul : ∃ (c : ℝ) (hc : 0 < c), ∀ (x y : α), f (x * y) ≤ c * f x * f y) :
+  f x ≤ f 1 * seminorm_from_bounded f x :=
+begin
+  obtain ⟨c, hc_pos, hxy⟩ := f_mul,
+  by_cases h1 : 0 = f 1,
+  { specialize hxy x 1,
+    rw [mul_one, ← h1, mul_zero] at hxy,
+    have hx0 : f x = 0 := le_antisymm hxy (f_nonneg _),
+    rw [hx0, ← h1, zero_mul] },
+  { rw ← div_le_iff' (lt_of_le_of_ne (f_nonneg _) h1),
+    simp_rw [seminorm_from_bounded],
+    have h_bdd : bdd_above (set.range (λ y, f (x * y) / f y)),
+    { use c * f x,
+      rw mem_upper_bounds,
+      rintros r ⟨y, hy⟩,
+      simp only [← hy],
+      by_cases hy0 : 0 = f y,
+      { rw [← hy0, div_zero],
+        exact mul_nonneg (le_of_lt hc_pos) (f_nonneg _), },
+      { simpa [div_le_iff (lt_of_le_of_ne (f_nonneg _) hy0)] using hxy x y,}},
+    convert le_csupr h_bdd (1 : α),
+    rw mul_one,} ,
 end
 
 lemma seminorm_from_bounded_of_mul_le {x : α} (f_nonneg : ∀ (x : α), 0 ≤ f x)
@@ -162,16 +200,45 @@ begin
     { rw div_le_iff (lt_of_le_of_ne (f_nonneg _) (ne_comm.mp hy)), exact hx _, }},
   have h_ge : f x ≤ (⨆ (y : α), f (x * y) / f y),
   { have h_bdd : bdd_above (set.range (λ y, f (x * y) / f y)),
-    sorry,
+    { use (f x),
+      rw mem_upper_bounds,
+      rintros r ⟨y, hy⟩,
+      simp only [← hy],
+      by_cases hy0 : f y = 0,
+      { rw [hy0, div_zero],
+        exact f_nonneg _  },
+      { rw [← mul_one (f x), ← div_self hy0, ← mul_div_assoc, div_le_iff
+          (lt_of_le_of_ne (f_nonneg _) (ne_comm.mp hy0)), mul_div_assoc, div_self hy0, mul_one],
+        exact hx y,}},
     convert le_csupr h_bdd (1 : α),
-    by_cases h1 : f 1 = 0,
-    { sorry},
-    { sorry } },
+    by_cases h0 : f x = 0,
+    { rw [mul_one, h0, zero_div],},
+    { have heq : f 1 = 1,
+      { apply le_antisymm h_one,
+        specialize hx 1,
+        rw [mul_one, le_mul_iff_one_le_right (lt_of_le_of_ne (f_nonneg _) (ne_comm.mp h0))] at hx,
+        exact hx, },
+      rw [heq, mul_one, div_one], } },
   exact le_antisymm h_le h_ge,
 end
 
-lemma seminorm_from_bounded_ker :
-  (seminorm_from_bounded f)⁻¹' {0} = f⁻¹' {0} := sorry
+lemma seminorm_from_bounded_ker (f_nonneg : ∀ (x : α), 0 ≤ f x) 
+(f_mul : ∃ (c : ℝ) (hc : 0 < c), ∀ (x y : α), f (x * y) ≤ c * f x * f y) :
+  (seminorm_from_bounded f)⁻¹' {0} = f⁻¹' {0} := 
+begin
+  ext x,
+  simp only [set.mem_preimage, set.mem_singleton_iff],
+  refine ⟨λ h, _, λ h, _⟩,
+  { sorry },
+  { simp only [seminorm_from_bounded],
+    have h_le : (⨆ (y : α), f (x * y) / f y) ≤ 0,
+    { apply csupr_le,
+      sorry },
+    have h_ge : 0 ≤ (⨆ (y : α), f (x * y) / f y),
+    { 
+      sorry},
+    exact le_antisymm h_le h_ge, }
+end
 
 lemma seminorm_from_bounded_is_norm_iff (f_nonneg : ∀ (x : α), 0 ≤ f x) (f_zero : f 0 = 0)
   (f_ne_zero : ∃ (x : α), f x ≠ 0) 
