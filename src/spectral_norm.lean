@@ -17,10 +17,11 @@ def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat
   (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)) -/
 
 
-def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
-λ (n : ℕ), if n < p.nat_degree then ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ)) else 0
+def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → nnreal := 
+λ (n : ℕ), if n < p.nat_degree then 
+⟨∥ p.coeff n ∥, norm_nonneg (p.coeff n)⟩^(1/(p.nat_degree - n : ℝ))  else 0
 
-def spectral_value {p : R[X]} (hp : p.monic) : ℝ := supr (spectral_value_terms hp)
+def spectral_value {p : R[X]} (hp : p.monic) : nnreal := supr (spectral_value_terms hp)
 
 lemma spectral_value_terms_bdd_above {p : R[X]} (hp : p.monic) :
   bdd_above (set.range (spectral_value_terms hp)) := sorry
@@ -70,12 +71,11 @@ begin
   convert csupr_const,
   ext m,
   by_cases hmn : m < n,
-  { rw if_pos hmn, rw if_neg (ne_of_lt hmn), rw norm_zero, rw real.zero_rpow,
-    refine div_ne_zero one_ne_zero _,
-    rw [← nat.cast_sub (le_of_lt hmn), ← nat.cast_zero, ne.def, nat.cast_inj, 
-      nat.sub_eq_zero_iff_le],
-    exact not_le_of_lt hmn,},
-  { rw if_neg hmn,},
+  { rw [if_pos hmn, nnreal.coe_eq, nnreal.rpow_eq_zero_iff, nonneg.mk_eq_zero,
+      if_neg (ne_of_lt hmn), norm_zero, one_div, ne.def, inv_eq_zero, ← nat.cast_sub (le_of_lt hmn),
+      nat.cast_eq_zero, nat.sub_eq_zero_iff_le],
+    exact ⟨eq.refl _, not_le_of_lt hmn⟩, },
+  { rw if_neg hmn },
   apply_instance,
 end
 
@@ -94,13 +94,13 @@ begin
           have h_exp : 0 < 1 / ((p.nat_degree : ℝ) - n),
           { rw [one_div_pos, ← nat.cast_sub (le_of_lt hn'), nat.cast_pos],
             exact nat.sub_pos_of_lt hn', },
-          have h0 : (0 : ℝ) = 0^(1 / ((p.nat_degree : ℝ) - n)),
-          { rw real.zero_rpow (ne_of_gt h_exp), },
+          have h0 : (0 : nnreal) = 0^(1 / ((p.nat_degree : ℝ) - n)),
+          { rw nnreal.zero_rpow (ne_of_gt h_exp), },
           rw [supr, cSup_le_iff (spectral_value_terms_bdd_above hp)
             (spectral_value_terms_nonempty hp)] at h_le,
           specialize h_le (spectral_value_terms hp n) ⟨n, rfl⟩,
           simp only [spectral_value_terms, if_pos hn'] at h_le,
-          rw [h0, real.rpow_le_rpow_iff (norm_nonneg (p.coeff n)) (le_refl 0) h_exp] at h_le,
+          rw [h0, nnreal.rpow_le_rpow_iff h_exp] at h_le,
           exact norm_eq_zero.mp (le_antisymm h_le (norm_nonneg _)), },
         { exact polynomial.coeff_eq_zero_of_nat_degree_lt 
             (lt_of_le_of_ne (le_of_not_lt hn') (ne_comm.mpr hn)) }}}},
@@ -118,7 +118,7 @@ variables {K : Type*} [normed_field' K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L)
 
 -- The spectral norm |y|_sp is the spectral value of the minimal polynomial of y over K.
-def spectral_norm (y : L) : ℝ :=
+def spectral_norm (y : L) : nnreal :=
 spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
 
 variable (y : L)
@@ -151,8 +151,8 @@ begin
   convert csupr_const,
   ext m,
   by_cases hm : m < 1,
-  { rw [if_pos hm, nat.lt_one_iff.mp hm, polynomial.coeff_X_zero, norm_zero, nat.cast_one,
-      nat.cast_zero, sub_zero, div_one, real.rpow_one] },
+  { rw [if_pos hm, nnreal.coe_eq, nat.lt_one_iff.mp hm, nat.cast_one, nat.cast_zero, sub_zero,
+      div_one, nnreal.rpow_one, nonneg.mk_eq_zero, polynomial.coeff_X_zero, norm_zero] },
   { rw if_neg hm },
   apply_instance,
 end
@@ -171,14 +171,14 @@ begin
 
 end
 
-lemma spectral_norm_nonarchimedean (x y : L) (h : is_nonarchimedean (λ k : K, ∥ k ∥)) :
+lemma spectral_norm_nonarchimedean (x y : L) (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
   spectral_norm h_alg (x + y) ≤ max (spectral_norm h_alg x) (spectral_norm h_alg y) :=
 begin
   sorry
 end
 
 lemma spectral_norm_smul (k : K) (y : L) :
-  spectral_norm h_alg (k • y) ≤ ∥ k ∥ * spectral_norm h_alg y :=
+  spectral_norm h_alg (k • y) ≤ ⟨∥ k ∥, norm_nonneg _⟩  * spectral_norm h_alg y :=
 begin
   sorry
 end
@@ -213,7 +213,7 @@ instance valued_field.to_normed_field : normed_field' K :=
 
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
 
-lemma spectral_value_unique {f : L → ℝ} (hf_norm : is_algebra_norm K f) 
+lemma spectral_value_unique {f : L → nnreal} (hf_norm : is_algebra_norm K f) 
   (hf_pow : is_pow_mult f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 --instance spectral_valued_complete (hKL : finite_dimensional K L) : complete_space L := sorry

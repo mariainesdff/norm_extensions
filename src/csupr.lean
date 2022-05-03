@@ -76,6 +76,36 @@ csupr_mul_le $ λ i, mul_csupr_le $ H _
 
 variables {f : ι → nnreal}
 
+/- open function set
+
+
+variables {α β : Type*}  [conditionally_complete_lattice α] 
+
+lemma cinfi_range {g : β → α} {f : ι → β} : (⨅ b ∈ range f, g b) = ⨅ i, g (f i) :=
+begin
+  rw cinfi_subt
+
+rw [infi_range']
+end
+
+#exit
+lemma csupr_range {g : β → α} {f : ι → β} : (⨆ b ∈ range f, g b) = ⨆ i, g (f i) :=
+@infi_range (order_dual α) _ _ _ _ _
+
+lemma mul_Sup {s : set nnreal} {a : nnreal} : a * Sup s = ⨆i∈s, a * i :=
+begin
+  sorry
+end
+
+lemma mul_csupr' (hf : bdd_above (set.range f)) (a : nnreal) :
+  a * (⨆ i, f i) = ⨆ i, a * f i :=
+begin
+  rw ← Sup_range,
+  rw mul_Sup,
+  rw csupr_range,
+  sorry
+end
+ -/
 lemma mul_csupr (hf : bdd_above (set.range f)) (a : nnreal) :
   a * (⨆ i, f i) = ⨆ i, a * f i :=
 begin

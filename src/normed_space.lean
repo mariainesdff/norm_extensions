@@ -22,7 +22,7 @@ variables {K : Type*} [normed_field K]
 -- Lemma 3.2.1./3
 lemma finite_extension_pow_mul_seminorm {L : Type*} [field L] [algebra K L] 
   (hfd : finite_dimensional K L) :
-  ∃ f : L → ℝ, is_algebra_norm K f ∧ is_pow_mult f ∧ norm_extends K f :=
+  ∃ f : L → nnreal, is_algebra_norm K f ∧ is_pow_mult f ∧ norm_extends K f :=
 begin
   have h1 : linear_independent K (λ x, x : ({1} : set L) → L),
   { exact linear_independent_singleton one_ne_zero },

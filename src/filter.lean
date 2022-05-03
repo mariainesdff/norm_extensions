@@ -3,11 +3,11 @@ import order.filter.at_top_bot
 import order.liminf_limsup
 import topology.metric_space.basic
 import topology.algebra.order.monotone_convergence
-
+import topology.instances.nnreal
 
 open_locale filter topological_space
 
-theorem real.exists_is_glb (S : set ℝ) (hne : S.nonempty) (hbdd : bdd_below S) :
+theorem real.exists_is_glb {S : set ℝ} (hne : S.nonempty) (hbdd : bdd_below S) :
   ∃ x, is_glb S x :=
 begin
   set T := - S with hT,
@@ -33,25 +33,29 @@ begin
   exact tendsto_at_top_is_lub h_mon hB,
 end
 
-/- lemma antitone.neg {α β : Type*} [preorder α] [preorder β] [add_group β]
-  [covariant_class β β (+) (preorder.to_has_le β).le]
-  [covariant_class  β β (function.swap (+)) (preorder.to_has_le β).le] {f : α → β}
-  (h_ant : antitone f) : monotone (-f) :=
-λ x y hxy, by simpa [pi.neg_apply, neg_le_neg_iff] using h_ant hxy
-
-lemma set.range_neg {α β : Type*} [add_group β] (f : α → β) :
-  set.range (-f) = - (set.range f) :=
-begin
-  ext x,
-  simp only [set.mem_range, pi.neg_apply, set.mem_neg],
-  split; rintro ⟨y, hy⟩; use y,
-  exacts [eq_neg_iff_eq_neg.mpr (eq.symm hy), (neg_eq_iff_neg_eq.mpr (eq.symm hy))],
-end -/
-
-lemma filter.tendsto_of_is_bounded_antitone {f : ℕ → ℝ} (h_bdd : bdd_below (set.range f)) 
+lemma real.tendsto_of_is_bounded_antitone {f : ℕ → ℝ} (h_bdd : bdd_below (set.range f)) 
   (h_ant : antitone f) : ∃ r : ℝ, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
-  obtain ⟨B, hB⟩ := (real.exists_is_glb ((set.range f)) (set.range_nonempty f) h_bdd),
+  obtain ⟨B, hB⟩ := (real.exists_is_glb (set.range_nonempty f) h_bdd),
   use B,
   exact tendsto_at_top_is_glb h_ant hB,
 end
+
+lemma nnreal.tendsto_of_is_bounded_antitone {f : ℕ → nnreal} (h_bdd : bdd_below (set.range f)) 
+  (h_ant : antitone f) : ∃ r : nnreal, filter.tendsto f filter.at_top (𝓝 r) :=
+begin
+  have h_bdd_0 : (0 : ℝ) ∈ lower_bounds (set.range (λ (n : ℕ), (f n : ℝ))),
+  { intros r hr,
+    obtain ⟨n, hn⟩ := set.mem_range.mpr hr,
+    simp_rw [← hn],
+    exact nnreal.coe_nonneg _ },
+  have h_bdd : bdd_below (set.range (λ n, (f n : ℝ))) := ⟨0, h_bdd_0⟩,
+  obtain ⟨L, hL⟩ := real.tendsto_of_is_bounded_antitone h_bdd h_ant,
+  have hL0 : 0 ≤ L,
+  { have h_glb : is_glb (set.range (λ n, (f n : ℝ))) L := is_glb_of_tendsto_at_top h_ant hL,
+    exact (le_is_glb_iff h_glb).mpr h_bdd_0 },
+  use ⟨L, hL0⟩,
+  rw ← nnreal.tendsto_coe,
+  exact hL,
+end
+
