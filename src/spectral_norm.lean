@@ -40,12 +40,12 @@ begin
     exact le_of_eq hn, }
 end
 
-lemma spectral_value_zero_le [nontrivial R] {p : R[X]} (hp : p.monic) :
+/- lemma spectral_value_zero_le [nontrivial R] {p : R[X]} (hp : p.monic) :
   0 ≤ spectral_value hp := 
 begin
   rw spectral_value,
   sorry
-end
+end -/
 
 /- lemma spectral_value_X_pow (n : ℕ) :
   spectral_value (@polynomial.monic_X_pow R _ n) = 0 := 
@@ -157,13 +157,13 @@ begin
   apply_instance,
 end
 
-lemma spectral_norm_zero_le (y : L) : 0 ≤ spectral_norm h_alg y := 
-spectral_value_zero_le _
+/- lemma spectral_norm_zero_le (y : L) : 0 ≤ spectral_norm h_alg y := 
+spectral_value_zero_le _ -/
 
 lemma spectral_norm_zero_lt {y : L} (hy : y ≠ 0) : 0 < spectral_norm h_alg y := 
 begin
   rw lt_iff_le_and_ne,
-  refine ⟨spectral_norm_zero_le h_alg y, _⟩,
+  refine ⟨zero_le _, _⟩,
   rw [spectral_norm, ne.def, eq_comm, spectral_value_eq_zero_iff],
   have h0 : polynomial.coeff (minpoly K y) 0 ≠ 0  :=
   minpoly.coeff_zero_ne_zero (is_algebraic_iff_is_integral.mp (h_alg y)) hy,

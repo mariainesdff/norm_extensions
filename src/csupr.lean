@@ -134,7 +134,7 @@ lemma csupr_mul (hf : bdd_above (set.range f)) (a : nnreal) :
 by { rw [mul_comm, mul_csupr hf], simp_rw [mul_comm] }
 
 
-@[to_additive] lemma csupr_div (hf : bdd_above (set.range f)) (a : nnreal) :
+lemma csupr_div (hf : bdd_above (set.range f)) (a : nnreal) :
   (⨆ i, f i) / a = ⨆ i, f i / a :=
 by simp only [div_eq_mul_inv, csupr_mul hf]
 
