@@ -391,38 +391,43 @@ begin
   rw [nnreal.rpow_mul, nnreal.rpow_nat_cast],
 end
 
-/- exists_lt_of_cinfi_lt -/
-
-private lemma smoothing_seminorm_seq_has_limit_m (f : α → nnreal) (x : α) {ε : nnreal} (hε : 0 < ε) : 
+private lemma smoothing_seminorm_seq_has_limit_m (f : α → nnreal) (x : α) {ε : ℝ} (hε : 0 < ε) : 
   ∃ (m : pnat), (f (x ^(m : ℕ)))^(1/m : ℝ) < 
-    infi (λ (n : pnat), (f(x ^(n : ℕ)))^(1/(n : ℝ))) + ε/2 :=
+    infi (λ (n : pnat), (f(x ^(n : ℕ)))^(1/(n : ℝ))) + ⟨ε, le_of_lt hε⟩/2 :=
+exists_lt_of_cinfi_lt (lt_add_of_le_of_pos (le_refl _) (nnreal.half_pos hε))
+
+lemma tendsto_bdd_div_at_top_nhds_0_nat (f : ℕ → ℝ)
+ (hfb : ∃ b : ℝ, ∀ᶠ (n : ℕ) in filter.at_top, b ≤ f n)
+ (hfB : ∃ B : ℝ, ∀ᶠ (n : ℕ) in filter.at_top, f n ≤ B) : 
+  filter.tendsto (λ (n: ℕ), ((f n / (n : ℝ)))) filter.at_top (𝓝 0) :=
 begin
-  exact exists_lt_of_cinfi_lt (lt_add_of_le_of_pos (le_refl _) (nnreal.half_pos hε)), 
+  obtain ⟨b, hb⟩ := hfb,
+  obtain ⟨B, hB⟩ := hfB,
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (tendsto_const_div_at_top_nhds_0_nat b)
+    (tendsto_const_div_at_top_nhds_0_nat B) _ _,
+  { simp only [filter.eventually_at_top, ge_iff_le] at hb ⊢,
+    obtain ⟨N, hN⟩ := hb,
+    use N, intros n hn,
+    exact div_le_div_of_le (nat.cast_nonneg _) (hN n hn), },
+  { simp only [filter.eventually_at_top, ge_iff_le] at hB ⊢,
+    obtain ⟨N, hN⟩ := hB,
+    use N, intros n hn,
+    exact div_le_div_of_le (nat.cast_nonneg _) (hN n hn), },
 end
 
-/- private lemma smoothing_seminorm_seq_has_limit_m {x : α} {ε : nnreal} (hε : 0 < ε) : 
-  ∃ (m : ℕ) (hm : 0 < m), (f (x ^m))^(1/m : ℝ) < 
-    infi (λ (n : pnat), (f(x ^(n : ℕ)))^(1/(n : ℝ))) + ε/2:=
+lemma tendsto_mod_div_at_top_nhds_0_nat {m : ℕ} (hm : 0 < m) : 
+  filter.tendsto (λ (n: ℕ), (((n % m : ℕ) : ℝ) / (n : ℝ))) filter.at_top (𝓝 0) :=
 begin
-  set L := infi (λ (n : pnat), (f(x ^(n : ℕ)))^(1/(n : ℝ))) with hL,
-  by_contradiction h,
-  push_neg at h,
-  have h_bdd : bdd_below (set.range (λ (n : pnat), (f(x ^ (n : ℕ)))^(1/(n : ℝ)))),
-    { use 0, rw mem_lower_bounds, intros y hy, exact zero_le _,},
-  have hL_inf := is_glb_cinfi h_bdd,
-  rw [is_glb, ← hL] at hL_inf,
-  have hLε : L + ε/2 ∈ 
-    (lower_bounds (set.range (λ (n : ℕ+), f (x ^ (n : ℕ)) ^ (1 / (n : ℝ))))),
-  { rw mem_lower_bounds,
-    intros r hr,
-    obtain ⟨n, hn⟩ := set.mem_range.mpr hr,
-    simp_rw ← hn,
-    exact (h (n : ℕ) (pnat.pos _)), },
-  simp only [← le_is_glb_iff hL_inf, add_le_iff_nonpos_right, le_zero_iff, div_eq_zero_iff,
-    two_ne_zero, or_false] at hLε,
-  exact (ne_of_gt hε) hLε,
-end -/
-
+  apply tendsto_bdd_div_at_top_nhds_0_nat (λ (n: ℕ), ((n % m : ℕ) : ℝ)),
+  { use 0,
+    apply filter.eventually_of_forall,
+    intros n,
+    simp only [nat.cast_nonneg], },
+  { use m,
+    apply filter.eventually_of_forall,
+    intros n, 
+    simp only [nat.cast_le,le_of_lt (nat.mod_lt n hm)], }
+end
 
 private lemma smoothing_seminorm_seq_has_limit_aux {x : α} (L : nnreal) {ε : nnreal} (hε : 0 < ε)
   {m1 : ℕ} (hm1 : 0 < m1) (hx : f x ≠ 0) : 
@@ -430,36 +435,18 @@ private lemma smoothing_seminorm_seq_has_limit_aux {x : α} (L : nnreal) {ε : n
     (-(((n % m1 : ℕ) : ℝ)/(n : ℝ)))*((f x) ^(n % m1)) ^ (1 / (n : ℝ))) filter.at_top (𝓝 1) := 
 begin
   rw ← mul_one (1 : nnreal),
-  have h_exp : filter.tendsto (λ (n: ℕ), (((n % m1 : ℕ) : ℝ) * (1 / (n : ℝ))))
-    filter.at_top (𝓝 0),
-  { have h_ge : filter.tendsto (λ (n : ℕ), (m1 : ℝ) * (1 / (n : ℝ))) filter.at_top (𝓝 0),
-    { simp_rw ← mul_div_assoc,
-      exact tendsto_const_div_at_top_nhds_0_nat _, },
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_ge _ _,
-    { simp only [filter.eventually_at_top, ge_iff_le],
-      use 1,
-      intros n hn,
-      apply mul_nonneg (nat.cast_nonneg _) (nat.one_div_cast_nonneg n), },
-    { simp only [filter.eventually_at_top, ge_iff_le],
-      use 1,
-      intros n hn,
-      rw [mul_le_mul_right (nat.one_div_cast_pos hn), nat.cast_le],
-      exact le_of_lt (nat.mod_lt _ hm1), }},
+  have h_exp : filter.tendsto (λ (n: ℕ), (((n % m1 : ℕ) : ℝ) / (n : ℝ)))
+    filter.at_top (𝓝 0) := tendsto_mod_div_at_top_nhds_0_nat hm1,
   apply filter.tendsto.mul,
   { have h0 : filter.tendsto (λ (t : ℕ), -(((t % m1 : ℕ) : ℝ) / (t : ℝ))) filter.at_top (𝓝 0),
-    { rw ← neg_zero,
-      convert filter.tendsto.neg h_exp,
-      ext n,
-      rw mul_one_div, },
+    { rw ← neg_zero, exact filter.tendsto.neg h_exp, },
     rw [← nnreal.rpow_zero (L + ε), ← nnreal.tendsto_coe],
     simp_rw nnreal.coe_rpow,
     apply filter.tendsto.rpow tendsto_const_nhds h0,
-    left,
     rw [nnreal.coe_ne_zero, ne.def, add_eq_zero_iff],
-    exact not_and_of_not_right _ (ne_of_gt hε) },
-  { simp_rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_mul],
-    rw [← nnreal.rpow_zero (f x), ← nnreal.tendsto_coe],
-    simp_rw nnreal.coe_rpow,
+    exact or.inl (not_and_of_not_right _ (ne_of_gt hε)) },
+  { simp_rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, ← nnreal.rpow_zero (f x), 
+      ← nnreal.tendsto_coe, nnreal.coe_rpow, ← mul_div_assoc, mul_one],
     exact filter.tendsto.rpow tendsto_const_nhds h_exp (or.inl (nnreal.coe_ne_zero.mpr hx)), },
 end
 
@@ -472,40 +459,25 @@ begin
     suffices h : ∀ (n : ℕ) (hn : 1 ≤ n), (f (x ^ n))^(1/(n : ℝ)) = 0,
     { exact tendsto_at_top_of_eventually_const h },
     intros n hn,
-    have hfn : f (x^n) = 0,
-    { have hfn_le : f (x ^ n) ≤ 0,
-      { calc f (x ^ n) ≤ f x ^ n : hsn.pow_le x hn
-                   ... = 0 ^ n : by rw hx
-                   ... = 0 : zero_pow hn },
-      exact le_antisymm hfn_le (zero_le _) },
+    have hfn : f (x ^ n) = 0,
+    { rw [← le_zero_iff, ← zero_pow hn, ← hx], exact hsn.pow_le x hn, },
     rw [hfn, nnreal.zero_rpow (nat.one_div_cast_ne_zero hn)], },
   { set L := infi (λ (n : pnat), (f(x ^(n : ℕ)))^(1/(n : ℝ))) with hL,
     use L,
-    have h_bdd : bdd_below (set.range (λ (n : pnat), (f(x ^ (n : ℕ)))^(1/(n : ℝ)))),
-    { use 0, rw mem_lower_bounds, intros y hy, exact zero_le _,},
     rw metric.tendsto_at_top,
     intros ε hε,
-    have hLε : 0 < L + ⟨ε, (le_of_lt hε)⟩,
-        { exact add_pos_of_nonneg_of_pos (zero_le _) hε },
-    have hm1 : ∃ (m : ℕ) (hm : 0 < m), (f (x^m))^(1/m : ℝ) < L + (⟨ε, (le_of_lt hε)⟩/2),
-    { have : (0 : nnreal) < ⟨ε, (le_of_lt hε)⟩ := hε,
-      obtain ⟨m, hm⟩ := smoothing_seminorm_seq_has_limit_m f x this,
-      use [m, pnat.pos m],
-      convert hm,
-        },
-    obtain ⟨m1, hm10, hm1⟩ := hm1,
-    have hm2 : ∃ m : ℕ, ∀ (n ≥ m), (L + ⟨ε, (le_of_lt hε)⟩/2)^
+    obtain ⟨m1, hm1⟩ := smoothing_seminorm_seq_has_limit_m f x hε,
+    obtain ⟨m2, hm2⟩ : ∃ m : ℕ, ∀ (n ≥ m), (L + ⟨ε, (le_of_lt hε)⟩/2)^
       (-(((n % m1 : ℕ) : ℝ)/(n : ℝ)))*((f x) ^(n % m1)) ^ (1 / (n : ℝ)) - 1 ≤
       ⟨ε, (le_of_lt hε)⟩/(2 * (L + ⟨ε, (le_of_lt hε)⟩/2)),
     { have hε2 : (0 : nnreal) < ⟨ε, (le_of_lt hε)⟩/2 := nnreal.half_pos hε,
-      have hL2  := smoothing_seminorm_seq_has_limit_aux L hε2 hm10 hx,
+      have hL2  := smoothing_seminorm_seq_has_limit_aux L hε2 (pnat.pos m1) hx,
       rw metric.tendsto_at_top at hL2,
       set δ : nnreal := ⟨ε, (le_of_lt hε)⟩/(2 * (L + ⟨ε, (le_of_lt hε)⟩/2)) with hδ_def,
       have hδ : 0 < δ,
       { rw [hδ_def, div_mul_eq_div_mul_one_div],
-        apply mul_pos hε2,
-        rw [one_div, nnreal.inv_pos],
-        exact add_pos_of_nonneg_of_pos (zero_le L) hε2, },
+        exact mul_pos hε2 ((one_div (L + ⟨ε, (le_of_lt hε)⟩/2)).symm ▸ nnreal.inv_pos.mpr
+          (add_pos_of_nonneg_of_pos (zero_le L) hε2)), },
       obtain ⟨N, hN⟩ := hL2 δ hδ,
       use N,
       intros n hn,
@@ -513,19 +485,18 @@ begin
       rw [nnreal.dist_eq, abs_lt] at hN,
       rw [← nnreal.coe_le_coe, nnreal.coe_sub_def],
       exact max_le (le_of_lt hN.right) (nnreal.coe_nonneg _), },
-    obtain ⟨m2, hm2⟩ := hm2,
-    let N := max m1 m2,
-    use N,
+    use max (m1 : ℕ) m2,
     intros n hn,
-    have hn0 : 0 < n := lt_of_lt_of_le (lt_of_lt_of_le hm10 (le_max_left m1 m2)) hn,
+    have hn0 : 0 < n := lt_of_lt_of_le (lt_of_lt_of_le (pnat.pos m1) (le_max_left m1 m2)) hn,
     rw [nnreal.dist_eq, abs_lt],
     have hL_le : L ≤ smoothing_seminorm_seq hsn x n,
-    { simp only [smoothing_seminorm_seq],
+    { have h_bdd : bdd_below (set.range (λ (n : pnat), (f(x ^ (n : ℕ)))^(1/(n : ℝ)))),
+      { use 0, rw mem_lower_bounds, intros y hy, exact zero_le _ },
+      simp only [smoothing_seminorm_seq],
       rw ← pnat.mk_coe n hn0,
-      apply cinfi_le h_bdd,  },
-    refine ⟨lt_of_lt_of_le (neg_lt_zero.mpr hε) _, _⟩,
-    { rw ← nnreal.coe_sub hL_le,
-        simp only [nnreal.zero_le_coe], },
+      apply cinfi_le h_bdd, },
+    refine ⟨lt_of_lt_of_le (neg_lt_zero.mpr hε) (by simp only
+      [← nnreal.coe_sub hL_le, nnreal.zero_le_coe]), _⟩,
     { suffices h : smoothing_seminorm_seq hsn x n < L + ⟨ε, (le_of_lt hε)⟩, 
       { rw [← nnreal.coe_sub hL_le, ← subtype.coe_mk ε (le_of_lt hε), nnreal.coe_lt_coe,
           tsub_lt_iff_left hL_le],
@@ -533,80 +504,68 @@ begin
       by_cases hxn : f (x ^(n % m1)) = 0,
       { simp only [smoothing_seminorm_seq],
         nth_rewrite 0 ← nat.div_add_mod n m1,
-        
+        have hLε : 0 < L + ⟨ε, (le_of_lt hε)⟩ := add_pos_of_nonneg_of_pos (zero_le _) hε,
         apply lt_of_le_of_lt _ hLε,
-        rw [pow_add, ← mul_zero ((f (x ^ (m1 * (n / m1)))) ^ (1/(n : ℝ))), 
+        rw [pow_add, ← mul_zero ((f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ))))) ^ (1/(n : ℝ))), 
           ← nnreal.zero_rpow (nat.one_div_cast_ne_zero hn0), ← hxn, ← nnreal.mul_rpow],
         exact nnreal.rpow_le_rpow (hsn.mul _ _) (nat.one_div_cast_nonneg _), },
-      { have hn0' : 0 ≤ 1 / (n : ℝ) := nat.one_div_cast_nonneg _,
-        simp only [smoothing_seminorm_seq],
+      { simp only [smoothing_seminorm_seq],
         nth_rewrite 0 ← nat.div_add_mod n m1,
-        
-        have h : f (x ^ (m1 * (n / m1))) ^ (1 / (n : ℝ))  ≤ (f (x ^ m1) ^ (n / m1)) ^ (1 / (n : ℝ)),
-        { apply nnreal.rpow_le_rpow _ hn0',
+        have h : f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)))) ^ (1 / (n : ℝ))  ≤
+          (f (x ^ (m1 : ℕ)) ^ (n / (m1 : ℕ))) ^ (1 / (n : ℝ)),
+        { apply nnreal.rpow_le_rpow _ (nat.one_div_cast_nonneg _),
           rw pow_mul,
-          exact hsn.pow_le _ (nat.div_pos (le_trans (le_max_left m1 m2) hn) hm10), },
-        
-        have h1 : (f (x ^ m1) ^ (n / m1)) ^ (1 / (n : ℝ))  <
+          exact hsn.pow_le (x^(m1 : ℕ)) (nat.div_pos (le_trans (le_max_left m1 m2) hn)
+            (pnat.pos m1)), },
+        have h1 : (f (x ^ (m1 : ℕ)) ^ (n / (m1 : ℕ))) ^ (1 / (n : ℝ))  <
           (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^ -(((n % m1 : ℕ) : ℝ)/(n : ℝ))),
-        { have hm10' : (m1 : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt hm10),
-          rw ←  nnreal.rpow_nat_cast,
-          rw [← nnreal.rpow_lt_rpow_iff (nat.cast_pos.mpr hm10), ← nnreal.rpow_mul,
-            one_div_mul_cancel hm10', nnreal.rpow_one] at hm1,
-          
+        { have hm10 : (m1 : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (pnat.pos m1)),
+          rw [← nnreal.rpow_lt_rpow_iff (nat.cast_pos.mpr (pnat.pos m1)), ← nnreal.rpow_mul,
+            ← coe_coe, one_div_mul_cancel hm10, nnreal.rpow_one] at hm1,
           nth_rewrite 0 ← nnreal.rpow_one (L + ⟨ε, _⟩ / 2),
-          rw ← nnreal.rpow_add,
           have : (n : ℝ)/n = 1 := div_self (nat.cast_ne_zero.mpr (ne_of_gt hn0)),
           nth_rewrite 1 ← this, clear this,
-          rw ← neg_div,
-          rw div_add_div_same,
           nth_rewrite 2 ← nat.div_add_mod n m1,
-          have : 0 < ((n / m1 : ℕ) : ℝ) / (n : ℝ),
+          have h_lt : 0 < ((n / m1 : ℕ) : ℝ) / (n : ℝ),
           { apply div_pos,
-            { exact nat.cast_pos.mpr (nat.div_pos (le_trans (le_max_left m1 m2) hn) hm10), },
-            { exact nat.cast_pos.mpr hn0}
-          },
-          rw [nat.cast_add, add_neg_cancel_right, nat.cast_mul, ← nnreal.rpow_mul, mul_one_div,
+            { exact nat.cast_pos.mpr (nat.div_pos (le_trans (le_max_left _ _) hn) (pnat.pos m1)) },
+            { exact nat.cast_pos.mpr hn0 }},
+          have h_ne : L + ⟨ε, (le_of_lt hε)⟩ / 2 ≠ 0,
+          { exact zero_lt_iff.mp (add_pos_of_nonneg_of_pos (zero_le _) (nnreal.half_pos hε)) },
+          rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_add h_ne, ← neg_div, div_add_div_same,
+            nat.cast_add, add_neg_cancel_right, nat.cast_mul, ← nnreal.rpow_mul, mul_one_div,
             mul_div_assoc, nnreal.rpow_mul],
-          exact nnreal.rpow_lt_rpow hm1 this,
-          { exact zero_lt_iff.mp (add_pos_of_nonneg_of_pos (zero_le _) (nnreal.half_pos hε)),},
-        },
-
-        
+          exact nnreal.rpow_lt_rpow hm1 h_lt },
         have h2 : f (x ^(n % m1)) ^ (1 / (n : ℝ)) ≤ (f x ^(n % m1)) ^ (1 / (n : ℝ)),
         { by_cases hnm1 : n % m1 = 0,
-          { rw hnm1, rw pow_zero, rw pow_zero,
-          exact nnreal.rpow_le_rpow hsn.one hn0', },
-          { exact nnreal.rpow_le_rpow (hsn.pow_le _ (nat.pos_of_ne_zero hnm1)) hn0', }},
-
-        have h3 : (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^ -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) *
-                (f x ^(n % m1)) ^ (1 / (n : ℝ)) ≤ L + ⟨ε, (le_of_lt hε)⟩,
+          { simpa [hnm1, pow_zero] using nnreal.rpow_le_rpow hsn.one (nat.one_div_cast_nonneg _) },
+          { exact nnreal.rpow_le_rpow (hsn.pow_le _ (nat.pos_of_ne_zero hnm1))
+              (nat.one_div_cast_nonneg _), }},
+        have h3 : (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^
+          -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) * (f x ^(n % m1)) ^ (1 / (n : ℝ)) ≤ L + ⟨ε, (le_of_lt hε)⟩,
         { have heq :  L + ⟨ε, (le_of_lt hε)⟩ = L + ⟨ε, (le_of_lt hε)⟩/2 + ⟨ε, (le_of_lt hε)⟩/2,
-          { have h20 : (2 : nnreal) ≠ 0 := two_ne_zero,
-            rw [add_assoc, nnreal.div_add_div_same, ← mul_two, mul_div_cancel _ h20], },
+          { rw [add_assoc, nnreal.div_add_div_same, ← mul_two, mul_div_cancel], exact two_ne_zero },
           have hL0 : L + ⟨ε, (le_of_lt hε)⟩ / 2 ≠ 0,
           { apply ne_of_gt,
             exact (add_pos_of_nonneg_of_pos (zero_le _) (nnreal.half_pos hε)), },
           rw [heq, ← tsub_le_iff_left],
           nth_rewrite 2 ← mul_one (L + ⟨ε, _⟩ / 2),
           rw [mul_assoc, ← mul_tsub, mul_comm, ← le_div_iff₀ hL0, div_div_eq_div_mul],
-          refine hm2 n (le_trans (le_max_right m1 m2) hn), },
-
-
-      calc f (x ^ (m1 * (n / m1) + n % m1)) ^ (1 / (n : ℝ)) = 
-              f (x ^ (m1 * (n / m1)) * x ^(n % m1)) ^ (1 / (n : ℝ)) : by rw pow_add
-        ... ≤ (f (x ^ (m1 * (n / m1))) * f (x ^(n % m1))) ^ (1 / (n : ℝ)) :
-              nnreal.rpow_le_rpow (hsn.mul _ _) hn0'
-        ... = f (x ^ (m1 * (n / m1))) ^ (1 / (n : ℝ)) * f (x ^(n % m1)) ^ (1 / (n : ℝ)) :
+          exact hm2 n (le_trans (le_max_right m1 m2) hn), },
+      calc f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)) + n % m1)) ^ (1 / (n : ℝ)) = 
+              f (x ^ ((m1 : ℕ) * (n /(m1 : ℕ))) * x ^(n % m1)) ^ (1 / (n : ℝ)) : by rw pow_add
+        ... ≤ (f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)))) * f (x ^(n % m1))) ^ (1 / (n : ℝ)) :
+              nnreal.rpow_le_rpow (hsn.mul _ _) (nat.one_div_cast_nonneg _)
+        ... = f (x ^ ((m1 : ℕ) * (n /(m1 : ℕ)))) ^ (1 / (n : ℝ)) * f (x ^(n % m1)) ^ (1 / (n : ℝ)) :
               nnreal.mul_rpow
-        ... ≤ (f (x ^ m1) ^ (n / m1)) ^ (1 / (n : ℝ)) * f (x ^(n % m1)) ^ (1 / (n : ℝ)) : 
+        ... ≤ (f (x ^ (m1 : ℕ)) ^ (n /(m1 : ℕ))) ^ (1 / (n : ℝ)) * f (x ^(n % m1)) ^ (1 / (n : ℝ)) : 
               mul_le_mul_right' h _
-        ... < (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^ -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) *
-              f (x ^(n % m1)) ^ (1 / (n : ℝ)) :
+        ... < (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^
+              -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) * f (x ^(n % m1)) ^ (1 / (n : ℝ)) :
               mul_lt_mul h1 (le_refl _) (nnreal.rpow_pos (zero_lt_iff.mpr hxn)) (zero_le _)
-        ... ≤ (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^ -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) *
-              (f x ^(n % m1)) ^ (1 / (n : ℝ)) : mul_le_mul_left' h2 _
-        ... ≤  L + ⟨ε, (le_of_lt hε)⟩ : h3, }}}
+        ... ≤ (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^
+              -(((n%m1 : ℕ) : ℝ)/(n : ℝ))) * (f x ^(n % m1)) ^ (1 / (n : ℝ)) : mul_le_mul_left' h2 _
+        ... ≤  L + ⟨ε, (le_of_lt hε)⟩ : h3 }}}
 end
 
 def smoothing_seminorm_seq_lim : nnreal :=
