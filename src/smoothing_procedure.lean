@@ -235,7 +235,7 @@ lemma seminorm_from_bounded_is_seminorm (f_zero : f 0 = 0)
   is_seminorm (seminorm_from_bounded f) :=
 { zero := seminorm_from_bounded_zero f_zero,
   mul  := seminorm_from_bounded_mul f_mul,
-  one  := seminorm_from_bounded_one f_mul }
+  /- one  := seminorm_from_bounded_one f_mul -/ }
 
 lemma seminorm_from_bounded_is_nonarchimedean 
   (f_mul : ∃ (c : nnreal) (hc : 0 < c), ∀ (x y : α), f (x * y) ≤ c * f x * f y)
@@ -380,7 +380,7 @@ variable {f}
 def smoothing_seminorm_seq (hsn : is_seminorm f) (x : α) : ℕ → nnreal :=
 λ n, (f (x ^n))^(1/n : ℝ)
 
-variables (hsn : is_seminorm f) (x : α)
+variables (hsn : is_seminorm f) (hf1 : is_norm_le_one_class f) (x : α) 
 
 lemma pow_n_n_inv (r : nnreal) {n : ℕ} (hn : 0 < n) : (r ^ n)^(1/n : ℝ) = r :=
 begin
@@ -449,6 +449,8 @@ begin
       ← nnreal.tendsto_coe, nnreal.coe_rpow, ← mul_div_assoc, mul_one],
     exact filter.tendsto.rpow tendsto_const_nhds h_exp (or.inl (nnreal.coe_ne_zero.mpr hx)), },
 end
+
+include hf1
 
 lemma smoothing_seminorm_seq_has_limit :
   ∃ r : nnreal, filter.tendsto (smoothing_seminorm_seq hsn x) filter.at_top (𝓝 r) :=
@@ -538,7 +540,7 @@ begin
           exact nnreal.rpow_lt_rpow hm1 h_lt },
         have h2 : f (x ^(n % m1)) ^ (1 / (n : ℝ)) ≤ (f x ^(n % m1)) ^ (1 / (n : ℝ)),
         { by_cases hnm1 : n % m1 = 0,
-          { simpa [hnm1, pow_zero] using nnreal.rpow_le_rpow hsn.one (nat.one_div_cast_nonneg _) },
+          { simpa [hnm1, pow_zero] using nnreal.rpow_le_rpow hf1 (nat.one_div_cast_nonneg _) },
           { exact nnreal.rpow_le_rpow (hsn.pow_le _ (nat.pos_of_ne_zero hnm1))
               (nat.one_div_cast_nonneg _), }},
         have h3 : (L + ⟨ε, (le_of_lt hε)⟩/2) * ((L + ⟨ε, (le_of_lt hε)⟩/2) ^
@@ -569,18 +571,18 @@ begin
 end
 
 def smoothing_seminorm_seq_lim : nnreal :=
-classical.some (smoothing_seminorm_seq_has_limit hsn x)
+classical.some (smoothing_seminorm_seq_has_limit hsn hf1 x)
 
 lemma smoothing_seminorm_seq_lim_is_limit :
   filter.tendsto ((smoothing_seminorm_seq hsn x)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hsn x)) :=
-classical.some_spec (smoothing_seminorm_seq_has_limit hsn x)
+    (𝓝 (smoothing_seminorm_seq_lim hsn hf1 x)) :=
+classical.some_spec (smoothing_seminorm_seq_has_limit hsn hf1 x)
 
-def smoothing_seminorm : α → nnreal := λ x, smoothing_seminorm_seq_lim hsn x
+def smoothing_seminorm : α → nnreal := λ x, smoothing_seminorm_seq_lim hsn hf1 x
 
-lemma smoothing_seminorm_nonneg : 0 ≤ smoothing_seminorm hsn x :=
+lemma smoothing_seminorm_nonneg : 0 ≤ smoothing_seminorm hsn hf1 x :=
 begin
-  apply ge_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn x),
+  apply ge_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 x),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -589,9 +591,9 @@ begin
   exact real.rpow_nonneg_of_nonneg (nnreal.coe_nonneg _) _,
 end
 
-lemma smoothing_seminorm_zero : smoothing_seminorm hsn 0 = 0 :=
+lemma smoothing_seminorm_zero : smoothing_seminorm hsn hf1 0 = 0 :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn 0)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn hf1 0)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -602,12 +604,12 @@ begin
   exact nat.cast_ne_zero.mpr (nat.one_le_iff_ne_zero.mp hn),
 end
 
-lemma smoothing_seminorm_mul (y : α) :
-  smoothing_seminorm hsn (x * y) ≤ smoothing_seminorm hsn x * smoothing_seminorm hsn y :=
+lemma smoothing_seminorm_mul (y : α) : smoothing_seminorm hsn hf1 (x * y) ≤
+  smoothing_seminorm hsn hf1 x * smoothing_seminorm hsn hf1 y :=
 begin
-  apply le_of_tendsto_of_tendsto' (smoothing_seminorm_seq_lim_is_limit hsn (x *y))
-    (filter.tendsto.mul (smoothing_seminorm_seq_lim_is_limit hsn x)
-      (smoothing_seminorm_seq_lim_is_limit hsn y)),
+  apply le_of_tendsto_of_tendsto' (smoothing_seminorm_seq_lim_is_limit  hsn hf1 (x *y))
+    (filter.tendsto.mul (smoothing_seminorm_seq_lim_is_limit  hsn hf1 x)
+      (smoothing_seminorm_seq_lim_is_limit hsn hf1 y)),
   intro n,
   have hn : 0 ≤ 1 / (n : ℝ),
   { simp only [one_div, inv_nonneg, nat.cast_nonneg] },
@@ -616,9 +618,9 @@ begin
   exact nnreal.rpow_le_rpow (hsn.mul _ _) hn,
 end
 
-lemma smoothing_seminorm_one : smoothing_seminorm hsn 1 ≤ 1 := 
+lemma smoothing_seminorm_one : smoothing_seminorm hsn hf1 1 ≤ 1 := 
 begin
-  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn (1 : α)),
+  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 (1 : α) ),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -630,28 +632,31 @@ begin
     apply div_pos h01,
     rw [← nat.cast_zero, nat.cast_lt],
     exact (nat.succ_le_iff.mp hn) },
-  exact (nnreal.rpow_le_rpow_iff hn1).mpr hsn.one,
+  exact (nnreal.rpow_le_rpow_iff hn1).mpr hf1,
 end
 
-lemma smoothing_seminorm_is_seminorm : is_seminorm (smoothing_seminorm hsn) :=
-{ zero   := smoothing_seminorm_zero hsn,
-  mul    := smoothing_seminorm_mul hsn,
-  one    := smoothing_seminorm_one hsn }
+lemma smoothing_seminorm_is_seminorm : is_seminorm (smoothing_seminorm hsn hf1) :=
+{ zero   := smoothing_seminorm_zero hsn hf1,
+  mul    := smoothing_seminorm_mul hsn hf1/- ,
+  one    := smoothing_seminorm_one hsn  -/}
+
+lemma smoothing_seminorm_is_seminorm_is_norm_le_one_class : 
+  is_norm_le_one_class (smoothing_seminorm hsn hf1) := 
+smoothing_seminorm_one hsn hf1
 
 lemma smoothing_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
-  is_nonarchimedean (smoothing_seminorm hsn) :=
+  is_nonarchimedean (smoothing_seminorm hsn hf1) :=
 begin
   sorry
 end
 
-
-lemma smoothing_seminorm_is_pow_mult : is_pow_mult (smoothing_seminorm hsn) :=
+lemma smoothing_seminorm_is_pow_mult : is_pow_mult (smoothing_seminorm hsn hf1) :=
 begin
   intros x m hm,
   simp only [smoothing_seminorm],
-  have hlim : filter.tendsto (λ n, smoothing_seminorm_seq hsn (x) (m*n)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hsn x )),
-  { refine filter.tendsto.comp (smoothing_seminorm_seq_lim_is_limit hsn x) _,
+  have hlim : filter.tendsto (λ n, smoothing_seminorm_seq hsn x (m*n)) filter.at_top
+    (𝓝 (smoothing_seminorm_seq_lim hsn hf1 x )),
+  { refine filter.tendsto.comp (smoothing_seminorm_seq_lim_is_limit hsn hf1 x) _,
     apply filter.tendsto_at_top_at_top_of_monotone,
     { intros n k hnk, exact mul_le_mul_left' hnk m, },
     { rintro n, use n, exact le_mul_of_one_le_left' hm, }},
@@ -664,12 +669,12 @@ begin
     rw [pow_mul, ← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, nat.cast_mul, ← one_div_mul_one_div,
       mul_comm (1 / (m : ℝ)), mul_assoc, one_div_mul_cancel hm', mul_one] },
   simp_rw h_eq,
-  exact smoothing_seminorm_seq_lim_is_limit hsn _
+  exact smoothing_seminorm_seq_lim_is_limit hsn hf1 _
 end
 
-lemma smoothing_seminorm_le : smoothing_seminorm hsn x ≤ f x :=
+lemma smoothing_seminorm_le : smoothing_seminorm hsn hf1 x ≤ f x :=
 begin
-  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn x),
+  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 x),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -691,9 +696,9 @@ end
 variable {x}
 
 lemma smoothing_seminorm_of_pow_mult (hx : ∀ (n : ℕ) (hn : 1 ≤ n), f (x ^ n) = f x ^ n) :
-  smoothing_seminorm hsn x = f x :=
+  smoothing_seminorm hsn hf1 x = f x :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn x)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn hf1 x)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -703,7 +708,6 @@ begin
   rw [hx n hn, ← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, mul_one_div_cancel hn0,
     nnreal.rpow_one],
 end
-
 
 lemma f_is_mult_pow_of_is_mult (hx : ∀ y : α, f (x * y) = f x * f y) :
    ∀ (n : ℕ) (y : α), f (x ^ n * y) = f x ^ n * f y :=
@@ -715,9 +719,9 @@ begin
 end
 
 lemma smoothing_seminorm_apply_of_is_mult (hx : ∀ y : α, f (x * y) = f x * f y) :
-  smoothing_seminorm hsn x = f x :=
+  smoothing_seminorm hsn hf1 x = f x :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn x)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn hf1 x)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -732,24 +736,26 @@ begin
   { have h1 : f 1 = 1,
     { rw [← nnreal.mul_eq_mul_left hx0, ← hx 1, mul_one, mul_one], },
     have hn0 : (n : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (lt_of_lt_of_le zero_lt_one hn)),
-    rw [← mul_one (x ^ n), f_is_mult_pow_of_is_mult hx, ← nnreal.rpow_nat_cast, h1, mul_one,
+    rw [← mul_one (x ^ n), f_is_mult_pow_of_is_mult hf1 hx, ← nnreal.rpow_nat_cast, h1, mul_one,
       ← nnreal.rpow_mul, mul_one_div_cancel hn0, nnreal.rpow_one], },
 end
 
 lemma smoothing_seminorm_of_mult (hx : ∀ (y : α), f (x * y) = f x * f y) (y : α) :
-  smoothing_seminorm hsn (x * y) = smoothing_seminorm hsn x * smoothing_seminorm hsn y :=
+  smoothing_seminorm hsn hf1 (x * y) = 
+    smoothing_seminorm hsn hf1 x * smoothing_seminorm hsn hf1 y :=
 begin
   have hlim : filter.tendsto (λ n, f x * smoothing_seminorm_seq hsn y n) filter.at_top
-    (𝓝 (smoothing_seminorm hsn x * smoothing_seminorm hsn  y)),
-  { rw [smoothing_seminorm_apply_of_is_mult hsn hx],
-    exact filter.tendsto.const_mul _ (smoothing_seminorm_seq_lim_is_limit hsn y), },
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn (x * y)) hlim,
+    (𝓝 (smoothing_seminorm hsn hf1 x * smoothing_seminorm hsn hf1 y)),
+  { rw [smoothing_seminorm_apply_of_is_mult hsn hf1 hx],
+    exact filter.tendsto.const_mul _ (smoothing_seminorm_seq_lim_is_limit hsn hf1 y), },
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hsn hf1 (x * y))
+    hlim,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
   intros n hn1,
   have hn0 : (n : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (lt_of_lt_of_le zero_lt_one hn1)),
   simp only [smoothing_seminorm_seq],
-  rw [mul_pow, f_is_mult_pow_of_is_mult hx, nnreal.mul_rpow, ← nnreal.rpow_nat_cast,
+  rw [mul_pow, f_is_mult_pow_of_is_mult hf1 hx, nnreal.mul_rpow, ← nnreal.rpow_nat_cast,
     ← nnreal.rpow_mul, mul_one_div_cancel hn0, nnreal.rpow_one],
 end
 
