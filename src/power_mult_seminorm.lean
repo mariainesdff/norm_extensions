@@ -114,41 +114,29 @@ begin
   exact hsn.mul (x * c ^ n) (y * c ^ n), 
 end
 
-/- lemma c_seminorm_nonneg (hc : 0 ≠ f c) (hsn : is_seminorm f) (hpm : is_pow_mult f) (x : α):
-  0 ≤ c_seminorm hc hsn hpm x :=
+lemma c_seminorm_add (x y : α)  :
+  c_seminorm hf1 hc hsn hpm (x + y) ≤ c_seminorm hf1 hc hsn hpm x +  c_seminorm hf1 hc hsn hpm y :=
 begin
-  simp only [c_seminorm],
-  apply ge_of_tendsto (c_seminorm_seq_lim_is_limit hc hsn hpm x),
-  simp only [filter.eventually_at_top, ge_iff_le],
-  use 0,
-  rintro n -,
-  exact c_seminorm_seq_nonneg c hsn.nonneg x n,
-end -/
-
-lemma c_seminorm_is_seminorm :
-  is_seminorm (c_seminorm hf1 hc hsn hpm)  :=
-{ zero := c_seminorm_zero hf1 hc hsn hpm,
-  add  := sorry,
-  mul  := c_seminorm_mul hf1 hc hsn hpm  }
-
-lemma c_seminorm_is_seminorm' :
-  is_norm_le_one_class (c_seminorm hf1 hc hsn hpm) :=
-le_of_eq (c_seminorm_is_norm_one_class hf1 hc hsn hpm) 
-
-lemma c_seminorm_triangle (ht : triangle f) :
-  triangle (c_seminorm hf1 hc hsn hpm)  :=
-begin
-  intros x y,
   apply le_of_tendsto_of_tendsto' (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm (x + y))
     (filter.tendsto.add (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm x)
     (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm y)),
   intro n,
   have h_add : f ((x + y) * c ^ n) ≤ (f (x * c ^ n)) + (f (y * c ^ n)),
-  { rw add_mul, exact ht _ _ },
+  { rw add_mul, exact hsn.add _ _ },
   simp only [c_seminorm_seq],
   rw nnreal.div_add_div_same,
   exact (div_le_div_right₀ (pow_ne_zero _ (ne.symm hc))).mpr h_add,
 end
+
+lemma c_seminorm_is_seminorm :
+  is_seminorm (c_seminorm hf1 hc hsn hpm)  :=
+{ zero := c_seminorm_zero hf1 hc hsn hpm,
+  add  := c_seminorm_add hf1 hc hsn hpm ,
+  mul  := c_seminorm_mul hf1 hc hsn hpm  }
+
+lemma c_seminorm_is_norm_le_one_class :
+  is_norm_le_one_class (c_seminorm hf1 hc hsn hpm) :=
+le_of_eq (c_seminorm_is_norm_one_class hf1 hc hsn hpm) 
 
 lemma c_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (c_seminorm hf1 hc hsn hpm)  :=

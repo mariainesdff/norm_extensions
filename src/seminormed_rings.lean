@@ -60,9 +60,6 @@ def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*
 def is_nonarchimedean {α : Type*} [ring α] (f : α → nnreal) : Prop := 
 ∀ a b, f (a + b) ≤ max (f a) (f b)
 
-def triangle {α : Type*} [ring α] (f : α → nnreal) : Prop := 
-∀ a b, f (a + b) ≤ f a +  f b
-
 lemma field.is_norm_of_is_seminorm {α : Type*} [field α] {f : α → nnreal} (hf : is_seminorm f)
   (hnt : ∃ x : α, 0 ≠ f x) : is_norm f := 
 { ne_zero := λ x hx, begin
