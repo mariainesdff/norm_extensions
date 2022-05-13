@@ -127,13 +127,28 @@ end -/
 
 lemma c_seminorm_is_seminorm :
   is_seminorm (c_seminorm hf1 hc hsn hpm)  :=
-{ zero   := c_seminorm_zero hf1 hc hsn hpm,
-  mul    := c_seminorm_mul hf1 hc hsn hpm/- ,
-  one    := le_of_eq (c_seminorm_is_norm_one_class hc hsn hpm) -/  }
+{ zero := c_seminorm_zero hf1 hc hsn hpm,
+  add  := sorry,
+  mul  := c_seminorm_mul hf1 hc hsn hpm  }
 
 lemma c_seminorm_is_seminorm' :
   is_norm_le_one_class (c_seminorm hf1 hc hsn hpm) :=
 le_of_eq (c_seminorm_is_norm_one_class hf1 hc hsn hpm) 
+
+lemma c_seminorm_triangle (ht : triangle f) :
+  triangle (c_seminorm hf1 hc hsn hpm)  :=
+begin
+  intros x y,
+  apply le_of_tendsto_of_tendsto' (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm (x + y))
+    (filter.tendsto.add (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm x)
+    (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm y)),
+  intro n,
+  have h_add : f ((x + y) * c ^ n) ≤ (f (x * c ^ n)) + (f (y * c ^ n)),
+  { rw add_mul, exact ht _ _ },
+  simp only [c_seminorm_seq],
+  rw nnreal.div_add_div_same,
+  exact (div_le_div_right₀ (pow_ne_zero _ (ne.symm hc))).mpr h_add,
+end
 
 lemma c_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (c_seminorm hf1 hc hsn hpm)  :=
@@ -237,81 +252,6 @@ begin
     rw [mul_comm c, pow_succ, pow_succ, mul_div_comm, div_eq_mul_inv _ (f c * f c ^ n), mul_inv₀,
       ← mul_assoc (f c), mul_inv_cancel hc.symm, one_mul, mul_assoc, div_eq_mul_inv] },
   simpa [hterm] using filter.tendsto.mul tendsto_const_nhds hlim,
-end
-
-omit hf1 hc hsn hpm
-
-def ring_hom.is_bounded {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
-  (f : α →+* β) : Prop := ∃ C : nnreal, 0 < C ∧ ∀ x : α, norm (f x) ≤ C * norm x
-
-def ring_hom.is_bounded_wrt {α : Type*} [ring α] {β : Type*} [ring β] {nα : α → nnreal}
-  (hnα : is_seminorm nα) {nβ : β → nnreal} (hnβ : is_seminorm nβ) (f : α →+* β) : Prop :=
-∃ C : nnreal, 0 < C ∧ ∀ x : α, nβ (f x) ≤ C * nα x
-
-example {C : ℝ} (hC : 0 < C) : filter.tendsto (λ n : ℕ, C ^ (1 / (n : ℝ))) filter.at_top (𝓝 1) :=
-begin
-  apply filter.tendsto.comp _ (tendsto_const_div_at_top_nhds_0_nat 1),
-  rw ← real.rpow_zero C,
-  apply continuous_at.tendsto (real.continuous_at_const_rpow (ne_of_gt hC)),
-end 
-
-lemma contraction_of_is_pm_wrt {α : Type*} [ring α] {β : Type*} [ring β] {nα : α → nnreal}
-  (hnα : is_seminorm nα) {nβ : β → nnreal} (hnβ : is_seminorm nβ) 
-  (hβ : is_pow_mult nβ) {f : α →+* β} (hf : f.is_bounded_wrt hnα hnβ)
-  (x : α) : nβ (f x) ≤ nα x :=
-begin
-  obtain ⟨C, hC0, hC⟩ := hf,
-  have hlim : filter.tendsto (λ n : ℕ, C ^ (1 / (n : ℝ)) * nα x) filter.at_top (𝓝 (nα x)),
-  { have : (𝓝 (nα x)) = (𝓝 (1 * (nα x))) := by rw one_mul,
-    rw this,
-    apply filter.tendsto.mul,
-    { apply filter.tendsto.comp _ (tendsto_const_div_at_top_nhds_0_nat 1),
-      rw ← nnreal.rpow_zero C,
-      rw ← nnreal.tendsto_coe,
-      apply continuous_at.tendsto (real.continuous_at_const_rpow (ne_of_gt hC0)), },
-    exact tendsto_const_nhds, },
-  apply ge_of_tendsto hlim,
-  simp only [filter.eventually_at_top, ge_iff_le],
-  use 1,
-  intros n hn,
-  have h : (C^(1/n : ℝ))^n  = C,
-  { have hn0 : (n : ℝ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt hn),
-      rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, one_div, inv_mul_cancel hn0,
-        nnreal.rpow_one] },
-  apply le_of_pow_le_pow n _ hn,
-  { rw [mul_pow, h, ← hβ _ hn, ← ring_hom.map_pow],
-    refine le_trans (hC (x^n)) (mul_le_mul (le_refl C)
-      (hnα.pow_le  _ (lt_of_lt_of_le zero_lt_one hn)) (zero_le _) (le_of_lt hC0)) },
-    { exact zero_le _ },
-end
-
-lemma seminormed_ring.to_is_seminorm {α : Type*} [semi_normed_ring α]/-  (h1 : norm (1 : α) ≤ 1) -/ : 
-  is_seminorm (λ x : α, (⟨∥x∥, norm_nonneg _⟩ : nnreal)) :=
-{ zero   := by simp only [norm_zero, nonneg.mk_eq_zero],
-  mul    := by {simp only [nonneg.mk_mul_mk, subtype.mk_le_mk], exact norm_mul_le }/- ,
-  one    := begin 
-    have h : (1 : nnreal) = ⟨(1 : ℝ), zero_le_one⟩ := rfl,
-    simpa [h, subtype.mk_le_mk] using h1,
-  end -/ }
-
-lemma contraction_of_is_pm {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
-  (hβ : is_pow_mult (λ x : β, (⟨∥x∥, norm_nonneg _⟩ : nnreal))) {f : α →+* β} (hf : f.is_bounded)
-  (x : α) /- (h1α : norm (1 : α) ≤ 1) (h1β : norm (1 : β) ≤ 1) -/: norm (f x) ≤ norm x :=
-contraction_of_is_pm_wrt (seminormed_ring.to_is_seminorm /- h1α -/) (seminormed_ring.to_is_seminorm /- h1β -/)
-  hβ hf x
-
-lemma eq_seminorms  {α : Type*} [ring α] {f : α → nnreal} (hf : is_seminorm f) (hfpm : is_pow_mult f)
-  {g : α → nnreal} (hg : is_seminorm g) (hgpm : is_pow_mult g)
-  (hfg : ∃ (r : nnreal) (hr : 0 < r), ∀ (a : α), f a ≤ r * g a)
-  (hgf : ∃ (r : nnreal) (hr : 0 < r), ∀ (a : α), g a ≤ r * f a) : f = g :=
-begin
-  obtain ⟨r, hr0, hr⟩ := hfg,
-  obtain ⟨s, hs0, hs⟩ := hgf,
-  have hle : ring_hom.is_bounded_wrt hf hg (ring_hom.id _) := ⟨s, hs0, hs⟩,
-  have hge : ring_hom.is_bounded_wrt hg hf (ring_hom.id _) := ⟨r, hr0, hr⟩,
-  ext x,
-  exact le_antisymm (contraction_of_is_pm_wrt hg hf hfpm hge x)
-    (contraction_of_is_pm_wrt hf hg hgpm hle x),
 end
 
 --#lint
