@@ -69,21 +69,6 @@ begin
     exact le_trans (hna _ _) (max_le_iff.mpr ⟨hn, le_refl _⟩), }
 end
 
-lemma is_nonarchimedean_finset_add' {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
-  (hna : is_nonarchimedean f) (s : finset α) :
-  ∃ (a : α), f (s.sum id) ≤ f a := 
-begin
-  classical,
-  apply finset.induction_on s,
-  { rw [finset.sum_empty], exact ⟨0, le_refl _⟩, },
-  { rintros a s has ⟨M, hM⟩,
-    rw [finset.sum_insert has, id.def],
-    by_cases haM : f a ≤ f M,
-    { exact ⟨M, le_trans (hna _ _) (max_le_iff.mpr ⟨haM, hM⟩)⟩, },
-    { exact ⟨a, le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,
-        le_trans hM (le_of_lt (not_le.mp haM))⟩))⟩, }}
-end
-
 open_locale classical
 
 lemma is_nonarchimedean_finset_add {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
@@ -111,14 +96,50 @@ begin
         exact hMa, }}}      
 end
 
-lemma is_nonarchimedean_add_pow {α : Type*} [comm_ring α] {f : α → nnreal}
-  (hf : is_nonarchimedean f) (n : ℕ) (a b : α) : ∃ (m : ℕ) (hm : m ∈ list.range(n + 1)),
-  f ((a + b)^n) ≤ (f (a ^ m)) * (f (b ^ (n - m))) :=
+lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
+  ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := 
 begin
-  have hab : (a + b) ^ n = (finset.range (n + 1)).sum (λ (m : ℕ), a ^ m * b ^ (n - m) * ↑(n.choose m)),
-  { rw add_pow },
-  simp_rw add_pow,
-  sorry
+  apply finset.induction_on s,
+  { rw [finset.sum_empty],
+    refine ⟨hβ.some, by simp only [finset.nonempty_coe_sort, finset.not_nonempty_empty,
+      forall_false_left], _⟩,
+    rw hsn.zero, exact zero_le _, },
+  { rintros a s has ⟨M, hMs, hM⟩,
+    rw [finset.sum_insert has],
+    by_cases hMa : f (g M) ≤ f (g a),
+    { refine ⟨a, _, le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩,
+      simp only [finset.nonempty_coe_sort, finset.insert_nonempty, finset.mem_insert,
+        eq_self_iff_true, true_or, forall_true_left], },
+    { rw not_le at hMa,
+      by_cases hs : s.nonempty,
+      { refine ⟨M, _, le_trans (hna _ _) (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
+        simp only [finset.nonempty_coe_sort, finset.insert_nonempty, finset.mem_insert,
+          forall_true_left],
+          exact or.intro_right _ (hMs hs) },
+      { use a,
+        split,
+        { simp only [finset.insert_nonempty, finset.mem_insert, eq_self_iff_true, true_or,
+            forall_true_left] },
+          have h0 : f (s.sum g) = 0,
+          { rw [finset.not_nonempty_iff_eq_empty.mp hs, finset.sum_empty, hsn.zero],},
+          apply le_trans (hna _ _),
+          rw h0,
+          exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩, }}} 
+end
+
+lemma is_nonarchimedean_add_pow {α : Type*} [comm_ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hna : is_nonarchimedean f) (n : ℕ) (a b : α) : ∃ (m : ℕ) (hm : m ∈ list.range(n + 1)),
+  f ((a + b) ^ n) ≤ (f (a ^ m)) * (f (b ^ (n - m))) :=
+begin
+  obtain ⟨m, hm_lt, hM⟩ := is_nonarchimedean_finset_image_add hsn hna 
+    (λ (m : ℕ), a ^ m * b ^ (n - m) * ↑(n.choose m)) (finset.range (n + 1)),
+  simp only [finset.nonempty_range_iff, ne.def, nat.succ_ne_zero, not_false_iff, finset.mem_range,
+    if_true, forall_true_left] at hm_lt,
+  refine ⟨m, list.mem_range.mpr hm_lt, _⟩,
+  simp only [← add_pow] at hM,
+  rw mul_comm at hM,
+  exact le_trans hM (le_trans (is_nonarchimedean_nmul hsn hna _ _) (hsn.mul _ _)),
 end
 
 lemma add_le_of_is_nonarchimedean {α : Type*} [ring α] {f : α → nnreal} (hf : is_nonarchimedean f) 
