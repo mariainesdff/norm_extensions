@@ -5,7 +5,7 @@ import csupr
 
 noncomputable theory
 
-open_locale topological_space
+open_locale topological_space nnreal
 
 def normed_group_hom.normed_group_hom_inv_of_bijective_bounded {V : Type*} {W : Type*}
   [semi_normed_group V] [semi_normed_group W] (f : normed_group_hom V W)
@@ -673,9 +673,27 @@ begin
   sorry
 end
 
+
+-- (λ (m : ℕ), (f (x ^ m) f (y ^ (n - m)))^(1/(n : ℝ)))
+
 lemma smoothing_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (smoothing_seminorm hf1) :=
 begin
+  intros x y,
+  set g : ℕ → ℕ → ℝ≥0 := (λ n m, (f (x ^ m) * f (y ^ (n - m)))^(1/(n : ℝ))) with hg,
+  have hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ list.range (n + 1)), 
+    smoothing_seminorm hf1 (x + y) ≤ g n m,
+  { intro n,
+    have hm_some : option.is_some (list.argmax (g n) (list.range (n + 1))),
+    { rw [← option.ne_none_iff_is_some, ne.def, list.argmax_eq_none, list.range_eq_nil],
+      exact nat.succ_ne_zero _, },
+    set m : ℕ := option.get hm_some with hm_def,
+    use m,
+    split,
+    { rw hm_def,
+      
+      sorry },
+    { sorry }}, 
   sorry
 end
 

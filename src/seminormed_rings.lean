@@ -60,6 +60,74 @@ def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*
 def is_nonarchimedean {α : Type*} [ring α] (f : α → nnreal) : Prop := 
 ∀ a b, f (a + b) ≤ max (f a) (f b)
 
+lemma is_nonarchimedean_nmul {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hna : is_nonarchimedean f) (n : ℕ) (a : α) : f (n * a) ≤ (f a) := 
+begin
+  induction n with n hn,
+  { rw [nat.cast_zero, zero_mul, hsn.zero], exact zero_le _ },
+  { rw [nat.cast_succ, add_mul, one_mul],
+    exact le_trans (hna _ _) (max_le_iff.mpr ⟨hn, le_refl _⟩), }
+end
+
+lemma is_nonarchimedean_finset_add' {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hna : is_nonarchimedean f) (s : finset α) :
+  ∃ (a : α), f (s.sum id) ≤ f a := 
+begin
+  classical,
+  apply finset.induction_on s,
+  { rw [finset.sum_empty], exact ⟨0, le_refl _⟩, },
+  { rintros a s has ⟨M, hM⟩,
+    rw [finset.sum_insert has, id.def],
+    by_cases haM : f a ≤ f M,
+    { exact ⟨M, le_trans (hna _ _) (max_le_iff.mpr ⟨haM, hM⟩)⟩, },
+    { exact ⟨a, le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,
+        le_trans hM (le_of_lt (not_le.mp haM))⟩))⟩, }}
+end
+
+open_locale classical
+
+lemma is_nonarchimedean_finset_add {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hna : is_nonarchimedean f) (s : finset α) :
+  ∃ (a : α) (ha : if s.nonempty then a ∈ s else a = 0), f (s.sum id) ≤ f a := 
+begin
+  apply finset.induction_on s,
+  { rw [finset.sum_empty], use 0, simp only [finset.not_nonempty_empty, if_false],
+    exact ⟨eq.refl _, le_refl _⟩, },
+  { rintros a s has ⟨M, hMs, hM⟩,
+    rw [finset.sum_insert has, id.def],
+    by_cases hMa : f M ≤ f a,
+    { exact ⟨a, by simp only [finset.insert_nonempty, finset.mem_insert, if_true, eq_self_iff_true,
+        true_or],
+        le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩, },
+    { rw not_le at hMa,
+      by_cases hs : s.nonempty,
+      { rw if_pos hs at hMs,
+        refine ⟨M, _, le_trans (hna _ _) (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
+        simp only [finset.insert_nonempty, finset.mem_insert, if_true],
+        exact or.intro_right _ hMs, },
+      { rw if_neg hs at hMs,
+        exfalso,
+        simp only [hMs, hsn.zero, not_lt_zero'] at hMa,
+        exact hMa, }}}      
+end
+
+lemma is_nonarchimedean_add_pow {α : Type*} [comm_ring α] {f : α → nnreal}
+  (hf : is_nonarchimedean f) (n : ℕ) (a b : α) : ∃ (m : ℕ) (hm : m ∈ list.range(n + 1)),
+  f ((a + b)^n) ≤ (f (a ^ m)) * (f (b ^ (n - m))) :=
+begin
+  have hab : (a + b) ^ n = (finset.range (n + 1)).sum (λ (m : ℕ), a ^ m * b ^ (n - m) * ↑(n.choose m)),
+  { rw add_pow },
+  simp_rw add_pow,
+  sorry
+end
+
+lemma add_le_of_is_nonarchimedean {α : Type*} [ring α] {f : α → nnreal} (hf : is_nonarchimedean f) 
+  (a b : α) : f (a + b) ≤ f a + f b :=
+begin
+  apply le_trans (hf a b),
+  simp only [max_le_iff, le_add_iff_nonneg_right, zero_le', le_add_iff_nonneg_left, and_self],
+end
+
 lemma field.is_norm_of_is_seminorm {α : Type*} [field α] {f : α → nnreal} (hf : is_seminorm f)
   (hnt : ∃ x : α, 0 ≠ f x) : is_norm f := 
 { ne_zero := λ x hx, begin
