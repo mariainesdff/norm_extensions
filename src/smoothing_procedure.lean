@@ -580,8 +580,9 @@ begin
             exact (add_pos_of_nonneg_of_pos (zero_le _) (nnreal.half_pos hε)), },
           rw [heq, ← tsub_le_iff_left],
           nth_rewrite 2 ← mul_one (L + ⟨ε, _⟩ / 2),
-          rw [mul_assoc, ← mul_tsub, mul_comm, ← le_div_iff₀ hL0, div_div_eq_div_mul],
-          exact hm2 n (le_trans (le_max_right m1 m2) hn), },
+          sorry,
+          /- rw [mul_assoc, ← mul_tsub, mul_comm, ← le_div_iff₀ hL0, div_div_eq_div_mul],
+          exact hm2 n (le_trans (le_max_right m1 m2) hn), -/ },
       calc f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)) + n % m1)) ^ (1 / (n : ℝ)) = 
               f (x ^ ((m1 : ℕ) * (n /(m1 : ℕ))) * x ^(n % m1)) ^ (1 / (n : ℝ)) : by rw pow_add
         ... ≤ (f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)))) * f (x ^(n % m1))) ^ (1 / (n : ℝ)) :
@@ -656,45 +657,112 @@ begin
   exact (nnreal.rpow_le_rpow_iff hn1).mpr hf1,
 end
 
--- I don't think this is true for archimedean norms
-lemma smoothing_seminorm_triangle (x y : α) :
-  smoothing_seminorm hf1 (x + y) ≤ smoothing_seminorm hf1 x + smoothing_seminorm hf1 y :=
+lemma smoothing_seminorm_le : smoothing_seminorm hf1 x ≤ f x :=
 begin
-  simp only [smoothing_seminorm, smoothing_seminorm_seq_lim],
-  /-apply csupr_le,
-  intro z,
-  suffices hf : f ((x + y) * z) / f z ≤ f (x * z) / f z + f (y * z) / f z,
-  { exact le_trans hf (add_le_add
-      (le_csupr_of_le (seminorm_from_bounded_bdd_range x f_mul) z (le_refl _))
-      (le_csupr_of_le (seminorm_from_bounded_bdd_range y f_mul) z (le_refl _))), },
-  { by_cases hz : f z = 0,
-    { simp only [hz, div_zero, zero_add, le_refl, or_self], },
-    { rw [nnreal.div_add_div_same, div_le_div_right₀ hz, add_mul], exact ht _ _,  }}-/
-  sorry
+  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 x),
+  simp only [filter.eventually_at_top, ge_iff_le],
+  use 1,
+  rintros n hn,
+  have hn1 : (n : ℝ) * (1/n) = 1,
+  { apply mul_one_div_cancel,
+    exact (nat.cast_ne_zero.mpr (nat.one_le_iff_ne_zero.mp hn)) },
+  have hn' : 0 < (1/n : ℝ),
+  { have h01 : (0 : ℝ) < 1 := zero_lt_one,
+    apply div_pos h01,
+    rw [← nat.cast_zero, nat.cast_lt],
+    exact (nat.succ_le_iff.mp hn) },
+  simp only [smoothing_seminorm_seq],
+  rw [← nnreal.rpow_one (f x)],
+  conv_rhs { rw ← hn1 },
+  rw [nnreal.rpow_mul, nnreal.rpow_le_rpow_iff hn', nnreal.rpow_nat_cast],
+  exact hsn.pow_le x (nat.succ_le_iff.mp hn),
 end
-
-
--- (λ (m : ℕ), (f (x ^ m) f (y ^ (n - m)))^(1/(n : ℝ)))
 
 lemma smoothing_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (smoothing_seminorm hf1) :=
 begin
   intros x y,
-  set g : ℕ → ℕ → ℝ≥0 := (λ n m, (f (x ^ m) * f (y ^ (n - m)))^(1/(n : ℝ))) with hg,
-  have hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ list.range (n + 1)), 
-    smoothing_seminorm hf1 (x + y) ≤ g n m,
+  have hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    smoothing_seminorm hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)),
+  { intros n,
+    obtain ⟨m, hm_lt, hm⟩ := is_nonarchimedean_add_pow hsn hna n x y,
+    use [m, hm_lt],
+    have hn_le : smoothing_seminorm hf1 (x + y) ≤ f ((x + y)^(n : ℕ))^(1/n : ℝ),
+    { apply cinfi_le,
+      use 0, rw mem_lower_bounds, rintros x -, exact zero_le _ },
+    exact le_trans hn_le (nnreal.rpow_le_rpow hm (nat.one_div_cast_nonneg (n : ℕ))), }, 
+  set mu_n : ℕ → ℕ := λ n, if h : n = 0 then 0 else
+    (classical.some (hn (⟨n, nat.pos_of_ne_zero h⟩ : pnat))) with hmu_n,
+  set nu_n : ℕ → ℕ := λ n, n - (mu_n n) with hnu_n,
+  have hmu_n_le : ∀ n : ℕ, mu_n n ≤ n,
   { intro n,
-    have hm_some : option.is_some (list.argmax (g n) (list.range (n + 1))),
-    { rw [← option.ne_none_iff_is_some, ne.def, list.argmax_eq_none, list.range_eq_nil],
-      exact nat.succ_ne_zero _, },
-    set m : ℕ := option.get hm_some with hm_def,
-    use m,
-    split,
-    { rw hm_def,
+    by_cases hn0 : n = 0,
+    { simp only [hmu_n, dif_pos hn0], exact eq.ge hn0 },
+    { simp only [hmu_n, dif_neg hn0, ← nat.lt_succ_iff, ← finset.mem_range],
+      exact classical.some (classical.some_spec (hn (⟨n, nat.pos_of_ne_zero hn0⟩ : pnat))), }},
+  have hmu_bdd : ∀ n : ℕ, (mu_n n : ℝ)/n ∈ set.interval (0 : ℝ) 1,
+  { intro n,
+    refine set.mem_Icc.mpr ⟨_, _⟩,
+    { simp only [min_eq_left, zero_le_one],
+      exact div_nonneg (nat.cast_nonneg (mu_n n)) (nat.cast_nonneg n), },
+    { simp only [zero_le_one, max_eq_right],
+      by_cases hn0 : n = 0,
+      { rw [hn0, nat.cast_zero, div_zero], exact zero_le_one, },
+      { have hn' : 0 < (n : ℝ) := nat.cast_pos.mpr (nat.pos_of_ne_zero hn0),
+        rw [div_le_one hn', nat.cast_le],
+        exact hmu_n_le _, }}},
+  have hs : metric.bounded (set.interval (0 : ℝ) 1),
+  { exact metric.bounded_Icc (min 0 1) (max 0 1)},
+  obtain ⟨a, a_in, φ, hφ_mono, hφ_lim⟩ := tendsto_subseq_of_bounded hs hmu_bdd,
+  set b := 1 - a with hb,
+  have hb_lim : filter.tendsto ((λ (n : ℕ), ↑(nu_n n) / ↑n) ∘ φ) filter.at_top (𝓝 b),
+  { apply filter.tendsto.congr' _ (filter.tendsto.const_sub 1 hφ_lim),
+    simp only [filter.eventually_eq,function.comp_app, filter.eventually_at_top, ge_iff_le],
+    use 1,
+    intros m hm,
+    have h0 : (φ m : ℝ ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (lt_of_le_of_lt (zero_le _) 
+      (hφ_mono (nat.pos_of_ne_zero (nat.one_le_iff_ne_zero.mp hm))))),
+    rw [← div_self h0, ← sub_div],
+    simp only [hnu_n],
+    rw nat.cast_sub,
+    exact hmu_n_le _ },
+
+    have hx : filter.limsup filter.at_top (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ))) ≤
+      (smoothing_seminorm hf1 x)^a,
+    { sorry },
+    have hy : filter.limsup filter.at_top (λ (n : ℕ), (f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
+      (smoothing_seminorm hf1 y)^b,
+    { sorry },
+
+    have hxy : filter.limsup filter.at_top
+      (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
+      (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b,
+    { sorry },
+
+    conv_lhs { simp only [smoothing_seminorm, smoothing_seminorm_seq_lim], },
+    rw ← nnreal.coe_le_coe,
+    apply le_of_forall_sub_le,
+    intros ε hε,
+    have hε_nnr : ε = ((⟨ε, le_of_lt hε⟩ : nnreal) : ℝ) := rfl,
+    rw sub_le_iff_le_add, rw hε_nnr, rw ← nnreal.coe_add, rw nnreal.coe_le_coe,
+
+    have hxy' : filter.limsup filter.at_top
+      (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) <
+      (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b + ⟨ε, le_of_lt hε⟩,
+    { sorry },
+  sorry,
+   /-  have h := filter.eventually_lt_of_limsup_lt hxy' _,
+
+    { sorry },
+
+    { simp only [auto_param_eq],
       
-      sorry },
-    { sorry }}, 
-  sorry
+      --refine filter.is_bounded_under_of _,
+      sorry }, -/
+
+    --rw ← filter.limsup_const ((smoothing_seminorm hf1 x)^a) at hx,
+    --apply cinfi_le_of_le,
+
 end
 
 lemma smoothing_seminorm_is_seminorm (hna : is_nonarchimedean f) :
@@ -729,26 +797,7 @@ begin
   exact smoothing_seminorm_seq_lim_is_limit hsn hf1 _
 end
 
-lemma smoothing_seminorm_le : smoothing_seminorm hf1 x ≤ f x :=
-begin
-  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 x),
-  simp only [filter.eventually_at_top, ge_iff_le],
-  use 1,
-  rintros n hn,
-  have hn1 : (n : ℝ) * (1/n) = 1,
-  { apply mul_one_div_cancel,
-    exact (nat.cast_ne_zero.mpr (nat.one_le_iff_ne_zero.mp hn)) },
-  have hn' : 0 < (1/n : ℝ),
-  { have h01 : (0 : ℝ) < 1 := zero_lt_one,
-    apply div_pos h01,
-    rw [← nat.cast_zero, nat.cast_lt],
-    exact (nat.succ_le_iff.mp hn) },
-  simp only [smoothing_seminorm_seq],
-  rw [← nnreal.rpow_one (f x)],
-  conv_rhs { rw ← hn1 },
-  rw [nnreal.rpow_mul, nnreal.rpow_le_rpow_iff hn', nnreal.rpow_nat_cast],
-  exact hsn.pow_le x (nat.succ_le_iff.mp hn),
-end
+
 
 variable {x}
 

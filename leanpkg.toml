@@ -1,8 +1,8 @@
 [package]
 name = "local_fields"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.42.0"
+lean_version = "leanprover-community/lean:3.42.1"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "77110125caaa6d3af4f4633449bdfed4ce919f7f"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "93df724a2c0bd3aece583c3c788e5c16d52d3511"}

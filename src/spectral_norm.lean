@@ -1,6 +1,6 @@
 import rank_one_valuation
 import seminormed_rings
-
+import data.list.min_max
 import field_theory.minpoly
 import topology.algebra.valuation
 
@@ -17,17 +17,41 @@ def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat
   (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)) -/
 
 
+lemma list.le_max_of_exists_le {α : Type*} [linear_order α] [order_bot α] {l : list α} {a x : α} (hx : x ∈ l) (h : a ≤ x) :
+  a ≤ l.foldr max ⊥ :=
+begin
+  induction l with y l IH,
+  { exact absurd hx (list.not_mem_nil _), },
+  { obtain rfl | hl := hx,
+    simp only [list.foldr, list.foldr_cons],
+    { exact le_max_of_le_left h, },
+    { exact le_max_of_le_right (IH hl) }}
+end
+
 def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → nnreal := 
 λ (n : ℕ), if n < p.nat_degree then 
-⟨∥ p.coeff n ∥, norm_nonneg (p.coeff n)⟩^(1/(p.nat_degree - n : ℝ))  else 0
+∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) else 0
 
 def spectral_value {p : R[X]} (hp : p.monic) : nnreal := supr (spectral_value_terms hp)
 
 lemma spectral_value_terms_bdd_above {p : R[X]} (hp : p.monic) :
-  bdd_above (set.range (spectral_value_terms hp)) := sorry
-
-lemma spectral_value_terms_nonempty {p : R[X]} (hp : p.monic) :
-  (set.range (spectral_value_terms hp)).nonempty := sorry
+  bdd_above (set.range (spectral_value_terms hp)) := 
+begin
+  use list.foldr max 0
+  (list.map (λ n, ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)),
+  { rw mem_upper_bounds,
+    intros r hr,
+    obtain ⟨n, hn⟩ := set.mem_range.mpr hr,
+    simp only [spectral_value_terms] at hn,
+    rw ← nnreal.bot_eq_zero,
+    split_ifs at hn with hd hd,
+    { have h : ∥p.coeff n∥₊ ^ (1 / (p.nat_degree - n : ℝ)) ∈ list.map 
+        (λ (n : ℕ), ∥p.coeff n∥₊ ^ (1 / (p.nat_degree - n : ℝ))) (list.range p.nat_degree),
+      { simp only [list.mem_map, list.mem_range],
+        exact ⟨n, hd, rfl⟩, },  
+    exact list.le_max_of_exists_le h (ge_of_eq hn), },
+    { rw ← hn, exact zero_le _, }},
+end
 
 variable [nontrivial R]
 
@@ -71,9 +95,9 @@ begin
   convert csupr_const,
   ext m,
   by_cases hmn : m < n,
-  { rw [if_pos hmn, nnreal.coe_eq, nnreal.rpow_eq_zero_iff, nonneg.mk_eq_zero,
-      if_neg (ne_of_lt hmn), norm_zero, one_div, ne.def, inv_eq_zero, ← nat.cast_sub (le_of_lt hmn),
-      nat.cast_eq_zero, nat.sub_eq_zero_iff_le],
+  { rw [if_pos hmn, nnreal.coe_eq, nnreal.rpow_eq_zero_iff, if_neg (ne_of_lt hmn), nnnorm_zero,
+      one_div, ne.def, inv_eq_zero, ← nat.cast_sub (le_of_lt hmn), nat.cast_eq_zero,
+      nat.sub_eq_zero_iff_le],
     exact ⟨eq.refl _, not_le_of_lt hmn⟩, },
   { rw if_neg hmn },
   apply_instance,
@@ -97,7 +121,7 @@ begin
           have h0 : (0 : nnreal) = 0^(1 / ((p.nat_degree : ℝ) - n)),
           { rw nnreal.zero_rpow (ne_of_gt h_exp), },
           rw [supr, cSup_le_iff (spectral_value_terms_bdd_above hp)
-            (spectral_value_terms_nonempty hp)] at h_le,
+            (set.range_nonempty _)] at h_le,
           specialize h_le (spectral_value_terms hp n) ⟨n, rfl⟩,
           simp only [spectral_value_terms, if_pos hn'] at h_le,
           rw [h0, nnreal.rpow_le_rpow_iff h_exp] at h_le,
@@ -113,8 +137,7 @@ list.maximum (list.map (λ n, ∥ p.coeff n ∥) (list.range p.nat_degree)) -/
 
 section spectral_norm
 
--- mathlib's normed_field is too strong (power multiplicative norm should suffice)
-variables {K : Type*} [normed_field' K] {L : Type*} [field L] [algebra K L]
+variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L)
 
 -- The spectral norm |y|_sp is the spectral value of the minimal polynomial of y over K.
@@ -152,7 +175,7 @@ begin
   ext m,
   by_cases hm : m < 1,
   { rw [if_pos hm, nnreal.coe_eq, nat.lt_one_iff.mp hm, nat.cast_one, nat.cast_zero, sub_zero,
-      div_one, nnreal.rpow_one, nonneg.mk_eq_zero, polynomial.coeff_X_zero, norm_zero] },
+      div_one, nnreal.rpow_one, polynomial.coeff_X_zero, nnnorm_zero] },
   { rw if_neg hm },
   apply_instance,
 end
@@ -200,7 +223,7 @@ variables {K : Type*} [hK : field K] {Γ₀ : Type*} [linear_ordered_comm_group_
 --instance valued_field.to_normed_field : normed_field K := sorry
 
 --@[priority 10]
-instance valued_field.to_normed_field : normed_field' K := 
+instance valued_field.to_normed_field : normed_field K := 
 { norm               := sorry,
   dist               := sorry,
   dist_self          := sorry,
@@ -208,12 +231,13 @@ instance valued_field.to_normed_field : normed_field' K :=
   dist_triangle      := sorry,
   eq_of_dist_eq_zero := sorry,
   dist_eq            := sorry,
-  norm_mul           := sorry,
+  norm_mul'          := sorry,
   ..hK }
 
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
 
-lemma spectral_value_unique {f : L → nnreal} (hf_norm : is_algebra_norm K f) 
+lemma spectral_value_unique {f : L → nnreal}
+  (hf_alg_norm : is_algebra_norm K (normed_ring.to_is_norm K) f) 
   (hf_pow : is_pow_mult f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 --instance spectral_valued_complete (hKL : finite_dimensional K L) : complete_space L := sorry

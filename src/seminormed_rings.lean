@@ -71,7 +71,7 @@ end
 
 open_locale classical
 
-lemma is_nonarchimedean_finset_add {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+lemma is_nonarchimedean_finset_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
   (hna : is_nonarchimedean f) (s : finset α) :
   ∃ (a : α) (ha : if s.nonempty then a ∈ s else a = 0), f (s.sum id) ≤ f a := 
 begin
@@ -92,11 +92,11 @@ begin
         exact or.intro_right _ hMs, },
       { rw if_neg hs at hMs,
         exfalso,
-        simp only [hMs, hsn.zero, not_lt_zero'] at hMa,
+        simp only [hMs, hf0, not_lt_zero'] at hMa,
         exact hMa, }}}      
 end
 
-lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
   (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
   ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := 
 begin
@@ -104,7 +104,7 @@ begin
   { rw [finset.sum_empty],
     refine ⟨hβ.some, by simp only [finset.nonempty_coe_sort, finset.not_nonempty_empty,
       forall_false_left], _⟩,
-    rw hsn.zero, exact zero_le _, },
+    rw hf0, exact zero_le _, },
   { rintros a s has ⟨M, hMs, hM⟩,
     rw [finset.sum_insert has],
     by_cases hMa : f (g M) ≤ f (g a),
@@ -122,7 +122,7 @@ begin
         { simp only [finset.insert_nonempty, finset.mem_insert, eq_self_iff_true, true_or,
             forall_true_left] },
           have h0 : f (s.sum g) = 0,
-          { rw [finset.not_nonempty_iff_eq_empty.mp hs, finset.sum_empty, hsn.zero],},
+          { rw [finset.not_nonempty_iff_eq_empty.mp hs, finset.sum_empty, hf0],},
           apply le_trans (hna _ _),
           rw h0,
           exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩, }}} 
@@ -132,7 +132,7 @@ lemma is_nonarchimedean_add_pow {α : Type*} [comm_ring α] {f : α → nnreal} 
   (hna : is_nonarchimedean f) (n : ℕ) (a b : α) : ∃ (m : ℕ) (hm : m ∈ list.range(n + 1)),
   f ((a + b) ^ n) ≤ (f (a ^ m)) * (f (b ^ (n - m))) :=
 begin
-  obtain ⟨m, hm_lt, hM⟩ := is_nonarchimedean_finset_image_add hsn hna 
+  obtain ⟨m, hm_lt, hM⟩ := is_nonarchimedean_finset_image_add hsn.zero hna 
     (λ (m : ℕ), a ^ m * b ^ (n - m) * ↑(n.choose m)) (finset.range (n + 1)),
   simp only [finset.nonempty_range_iff, ne.def, nat.succ_ne_zero, not_false_iff, finset.mem_range,
     if_true, forall_true_left] at hm_lt,
