@@ -304,13 +304,13 @@ instance valued_field.to_normed_field : normed_field K :=
 
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
 
-lemma spectral_norm.is_field_norm : is_field_norm (spectral_norm h_alg) := sorry
+lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) := sorry
 
 lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
    (x : L) : f x = spectral_norm h_alg x := sorry
 
-lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_field_norm f)
+lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
    (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 -- TODO: ask

@@ -49,7 +49,7 @@ end
 structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminorm f) : Prop :=
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
 
-structure is_field_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
+structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
 (mul_eq : ∀ a b, f (a * b) ≤ f a * f b)
 
 structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
