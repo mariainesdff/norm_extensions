@@ -5,7 +5,7 @@ open_locale nnreal
 
 variables {R S : Type*} [field R] [field S] [algebra R S]
 
--- Lemma 3.1.5/2
+-- Proposition 3.1.5/1
 lemma eq_of_pow_mult_faithful {g : R → ℝ≥0} (hg : is_mul_norm g) {f₁ : S → ℝ≥0}
   (hf₁_pm : is_pow_mult f₁) (hf₁_an : is_algebra_norm (hg.to_is_norm) f₁) {f₂ : S → ℝ≥0}
   (hf₂_pm : is_pow_mult f₁) (hf₂_an : is_algebra_norm (hg.to_is_norm) f₂)
