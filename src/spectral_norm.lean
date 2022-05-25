@@ -1,24 +1,20 @@
 import rank_one_valuation
-import seminormed_rings
+import normed_space
 import data.list.min_max
 import field_theory.minpoly
+import field_theory.normal
 import topology.algebra.valuation
 
 noncomputable theory
 
-open_locale polynomial
+open_locale polynomial nnreal
 
 variables {R : Type*} [normed_ring R]
 
 def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat_degree)
 
--- This should be max |p_i|^1/(n-i), i = 0, ..., n - 1 = deg(p) -1
-/- def spectral_value {p : R[X]} (hp : p.monic) : ℝ :=  list.foldr max 0
-  (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)) -/
-
-
-lemma list.le_max_of_exists_le {α : Type*} [linear_order α] [order_bot α] {l : list α} {a x : α} (hx : x ∈ l) (h : a ≤ x) :
-  a ≤ l.foldr max ⊥ :=
+lemma list.le_max_of_exists_le {α : Type*} [linear_order α] [order_bot α] {l : list α} {a x : α}
+  (hx : x ∈ l) (h : a ≤ x) : a ≤ l.foldr max ⊥ :=
 begin
   induction l with y l IH,
   { exact absurd hx (list.not_mem_nil _), },
@@ -63,29 +59,6 @@ begin
   { simp only [list.foldr, list.repeat, list.repeat_succ, list.foldr_cons, max_eq_left_iff],
     exact le_of_eq hn, }
 end
-
-/- lemma spectral_value_zero_le [nontrivial R] {p : R[X]} (hp : p.monic) :
-  0 ≤ spectral_value hp := 
-begin
-  rw spectral_value,
-  sorry
-end -/
-
-/- lemma spectral_value_X_pow (n : ℕ) :
-  spectral_value (@polynomial.monic_X_pow R _ n) = 0 := 
-begin
-  rw spectral_value,
-  simp_rw [polynomial.coeff_X_pow n, polynomial.nat_degree_X_pow],
-  have h : ∀ l, l ∈ list.range n → ∥ite (l = n) (1 : R) 0∥ ^ (1 / (n - l : ℝ)) = 0,
-  { intros l hl,
-    rw list.mem_range at hl,
-    have h_exp : 1 / (n - l : ℝ) ≠ 0,
-    { apply one_div_ne_zero,
-      rw [← nat.cast_sub (le_of_lt hl), nat.cast_ne_zero, ne.def, tsub_eq_zero_iff_le, not_le],
-      exact hl, },
-    rw [if_neg (ne_of_lt hl), norm_zero, real.zero_rpow h_exp], },
-  rw [list.map_congr h, list.map_const, list.length_range, list.max_repeat],
-end -/
 
 lemma spectral_value_X_pow (n : ℕ) :
   spectral_value (@polynomial.monic_X_pow R _ n) = 0 := 
@@ -132,8 +105,37 @@ begin
     apply_instance }
 end
 
-/- def spectral_value' {p : R[X]} (hp : p.monic) : with_bot ℝ := 
-list.maximum (list.map (λ n, ∥ p.coeff n ∥) (list.range p.nat_degree)) -/
+/- In this section we prove Proposition 3.1.2/1 from BGR. -/
+section bdd_by_spectral_value
+variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L] {f : L → ℝ≥0}
+  (hf_pm : is_pow_mult f) (hf_Kn : is_algebra_norm (normed_ring.to_is_norm K) f)
+
+-- Part (1): the norm of any root of p is bounded by the spectral value of p.
+lemma root_norm_le_spectral_value {p : K[X]} (hp : p.monic) {x : L}
+  (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp := 
+begin
+  sorry
+end
+
+lemma polynomial.monic_of_prod (p : K[X]) {n : ℕ} (b : fin n → L) (hp : polynomial.map_alg K L p =
+  finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))) : p.monic :=
+begin
+  sorry
+end
+
+/-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
+  of the norms of its roots. -/
+lemma max_root_norm_eq_spectral_value (p : K[X]) {n : ℕ} (b : fin n → L)
+  (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
+  (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
+  supr (f ∘ b) = spectral_value (p.monic_of_prod b hp) := 
+begin
+  sorry
+end
+
+end bdd_by_spectral_value
+
+/- In this section we prove Theorem 3.2.1/2 from BGR. -/
 
 section spectral_norm
 
@@ -145,6 +147,72 @@ def spectral_norm (y : L) : nnreal :=
 spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
 
 variable (y : L)
+
+-- We first assume that the extension is finite
+section finite
+
+variable (h_fin : finite_dimensional K L)
+
+lemma spectral_value.is_pow_mult_of_fd : is_pow_mult (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_value.is_algebra_norm_of_fd :
+  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_value.is_nonarchimedean_of_fd : is_nonarchimedean (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_value.extends_norm_of_fd : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_value.ge_norm_of_fd {f : L → nnreal} (hf_pm : is_pow_mult f) 
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (x : L) : 
+  f x ≤ spectral_norm h_alg x :=
+begin
+  sorry
+end
+
+lemma spectral_value.aut_isom_of_fd (σ : L ≃ₐ[K] L) (x y : L) : 
+  spectral_norm h_alg (y - x) = spectral_norm h_alg (σ (y - x)) :=
+begin
+  sorry
+end
+
+section normal
+
+variable (hn : normal K L)
+
+lemma spectral_value.unique_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
+  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
+  (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x y : L), f (y - x) = f (σ (y - x)))
+  (x : L) : f x = spectral_norm h_alg x :=
+begin
+  sorry
+end
+
+lemma spectral_value.max_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
+  (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) :
+  spectral_norm h_alg x = supr (λ (σ : L ≃ₐ[K] L), f (σ x)) :=
+begin
+  sorry
+end
+
+end normal
+
+end finite
+
+-- Now we let L/K be any algebraic extension
 
 -- The spectral norm is a power-multiplicative K-algebra norm on L extending the norm on K.
 
@@ -237,7 +305,7 @@ instance valued_field.to_normed_field : normed_field K :=
 --instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
 
 lemma spectral_value_unique {f : L → nnreal}
-  (hf_alg_norm : is_algebra_norm K (normed_ring.to_is_norm K) f) 
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
   (hf_pow : is_pow_mult f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 --instance spectral_valued_complete (hKL : finite_dimensional K L) : complete_space L := sorry
