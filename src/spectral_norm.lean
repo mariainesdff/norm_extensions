@@ -314,6 +314,6 @@ lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is
    (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
 
 -- TODO: ask
---instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
+-- instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
 
 end spectral_valuation
