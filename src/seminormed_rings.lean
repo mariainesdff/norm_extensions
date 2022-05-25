@@ -49,7 +49,10 @@ end
 structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminorm f) : Prop :=
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
 
-structure is_algebra_norm (α : Type*) [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
+structure is_field_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
+(mul_eq : ∀ a b, f (a * b) ≤ f a * f b)
+
+structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f ((algebra_map α β a) * x) = g a * f x)
 
@@ -163,6 +166,7 @@ lemma field.is_norm_of_is_seminorm {α : Type*} [field α] {f : α → nnreal} (
     exact lt_of_le_of_ne (zero_le (f _)) hfx,
   end,
   ..hf }
+  
 lemma seminormed_ring.to_is_seminorm (R : Type*) [semi_normed_ring R] :
   is_seminorm (λ r : R, ∥r∥₊) :=
 { zero := nnnorm_zero,
