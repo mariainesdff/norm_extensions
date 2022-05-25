@@ -3,7 +3,7 @@ import analysis.special_functions.pow
 
 noncomputable theory
 
-open_locale topological_space
+open_locale topological_space nnreal
 
 def is_pow_mult {α : Type*} [ring α] (f : α → nnreal) :=
 ∀ (a : α) {n : ℕ} (hn : 1 ≤ n), f (a^n) = (f a) ^ n
@@ -242,3 +242,19 @@ begin
   exact le_antisymm (contraction_of_is_pm_wrt hg f hfpm hge x)
     (contraction_of_is_pm_wrt hf g hgpm hle x),
 end
+
+
+-- Def. 1.5.1/2
+def is_degenerate {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) : Prop :=
+(∀ (x : α), f x = 0 ∨ 1 ≤ f x) ∨ (∀ (x : α), f x ≤ 1)
+
+-- I might not need the following two defs:
+
+--TODO: check if I can use any mathlib def
+def is_bdd_above {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) : Prop :=
+∃ B : ℝ≥0, ∀ x : α, f x ≤ B
+
+
+
+def is_trivial {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) : Prop :=
+∀ (x : α) (hx : x ≠ 0), f x = 1
