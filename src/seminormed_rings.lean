@@ -56,6 +56,11 @@ structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f ((algebra_map α β a) * x) = g a * f x)
 
+-- Def. 2.1.1/2. Probably won't need to use this, since in is_algebra_norm I already assume faithful
+structure is_faithful_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_mul_norm g) 
+  {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
+(smul : ∀ (a : α) (x : β) , f ((algebra_map α β a) * x) = g a * f x)
+
 def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*} [ring β] [algebra α β]
   (f : β → nnreal) : Prop :=
 ∀ x : α, f (algebra_map α β x) = g x 
@@ -253,8 +258,6 @@ def is_degenerate {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f
 --TODO: check if I can use any mathlib def
 def is_bdd_above {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) : Prop :=
 ∃ B : ℝ≥0, ∀ x : α, f x ≤ B
-
-
 
 def is_trivial {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) : Prop :=
 ∀ (x : α) (hx : x ≠ 0), f x = 1
