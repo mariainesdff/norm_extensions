@@ -288,6 +288,8 @@ variables {K : Type*} [hK : field K] {Γ₀ : Type*} [linear_ordered_comm_group_
 [val : valued K Γ₀] [hv : is_rank_one val.v] [complete_space K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L) 
 
+include hK
+
 --instance valued_field.to_normed_field : normed_field K := sorry
 
 --@[priority 10]
@@ -313,7 +315,6 @@ lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
    (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
 
--- TODO: ask
--- instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
+instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
 
 end spectral_valuation

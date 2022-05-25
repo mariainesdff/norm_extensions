@@ -69,132 +69,6 @@ def with_zero.coe_monoid_hom : with_zero G →* with_zero H :=
 instance : linear_ordered_comm_monoid_with_zero nnreal := infer_instance
 open_locale classical
 
-def padic.add_valuation_def {p : ℕ} [fact p.prime] : ℚ_[p] → (with_top ℤ) :=
-λ x, if x = 0 then ⊤ else x.valuation
-
-@[simp] lemma padic.add_valuation.map_zero {p : ℕ} [fact p.prime] :
-  padic.add_valuation_def (0 : ℚ_[p]) = ⊤ :=
-by simp only [padic.add_valuation_def, if_pos (eq.refl _)]
-
-@[simp] lemma padic.add_valuation.map_one {p : ℕ} [fact p.prime] :
-  padic.add_valuation_def (1 : ℚ_[p]) = 0 :=
-by simp only [padic.add_valuation_def, if_neg (one_ne_zero), padic.valuation_one,
-  with_top.coe_zero]
-
-lemma padic.add_valuation_map_mul' {p : ℕ} [hp: fact p.prime] {x y : ℚ_[p]} (hx : x ≠ 0) (hy : y ≠ 0) :
-  padic.valuation (x * y) = padic.valuation x + padic.valuation y :=
-begin
-  have h_norm : ∥x * y∥ = ∥x∥ * ∥y∥ := norm_mul x y,
-  have hp_ne_zero : (p : ℝ) ≠ 0,
-  { rw [← nat.cast_zero, ne.def, nat.cast_inj],
-    exact nat.prime.ne_zero (fact.elim hp), },
-  have hp_ne_one : (p : ℝ) ≠ 1,
-  { rw [← nat.cast_one, ne.def, nat.cast_inj],
-    exact nat.prime.ne_one (fact.elim hp), },
-  have hp_pos : (0 : ℝ) < p,
-  { rw [← nat.cast_zero, nat.cast_lt],
-    exact nat.prime.pos (fact.elim hp) },
-  rw [padic.norm_eq_pow_val hx, padic.norm_eq_pow_val hy, padic.norm_eq_pow_val (mul_ne_zero hx hy),
-    ← zpow_add₀ hp_ne_zero, zpow_inj hp_pos hp_ne_one, ← neg_add, neg_inj] at h_norm,
-  exact h_norm,
-end
-
-lemma padic.add_valuation.map_mul {p : ℕ} [fact p.prime] (x y : ℚ_[p]) :
-  padic.add_valuation_def (x * y) =
-  padic.add_valuation_def x + padic.add_valuation_def y :=
-begin
-  simp only [padic.add_valuation_def],
-  by_cases hx : x = 0,
-  { rw [hx, if_pos (eq.refl _), zero_mul, if_pos (eq.refl _), with_top.top_add] },
-  { by_cases hy : y = 0,
-    { rw [hy, if_pos (eq.refl _), mul_zero, if_pos (eq.refl _), with_top.add_top] },
-    { rw [if_neg hx, if_neg hy, if_neg (mul_ne_zero hx hy), ← with_top.coe_add, with_top.coe_eq_coe,
-        padic.add_valuation_map_mul' hx hy] }}
-end
-
-lemma min_le_of_zpow_le_max {K : Type*} [linear_ordered_field K] {x : K} (hx : 1 < x) {a b c : ℤ}
-  (h_max : x ^ (-c) ≤ max (x ^ (-a)) (x ^ (-b)) ) : min a b ≤ c :=
-begin
-  rw min_le_iff,
-  cases le_max_iff.mp h_max,
-  { left,
-    rw [zpow_le_iff_le hx, neg_le_neg_iff] at h,
-    exact h, },
-  { right,
-    rw [zpow_le_iff_le hx, neg_le_neg_iff] at h,
-    exact h },
-end
-
-lemma padic.valuation_map_add' {p : ℕ} [hp : fact p.prime] {x y : ℚ_[p]} (hxy : x + y ≠ 0):
-  min (padic.valuation x) (padic.valuation y) ≤ padic.valuation (x + y) :=
-begin
-  by_cases hx : x = 0,
-  { rw [hx, zero_add],
-    exact min_le_right _ _, },
-  { by_cases hy : y = 0,
-    { rw [hy, add_zero],
-    exact min_le_left _ _,},
-    { have h_norm : ∥x + y∥ ≤ (max ∥x∥ ∥y∥) := padic_norm_e.nonarchimedean x y,
-      have hp_ne_zero : (p : ℝ) ≠ 0,
-      { rw [← nat.cast_zero, ne.def, nat.cast_inj],
-        exact nat.prime.ne_zero (fact.elim hp), },
-      have hp_ne_one : (p : ℝ) ≠ 1,
-      { rw [← nat.cast_one, ne.def, nat.cast_inj],
-        exact nat.prime.ne_one (fact.elim hp), },
-      have hp_pos : (0 : ℝ) < p,
-      { rw [← nat.cast_zero, nat.cast_lt],
-        exact nat.prime.pos (fact.elim hp) },
-      rw [padic.norm_eq_pow_val hx, padic.norm_eq_pow_val hy, padic.norm_eq_pow_val hxy] at h_norm,
-      refine min_le_of_zpow_le_max _ h_norm,
-      rw [← nat.cast_one, nat.cast_lt],
-      exact nat.prime.one_lt hp.elim, }}
-end
-
-lemma padic.add_valuation.map_add {p : ℕ} [fact p.prime] (x y : ℚ_[p]) :
-  min (padic.add_valuation_def x) (padic.add_valuation_def y) ≤ 
-  padic.add_valuation_def (x + y) :=
-begin
-  simp only [padic.add_valuation_def],
-  by_cases hxy : x + y = 0,
-  { rw [hxy, if_pos (eq.refl _)],
-    exact le_top, },
-  { by_cases hx : x = 0,
-    { simp only [hx, if_pos (eq.refl _), min_eq_right, le_top, zero_add, le_refl], },
-    { by_cases hy : y = 0,
-    { simp only [hy, if_pos (eq.refl _), min_eq_left, le_top, add_zero, le_refl], },
-    { rw [if_neg hx, if_neg hy, if_neg hxy, ← with_top.coe_min, with_top.coe_le_coe],
-      exact padic.valuation_map_add' hxy }}}
-end
-
-def padic.add_valuation {p : ℕ} [fact p.prime] : add_valuation ℚ_[p] (with_top ℤ) :=
-add_valuation.of padic.add_valuation_def padic.add_valuation.map_zero
-  padic.add_valuation.map_one padic.add_valuation.map_add padic.add_valuation.map_mul
-
-@[simp] lemma padic.add_valuation.apply {p : ℕ} [fact p.prime] {x : ℚ_[p]} (hx : x ≠ 0) :
-  x.add_valuation = x.valuation :=
-by simp only [padic.add_valuation, add_valuation.of_apply, padic.add_valuation_def,if_neg hx]
-
-/- instance foo {Γ₀ : Type*} [linear_ordered_add_comm_monoid_with_top Γ₀] :
-  linear_ordered_comm_monoid_with_zero (multiplicative (order_dual Γ₀)) :=
-multiplicative.linear_ordered_comm_monoid_with_zero -/
-
-section foo
-variables {R' : Type*} [ring R'] {Γ₀' : Type*}
-  [linear_ordered_add_comm_monoid_with_top Γ₀'] (v : add_valuation R' Γ₀') 
-def add_valuation.valuation : 
-  valuation R' (multiplicative (order_dual Γ₀')) :=
-{ to_fun          := v,
-  map_zero'       := v.map_zero,
-  map_one'        := v.map_one,
-  map_mul'        := λ x y, v.map_mul x y,
-  map_add_le_max' := λ x y, v.map_add x y }
-
-@[simp] lemma add_valuation.valuation_apply {R : Type*} [ring R] {Γ₀ : Type*}
-  [linear_ordered_add_comm_monoid_with_top Γ₀] (v : add_valuation R Γ₀) (r : R) : 
-  v.valuation r = of_add (v r) := rfl
-
-end foo 
-
 def val_p (p : ℕ) [fact p.prime] : valuation ℚ_[p] (multiplicative (order_dual (with_top ℤ))) :=
 padic.add_valuation.valuation
 
@@ -324,7 +198,7 @@ def mult_with_top_R_to_nnreal_monoid_hom {e : nnreal} (he : 0 ≠ e) :
 { to_fun   := mult_with_top_R_to_nnreal he,
   map_one' := begin
     simp only [mult_with_top_R_to_nnreal, to_add_one],
-    erw [dif_neg (with_bot.coe_ne_bot (0 : ℝ)), mult_with_top_apply (0 : ℝ)],
+    erw [dif_neg with_bot.coe_ne_bot, mult_with_top_apply (0 : ℝ)],
     exact nnreal.rpow_zero e,
   end,
   map_mul' := λ x y,
@@ -400,7 +274,7 @@ def mult_with_top_R_to_R_monoid_hom {e : ℝ} (he : 0 < e) :
 { to_fun   := mult_with_top_R_to_R (ne_of_lt he),
   map_one' := begin
     simp only [mult_with_top_R_to_R, to_add_one],
-    erw [dif_neg (with_bot.coe_ne_bot (0 : ℝ)), mult_with_top_apply (0 : ℝ)],
+    erw [dif_neg with_bot.coe_ne_bot, mult_with_top_apply (0 : ℝ)],
     exact real.rpow_zero e,
   end,
   map_mul' := λ x y,
