@@ -193,20 +193,42 @@ begin
     exact h0 hf_alg_norm.to_is_norm.to_is_seminorm.zero, }
 end
 
+
 lemma polynomial.monic_of_prod (p : K[X]) {n : ℕ} (b : fin n → L) (hp : polynomial.map_alg K L p =
   finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))) : p.monic :=
 begin
-  sorry
+  have hprod : (finprod (λ (k : fin n), polynomial.X - polynomial.C (b k))).monic,
+  { rw finprod_eq_prod_of_fintype,
+    exact polynomial.monic_prod_of_monic _ _ (λ m hm, polynomial.monic_X_sub_C (b m)) },
+  rw [← hp, polynomial.map_alg_eq_map] at hprod,
+  exact polynomial.monic_of_injective (algebra_map K L).injective hprod,
 end
 
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
-lemma max_root_norm_eq_spectral_value (p : K[X]) {n : ℕ} (b : fin n → L)
+lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_le_one_class f)
+  (p : K[X]) {n : ℕ} (hn : 0 < n) (b : fin n → L)
   (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
   (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
   supr (f ∘ b) = spectral_value (p.monic_of_prod b hp) := 
 begin
-  sorry
+  apply le_antisymm,
+  { haveI : nonempty (fin n) := fin.pos_iff_nonempty.mp hn,
+    apply csupr_le,
+    rintros m,
+    have hm : polynomial.aeval (b m) p = 0,
+    { have hm' : polynomial.aeval (b m) ((polynomial.map_alg K L) p) = 0,
+      { have hd1 : (polynomial.aeval (b m)) (polynomial.X - polynomial.C (b m)) = 0,
+        { rw [polynomial.coe_aeval_eq_eval, polynomial.eval_sub, polynomial.eval_X,
+            polynomial.eval_C, sub_self] },
+        rw [hp, finprod_eq_prod_of_fintype, polynomial.aeval_def, polynomial.eval₂_finset_prod],
+        exact finset.prod_eq_zero (finset.mem_univ m) hd1, },
+      rw [polynomial.map_alg_eq_map, polynomial.aeval_map] at hm',
+      exact hm', },
+    rw function.comp_apply,
+    exact root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1 _ hm, },
+  { sorry }
 end
 
 end bdd_by_spectral_value
