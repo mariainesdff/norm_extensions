@@ -28,6 +28,14 @@ def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → nnreal :=
 λ (n : ℕ), if n < p.nat_degree then 
 ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) else 0
 
+lemma spectral_value_terms_of_lt_nat_degree {p : R[X]} (hp : p.monic) {n : ℕ}
+  (hn : n < p.nat_degree) : spectral_value_terms hp n = ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) := 
+by simp only [spectral_value_terms, if_pos hn]
+
+lemma spectral_value_terms_of_nat_degree_le {p : R[X]} (hp : p.monic) {n : ℕ}
+  (hn : p.nat_degree ≤ n) : spectral_value_terms hp n = 0 := 
+by simp only [spectral_value_terms, if_neg (not_lt.mpr hn)]
+
 def spectral_value {p : R[X]} (hp : p.monic) : nnreal := supr (spectral_value_terms hp)
 
 lemma spectral_value_terms_bdd_above {p : R[X]} (hp : p.monic) :
@@ -47,6 +55,23 @@ begin
         exact ⟨n, hd, rfl⟩, },  
     exact list.le_max_of_exists_le h (ge_of_eq hn), },
     { rw ← hn, exact zero_le _, }},
+end
+
+lemma spectral_value_terms_finite_range {p : R[X]} (hp : p.monic) :
+  (set.range (spectral_value_terms hp)).finite :=
+begin
+  have h_ss : set.range (spectral_value_terms hp) ⊆ set.range (λ (n : fin p.nat_degree), 
+    ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ))) ∪ {(0 : ℝ≥0)},
+  { intros x hx,
+    obtain ⟨m, hm⟩ := set.mem_range.mpr hx,
+    by_cases hm_lt : m < p.nat_degree,
+    { simp only [spectral_value_terms_of_lt_nat_degree hp hm_lt] at hm,
+      rw ← hm,
+      exact set.mem_union_left _ ⟨⟨m, hm_lt⟩, rfl⟩, },
+    { simp only [spectral_value_terms_of_nat_degree_le hp (le_of_not_lt hm_lt)] at hm,
+      rw hm,
+      exact set.mem_union_right _ (set.mem_singleton _), }},
+  exact set.finite.subset (set.finite.union (set.finite_range _) (set.finite_singleton _)) h_ss,
 end
 
 variable [nontrivial R]
@@ -108,13 +133,64 @@ end
 /- In this section we prove Proposition 3.1.2/1 from BGR. -/
 section bdd_by_spectral_value
 variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L] {f : L → ℝ≥0}
-  (hf_pm : is_pow_mult f) (hf_Kn : is_algebra_norm (normed_ring.to_is_norm K) f)
+
+lemma polynomial.nat_degree_pos_of_monic_of_root {p : K[X]} (hp : p.monic) {x : L}
+  (hx : polynomial.aeval x p = 0) : 0 < p.nat_degree := 
+polynomial.nat_degree_pos_of_aeval_root (polynomial.ne_zero_of_ne_zero_of_monic one_ne_zero hp) hx
+  ((injective_iff_map_eq_zero (algebra_map K L)).mp (algebra_map K L).injective)
 
 -- Part (1): the norm of any root of p is bounded by the spectral value of p.
-lemma root_norm_le_spectral_value {p : K[X]} (hp : p.monic) {x : L}
-  (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp := 
+lemma root_norm_le_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_le_one_class f)
+  {p : K[X]} (hp : p.monic) {x : L} (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp := 
 begin
-  sorry
+  by_cases hx0 : f x = 0,
+  { rw hx0, exact zero_le _ },
+  { by_contra' h_ge,
+    have hn_lt : ∀ (n : ℕ) (hn : n < p.nat_degree), ∥ p.coeff n ∥₊ < (f x)^ (p.nat_degree - n),
+    { intros n hn,
+      have hexp : (∥p.coeff n∥₊^(1/(p.nat_degree - n : ℝ)))^(p.nat_degree - n) = ∥p.coeff n∥₊,
+      { rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, mul_comm, nnreal.rpow_mul, 
+          nnreal.rpow_nat_cast, ← nat.cast_sub (le_of_lt hn), one_div,
+          nnreal.pow_nat_rpow_nat_inv _ (tsub_pos_of_lt hn)] },
+      have h_base : ∥p.coeff n∥₊^(1/(p.nat_degree - n : ℝ)) < f x,
+      { rw [spectral_value, supr, set.finite.cSup_lt_iff (spectral_value_terms_finite_range hp)
+          (set.range_nonempty (spectral_value_terms hp))] at h_ge,
+        have h_rg: ∥p.coeff n∥₊ ^ (1 / (p.nat_degree - n : ℝ)) ∈ set.range (spectral_value_terms hp),
+        { use n, simp only [spectral_value_terms, if_pos hn] },
+        exact h_ge (∥p.coeff n∥₊ ^ (1 / (↑(p.nat_degree) - ↑n))) h_rg },
+      rw [← hexp, ← nnreal.rpow_nat_cast, ← nnreal.rpow_nat_cast],
+      exact nnreal.rpow_lt_rpow h_base (nat.cast_pos.mpr (tsub_pos_of_lt hn)), },
+    have h_deg : 0 < p.nat_degree := polynomial.nat_degree_pos_of_monic_of_root hp hx,
+    have : ∥(1 : K)∥ = 1 := norm_one,
+    have h_lt : f ((finset.range (p.nat_degree)).sum (λ (i : ℕ), p.coeff i • x ^ i)) < 
+      f (x^(p.nat_degree)),
+    { have hn' : ∀ (n : ℕ) (hn : n < p.nat_degree), f (p.coeff n • x ^ n) < f (x^(p.nat_degree)),
+      { intros n hn,
+        by_cases hn0 : n = 0,
+        { rw [hn0, pow_zero, hf_alg_norm.smul, hf_pm _ (nat.succ_le_iff.mpr h_deg), 
+            ← nat.sub_zero p.nat_degree, ← hn0],
+          exact mul_lt_of_lt_of_le_one (hn_lt n hn) hf1 },
+        { have : p.nat_degree = (p.nat_degree - n) + n,
+          { rw nat.sub_add_cancel (le_of_lt hn), },
+          rw [hf_alg_norm.smul, hf_pm _ (nat.succ_le_iff.mp (pos_iff_ne_zero.mpr hn0)), 
+            hf_pm _ (nat.succ_le_iff.mpr h_deg), this, pow_add],
+          rw mul_lt_mul_right (pow_pos (pos_iff_ne_zero.mpr hx0) _),
+          exact hn_lt n hn }},
+      have hf0 : f 0 = 0 := hf_alg_norm.to_is_norm.to_is_seminorm.zero,
+      have hna : is_nonarchimedean f := hf_u.add_le hf0,
+      obtain ⟨m, hm_in, hm⟩ := is_nonarchimedean_finset_range_add_le hf0 hna p.nat_degree 
+        (λ (i : ℕ), p.coeff i • x ^ i),
+      exact lt_of_le_of_lt hm (hn' m (hm_in h_deg)) },
+    have h0 : f 0 ≠ 0,
+    { have h_eq : f 0 = f (x^(p.nat_degree)),
+      { rw [← hx, polynomial.aeval_eq_sum_range, finset.sum_range_succ, add_comm, hp.coeff_nat_degree,
+        one_smul, ← max_eq_left_of_lt h_lt],
+        exact is_nonarchimedean_add_eq_max_of_ne hf_alg_norm.to_is_norm.to_is_seminorm 
+        hf_u (ne_of_lt h_lt), },
+      rw h_eq,
+      exact ne_of_gt (lt_of_le_of_lt (zero_le _) h_lt) },
+    exact h0 hf_alg_norm.to_is_norm.to_is_seminorm.zero, }
 end
 
 lemma polynomial.monic_of_prod (p : K[X]) {n : ℕ} (b : fin n → L) (hp : polynomial.map_alg K L p =
@@ -174,18 +250,36 @@ begin
   sorry
 end
 
-lemma spectral_value.ge_norm_of_fd {f : L → nnreal} (hf_pm : is_pow_mult f) 
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (x : L) : 
-  f x ≤ spectral_norm h_alg x :=
+lemma spectral_value.ge_norm_of_fd {f : L → nnreal} (hf_pm : is_pow_mult f)
+  (hf_u : is_ultrametric f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
+  (hf1 : is_norm_le_one_class f) (x : L) : f x ≤ spectral_norm h_alg x :=
 begin
-  sorry
+  apply root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1,
+  rw [minpoly.aeval],
 end
 
-lemma spectral_value.aut_isom_of_fd (σ : L ≃ₐ[K] L) (x y : L) : 
-  spectral_norm h_alg (y - x) = spectral_norm h_alg (σ (y - x)) :=
+@[simp] lemma minpoly_eq_of_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
+  minpoly K (σ x) = minpoly K x := 
 begin
-  sorry
+  have h_dvd : minpoly K x ∣ minpoly K (σ x),
+  { apply minpoly.dvd,
+    have hx : σ.symm (σ x) = x := σ.left_inv x,
+    nth_rewrite 0 ← hx,
+    rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, minpoly.aeval, map_zero] },
+  have h_deg : (minpoly K (σ x)).nat_degree ≤ (minpoly K x).nat_degree,
+  { have h_eval : (polynomial.aeval (σ x)) (minpoly K x) = 0,
+    { rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, minpoly.aeval,
+        map_zero] },
+    apply polynomial.nat_degree_le_nat_degree (minpoly.degree_le_of_ne_zero K _ 
+      (minpoly.ne_zero (is_algebraic_iff_is_integral.mp (h_alg _))) h_eval) },
+  exact polynomial.eq_of_monic_of_dvd_of_nat_degree_le
+    (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
+    (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _))) h_dvd h_deg,
 end
+
+lemma spectral_value.aut_isom_of_fd (σ : L ≃ₐ[K] L) (x : L) : 
+  spectral_norm h_alg x = spectral_norm h_alg (σ x) :=
+by simp only [spectral_norm, minpoly_eq_of_conj h_alg]
 
 section normal
 

@@ -54,7 +54,14 @@ structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_nor
 
 structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
-(smul : ∀ (a : α) (x : β) , f ((algebra_map α β a) * x) = g a * f x)
+(smul : ∀ (a : α) (x : β) , f (a • x) = g a * f x)
+
+
+/- lemma root_norm_le_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) {p : K[X]} (hp : p.monic) {x : L}
+  (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp  -/
+
+
 
 -- Def. 2.1.1/2. Probably won't need to use this, since in is_algebra_norm I already assume faithful
 structure is_faithful_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_mul_norm g) 
@@ -65,7 +72,27 @@ def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*
   (f : β → nnreal) : Prop :=
 ∀ x : α, f (algebra_map α β x) = g x 
 
-def is_nonarchimedean {α : Type*} [ring α] (f : α → nnreal) : Prop := 
+def is_ultrametric {α : Type*} [add_group α] (f : α → nnreal) : Prop := 
+∀ a b, f (a - b) ≤ max (f a) (f b)
+
+
+
+lemma is_ultrametric.neg {α : Type*} [add_group α] {f : α → nnreal} (hu : is_ultrametric f) 
+  (h0 : f 0 = 0) (x : α) : f (-x) = f x := 
+begin
+  apply le_antisymm,
+  { rw [neg_eq_zero_sub, ← max_eq_right (zero_le (f x)), ← h0], exact hu _ _, },
+  { nth_rewrite 0 [← neg_neg x],
+    rw [neg_eq_zero_sub, ← max_eq_right (zero_le (f (-x))), ← h0], exact hu _ _, },
+end
+
+lemma is_ultrametric.add_le {α : Type*} [add_group α] {f : α → nnreal} (h0 : f 0 = 0)
+  (hu : is_ultrametric f) (a b : α) : f (a + b) ≤ max (f a) (f b) := 
+begin
+  rw [← neg_neg b, ← sub_eq_add_neg, neg_neg, ← hu.neg h0 b], exact hu _ _,
+end
+
+def is_nonarchimedean {α : Type*} [add_monoid α] (f : α → nnreal) : Prop := 
 ∀ a b, f (a + b) ≤ max (f a) (f b)
 
 lemma is_nonarchimedean_nmul {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
@@ -75,6 +102,28 @@ begin
   { rw [nat.cast_zero, zero_mul, hsn.zero], exact zero_le _ },
   { rw [nat.cast_succ, add_mul, one_mul],
     exact le_trans (hna _ _) (max_le_iff.mpr ⟨hn, le_refl _⟩), }
+end
+
+lemma is_nonarchimedean_add_eq_max_of_ne {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hu : is_ultrametric f) {x y : α} (hne : f y ≠ f x) :
+  f (x + y) = max (f x) (f y) :=
+begin
+  wlog hle := le_total (f y) (f x) using [x y],
+  have hlt : f y < f x, from lt_of_le_of_ne hle hne,
+  have : f x ≤ max (f (x + y)) (f y), from calc
+    f x = f (x + y - y) : by congr; rw [add_sub_cancel]
+               ... ≤ max (f (x + y)) (f (y)) : hu _ _,
+  have hnge : f y ≤ f (x + y),
+  { apply le_of_not_gt,
+    intro hgt,
+    rw max_eq_right_of_lt hgt at this,
+    apply not_lt_of_ge this,
+    assumption },
+  have : f x ≤ f (x + y), by rwa [max_eq_left hnge] at this,
+  apply _root_.le_antisymm,
+  { exact hu.add_le hsn.zero _ _ },
+  { rw max_eq_left_of_lt hlt,
+    assumption }
 end
 
 open_locale classical
@@ -103,6 +152,12 @@ begin
         simp only [hMs, hf0, not_lt_zero'] at hMa,
         exact hMa, }}}      
 end
+
+/- f ((finset.range n).sum (λ (i : ℕ), g i) -/
+
+lemma is_nonarchimedean_finset_range_add_le {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) (n : ℕ) (g : ℕ → α) : ∃ (m : ℕ) (hm : 0 < n → m < n),
+  f ((finset.range n).sum (λ (i : ℕ), g i)) ≤ f (g m) := sorry
 
 lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
   (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
