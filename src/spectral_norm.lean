@@ -4,6 +4,7 @@ import data.list.min_max
 import field_theory.minpoly
 import field_theory.normal
 import topology.algebra.valuation
+import ring_theory.polynomial.vieta
 
 noncomputable theory
 
@@ -193,7 +194,6 @@ begin
     exact h0 hf_alg_norm.to_is_norm.to_is_seminorm.zero, }
 end
 
-
 lemma polynomial.monic_of_prod (p : K[X]) {n : ℕ} (b : fin n → L) (hp : polynomial.map_alg K L p =
   finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))) : p.monic :=
 begin
@@ -203,6 +203,28 @@ begin
   rw [← hp, polynomial.map_alg_eq_map] at hprod,
   exact polynomial.monic_of_injective (algebra_map K L).injective hprod,
 end
+
+/-  theorem mv_polynomial.prod_X_add_C_eval {R : Type u} [comm_semiring R] (σ : Type u)
+ [fintype σ] (r : σ → R) :
+finset.univ.prod (λ (i : σ), ⇑polynomial.C (r i) + polynomial.X) =
+ (finset.range (fintype.card σ + 1)).sum (λ (i : ℕ), (finset.powerset_len i finset.univ).sum (λ (t : finset σ), t.prod (λ (i : σ), ⇑polynomial.C (r i))) * polynomial.X ^ (fintype.card σ - i))
+-/
+
+universe u
+lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
+  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
+  (finset.powerset_len (n - m) finset.univ).sum
+    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) := 
+begin
+  simp_rw [sub_eq_neg_add, ← polynomial.C_neg, ← pi.neg_apply],
+  rw finprod_eq_prod_of_fintype,
+  rw mv_polynomial.prod_X_add_C_eval,
+  simp only [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
+
+  -- (λ (x : finset (fin n)), x.prod (λ (x : fin n), -⇑polynomial.C (b x))) * polynomial.X ^ (n - b_1)).coeff m
+  sorry
+end
+
 
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
@@ -228,7 +250,17 @@ begin
       exact hm', },
     rw function.comp_apply,
     exact root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1 _ hm, },
-  { sorry }
+  { apply csupr_le,
+    intros m,
+    by_cases hm : m < p.nat_degree,
+    { rw spectral_value_terms_of_lt_nat_degree _ hm,
+      have h : 0 < (p.nat_degree - m : ℝ) := sorry,
+      rw [← nnreal.rpow_le_rpow_iff h, ← nnreal.rpow_mul, one_div_mul_cancel (ne_of_gt h),
+        nnreal.rpow_one, ← nat.cast_sub (le_of_lt hm), nnreal.rpow_nat_cast],
+
+      sorry },
+    { rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
+      exact zero_le _, }}
 end
 
 end bdd_by_spectral_value
