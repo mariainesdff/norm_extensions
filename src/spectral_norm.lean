@@ -1,7 +1,6 @@
 import rank_one_valuation
 import normed_space
 import data.list.min_max
-import field_theory.minpoly
 import field_theory.normal
 import topology.algebra.valuation
 import ring_theory.polynomial.vieta
@@ -278,10 +277,14 @@ spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
 
 variable (y : L)
 
--- We first assume that the extension is finite
+-- We first assume that the extension is finite and normal
 section finite
 
 variable (h_fin : finite_dimensional K L)
+
+section normal
+
+variable (hn : normal K L)
 
 lemma spectral_value.is_pow_mult_of_fd : is_pow_mult (spectral_norm h_alg) :=
 begin
@@ -312,7 +315,11 @@ begin
   rw [minpoly.aeval],
 end
 
-@[simp] lemma minpoly_eq_of_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
+@[simp] lemma minpoly.aeval_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
+  (polynomial.aeval (σ x)) (minpoly K x) = 0 :=
+by rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, minpoly.aeval, map_zero]
+
+@[simp] lemma minpoly.eq_of_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
   minpoly K (σ x) = minpoly K x := 
 begin
   have h_dvd : minpoly K x ∣ minpoly K (σ x),
@@ -321,23 +328,118 @@ begin
     nth_rewrite 0 ← hx,
     rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, minpoly.aeval, map_zero] },
   have h_deg : (minpoly K (σ x)).nat_degree ≤ (minpoly K x).nat_degree,
-  { have h_eval : (polynomial.aeval (σ x)) (minpoly K x) = 0,
-    { rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, minpoly.aeval,
-        map_zero] },
-    apply polynomial.nat_degree_le_nat_degree (minpoly.degree_le_of_ne_zero K _ 
-      (minpoly.ne_zero (is_algebraic_iff_is_integral.mp (h_alg _))) h_eval) },
+  { apply polynomial.nat_degree_le_nat_degree (minpoly.degree_le_of_ne_zero K _ (minpoly.ne_zero 
+    (is_algebraic_iff_is_integral.mp (h_alg _))) (minpoly.aeval_conj h_alg σ x)) },
   exact polynomial.eq_of_monic_of_dvd_of_nat_degree_le
     (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
     (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _))) h_dvd h_deg,
 end
 
+
 lemma spectral_value.aut_isom_of_fd (σ : L ≃ₐ[K] L) (x : L) : 
   spectral_norm h_alg x = spectral_norm h_alg (σ x) :=
-by simp only [spectral_norm, minpoly_eq_of_conj h_alg]
+by simp only [spectral_norm, minpoly.eq_of_conj h_alg]
 
-section normal
 
-variable (hn : normal K L)
+
+lemma minpoly.eq_of_root (h_alg : algebra.is_algebraic K L) {x y : L}
+ (h_ev : (polynomial.aeval y) (minpoly K x) = 0) : minpoly K y = minpoly K x  := 
+polynomial.eq_of_monic_of_associated
+   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
+   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
+   (irreducible.associated_of_dvd
+    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
+    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
+    (minpoly.dvd K y h_ev))
+
+section alg_equiv
+
+variables {S A B C: Type*} [comm_semiring S] [semiring A] [semiring B] [semiring C] [algebra S A]
+  [algebra S B] [algebra S C]
+
+def alg_equiv.comp (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) : A ≃ₐ[S] C :=
+{ to_fun    := g.to_fun ∘ f.to_fun,
+  inv_fun   := f.inv_fun ∘ g.inv_fun,
+  left_inv  :=  λ x, by simp only [alg_equiv.inv_fun_eq_symm, alg_equiv.to_fun_eq_coe,
+    function.comp_app, alg_equiv.symm_apply_apply],
+  right_inv := λ x, by simp only [alg_equiv.to_fun_eq_coe, alg_equiv.inv_fun_eq_symm,
+    function.comp_app, alg_equiv.apply_symm_apply],
+  map_mul'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_mul],
+  map_add'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_add],
+  commutes' := λ x, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, alg_equiv.commutes] }
+
+lemma alg_equiv.comp_apply (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) (x : A) : f.comp g x = g (f x) := rfl
+
+end alg_equiv
+
+def foo {p q : K[X]} (h_eq : p = q) :
+  adjoin_root p ≃ₐ[K] adjoin_root q :=
+alg_equiv.of_alg_hom (adjoin_root.lift_hom p (adjoin_root.root q) (by 
+  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self])) 
+  (adjoin_root.lift_hom q (adjoin_root.root p) (by
+  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self]))
+  (by sorry) (by sorry)
+
+lemma bar' (p q : K[X]) (h_eq : p = q) :
+  foo h_eq (adjoin_root.root p) = adjoin_root.root q :=
+begin
+  rw [foo],
+  rw alg_equiv.of_alg_hom,
+  simp only [alg_equiv.coe_mk, adjoin_root.lift_hom_root],
+end
+
+  /- { to_fun    := 
+    begin
+      apply adjoin_root.lift,
+    sorry,
+    end,
+    inv_fun   :=  sorry,
+    left_inv  := sorry,
+    right_inv := sorry,
+    map_mul'  := sorry,
+    map_add'  := sorry,
+    commutes' := sorry } -/
+
+
+def minpoly.alg_equiv (hn : normal K L) {x y : L} (h_mp : minpoly K y = minpoly K x) :
+  K⟮x⟯ ≃ₐ[K] K⟮y⟯ := 
+alg_equiv.comp ((intermediate_field.adjoin_root_equiv_adjoin K (normal.is_integral hn x)).symm)
+  (alg_equiv.comp (by rw h_mp) (intermediate_field.adjoin_root_equiv_adjoin K
+    (normal.is_integral hn y)))
+
+lemma minpoly.alg_equiv_apply (hn : normal K L) {x y : L} (h_mp : minpoly K y = minpoly K x) :
+  minpoly.alg_equiv hn h_mp ((intermediate_field.adjoin_simple.gen K x)) =
+    (intermediate_field.adjoin_simple.gen K y) := 
+begin
+  simp only [minpoly.alg_equiv],
+  rw alg_equiv.comp_apply,
+  rw ← intermediate_field.adjoin_root_equiv_adjoin_apply_root K (normal.is_integral hn x),
+  simp only [alg_equiv.symm_apply_apply],
+  simp only [eq_mpr_eq_cast],
+  rw alg_equiv.comp_apply,
+  have he : (adjoin_root.root (minpoly K x)) == adjoin_root.root (minpoly K y),
+  { rw h_mp, },
+  have h : (adjoin_root (minpoly K x) ≃ₐ[K] adjoin_root (minpoly K x)) = (adjoin_root (minpoly K x) ≃ₐ[K] adjoin_root (minpoly K y)),
+  { by rw h_mp },
+  have : ((cast h alg_equiv.refl) (adjoin_root.root (minpoly K x))) = 
+    adjoin_root.root (minpoly K y),
+  { sorry,
+   },
+   rw this,
+  rw intermediate_field.adjoin_root_equiv_adjoin_apply_root K (normal.is_integral hn _),
+end
+
+lemma minpoly.conj_of_root (h_alg : algebra.is_algebraic K L) (hn : normal K L) {x y : L}
+ (h_ev : (polynomial.aeval y) (minpoly K x) = 0) : ∃ (σ : L ≃ₐ[K] L), σ x = y  := 
+begin
+  set f : K⟮x⟯ ≃ₐ[K] K⟮y⟯ := minpoly.alg_equiv hn (minpoly.eq_of_root h_alg h_ev),
+  set h : L ≃ₐ[K] L := alg_equiv.lift_normal' L f,
+  use alg_equiv.lift_normal' L f,
+  simp_rw ← intermediate_field.adjoin_simple.algebra_map_gen K x,
+  rw alg_equiv.lift_normal_commutes' L f,
+  rw minpoly.alg_equiv_apply,
+  rw intermediate_field.adjoin_simple.algebra_map_gen K y,
+end
 
 lemma spectral_value.unique_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
@@ -374,15 +476,6 @@ begin
   sorry
 end
 
-/- lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
-begin
-  have h_lr: list.range 1 = [0] := rfl,
-  rw [spectral_norm, spectral_value, minpoly.zero, polynomial.nat_degree_X, h_lr],
-  simp only [list.map],
-  rw [polynomial.coeff_X_zero, norm_zero, nat.cast_one, nat.cast_zero, sub_zero, div_one,
-    real.rpow_one, list.foldr_cons, list.foldr_nil, max_eq_right (le_refl _)],
-end -/
-
 lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
 begin
   have h_lr: list.range 1 = [0] := rfl,
@@ -396,9 +489,6 @@ begin
   apply_instance,
 end
 
-/- lemma spectral_norm_zero_le (y : L) : 0 ≤ spectral_norm h_alg y := 
-spectral_value_zero_le _ -/
-
 lemma spectral_norm_zero_lt {y : L} (hy : y ≠ 0) : 0 < spectral_norm h_alg y := 
 begin
   rw lt_iff_le_and_ne,
@@ -406,8 +496,11 @@ begin
   rw [spectral_norm, ne.def, eq_comm, spectral_value_eq_zero_iff],
   have h0 : polynomial.coeff (minpoly K y) 0 ≠ 0  :=
   minpoly.coeff_zero_ne_zero (is_algebraic_iff_is_integral.mp (h_alg y)) hy,
-  sorry,
-
+  intro h,
+  have h0' : (minpoly K y).coeff 0 = 0,
+  { rw [h, polynomial.coeff_X_pow,
+      if_neg (ne_of_lt ( minpoly.nat_degree_pos (is_algebraic_iff_is_integral.mp (h_alg y))))] },
+  exact h0 h0',
 end
 
 lemma spectral_norm_nonarchimedean (x y : L) (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
