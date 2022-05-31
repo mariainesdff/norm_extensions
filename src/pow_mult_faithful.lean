@@ -17,8 +17,6 @@ lemma is_algebra_norm.restriction (A : subalgebra R S) {g : R → ℝ≥0} (hg :
       ← add_submonoid_class.coe_eq_zero] at hx, exact hf_an.to_is_norm.ne_zero _ hx})⟩,
      λ r x, hf_an.smul _ _⟩
 
-
-
 -- Proposition 3.1.5/1
 lemma eq_of_pow_mult_faithful {g : R → ℝ≥0} (hg : is_mul_norm g) {f₁ : S → ℝ≥0}
   (hf₁_pm : is_pow_mult f₁) (hf₁_an : is_algebra_norm (hg.to_is_norm) f₁) {f₂ : S → ℝ≥0}
