@@ -50,7 +50,7 @@ structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminor
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
 
 structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
-(mul_eq : ∀ a b, f (a * b) ≤ f a * f b)
+(mul_eq : ∀ a b, f (a * b) = f a * f b)
 
 structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=

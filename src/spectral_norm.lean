@@ -1,5 +1,6 @@
 import rank_one_valuation
 import normed_space
+import power_mult_seminorm
 import data.list.min_max
 import field_theory.normal
 import topology.algebra.valuation
@@ -224,7 +225,6 @@ begin
   sorry
 end
 
-
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
 lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
@@ -264,56 +264,48 @@ end
 
 end bdd_by_spectral_value
 
-/- In this section we prove Theorem 3.2.1/2 from BGR. -/
+section alg_equiv
 
-section spectral_norm
+variables {S A B C: Type*} [comm_semiring S] [semiring A] [semiring B] [semiring C] [algebra S A]
+  [algebra S B] [algebra S C]
+
+def alg_equiv.comp (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) : A ≃ₐ[S] C :=
+{ to_fun    := g.to_fun ∘ f.to_fun,
+  inv_fun   := f.inv_fun ∘ g.inv_fun,
+  left_inv  :=  λ x, by simp only [alg_equiv.inv_fun_eq_symm, alg_equiv.to_fun_eq_coe,
+    function.comp_app, alg_equiv.symm_apply_apply],
+  right_inv := λ x, by simp only [alg_equiv.to_fun_eq_coe, alg_equiv.inv_fun_eq_symm,
+    function.comp_app, alg_equiv.apply_symm_apply],
+  map_mul'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_mul],
+  map_add'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_add],
+  commutes' := λ x, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, alg_equiv.commutes] }
+
+lemma alg_equiv.comp_apply (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) (x : A) : f.comp g x = g (f x) := rfl
+
+end alg_equiv
+
+
+section minpoly
 
 variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L)
 
--- The spectral norm |y|_sp is the spectral value of the minimal polynomial of y over K.
-def spectral_norm (y : L) : nnreal :=
-spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
+def adjoin_root.id_alg_equiv {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
+  adjoin_root p ≃ₐ[K] adjoin_root q :=
+alg_equiv.of_alg_hom (adjoin_root.lift_hom p (adjoin_root.root q) (by 
+  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self])) 
+  (adjoin_root.lift_hom q (adjoin_root.root p) (by
+  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self]))
+  (power_basis.alg_hom_ext (adjoin_root.power_basis hq) (by
+    rw [adjoin_root.power_basis_gen hq, alg_hom.coe_comp, function.comp_app, 
+      adjoin_root.lift_hom_root, adjoin_root.lift_hom_root, alg_hom.coe_id, id.def]))
+  (power_basis.alg_hom_ext (adjoin_root.power_basis hp) (by
+    rw [adjoin_root.power_basis_gen hp, alg_hom.coe_comp, function.comp_app,
+      adjoin_root.lift_hom_root, adjoin_root.lift_hom_root, alg_hom.coe_id, id.def]))
 
-variable (y : L)
-
--- We first assume that the extension is finite and normal
-section finite
-
-variable (h_fin : finite_dimensional K L)
-
-section normal
-
-variable (hn : normal K L)
-
-lemma spectral_value.is_pow_mult_of_fd : is_pow_mult (spectral_norm h_alg) :=
-begin
-  sorry
-end
-
-lemma spectral_value.is_algebra_norm_of_fd :
-  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
-begin
-  sorry
-end
-
-lemma spectral_value.is_nonarchimedean_of_fd : is_nonarchimedean (spectral_norm h_alg) :=
-begin
-  sorry
-end
-
-lemma spectral_value.extends_norm_of_fd : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
-begin
-  sorry
-end
-
-lemma spectral_value.ge_norm_of_fd {f : L → nnreal} (hf_pm : is_pow_mult f)
-  (hf_u : is_ultrametric f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
-  (hf1 : is_norm_le_one_class f) (x : L) : f x ≤ spectral_norm h_alg x :=
-begin
-  apply root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1,
-  rw [minpoly.aeval],
-end
+lemma adjoin_root.id_alg_equiv_apply_root {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
+  adjoin_root.id_alg_equiv hp hq h_eq (adjoin_root.root p) = adjoin_root.root q :=
+by rw [adjoin_root.id_alg_equiv, alg_equiv.of_alg_hom, alg_equiv.coe_mk, adjoin_root.lift_hom_root]
 
 @[simp] lemma minpoly.aeval_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
   (polynomial.aeval (σ x)) (minpoly K x) = 0 :=
@@ -335,58 +327,6 @@ begin
     (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _))) h_dvd h_deg,
 end
 
-lemma spectral_value.aut_isom_of_fd (σ : L ≃ₐ[K] L) (x : L) : 
-  spectral_norm h_alg x = spectral_norm h_alg (σ x) :=
-by simp only [spectral_norm, minpoly.eq_of_conj h_alg]
-
-lemma minpoly.eq_of_root (h_alg : algebra.is_algebraic K L) {x y : L}
- (h_ev : (polynomial.aeval y) (minpoly K x) = 0) : minpoly K y = minpoly K x  := 
-polynomial.eq_of_monic_of_associated
-   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
-   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
-   (irreducible.associated_of_dvd
-    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
-    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
-    (minpoly.dvd K y h_ev))
-
-section alg_equiv
-
-variables {S A B C: Type*} [comm_semiring S] [semiring A] [semiring B] [semiring C] [algebra S A]
-  [algebra S B] [algebra S C]
-
-def alg_equiv.comp (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) : A ≃ₐ[S] C :=
-{ to_fun    := g.to_fun ∘ f.to_fun,
-  inv_fun   := f.inv_fun ∘ g.inv_fun,
-  left_inv  :=  λ x, by simp only [alg_equiv.inv_fun_eq_symm, alg_equiv.to_fun_eq_coe,
-    function.comp_app, alg_equiv.symm_apply_apply],
-  right_inv := λ x, by simp only [alg_equiv.to_fun_eq_coe, alg_equiv.inv_fun_eq_symm,
-    function.comp_app, alg_equiv.apply_symm_apply],
-  map_mul'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_mul],
-  map_add'  := λ x y, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, map_add],
-  commutes' := λ x, by simp only [alg_equiv.to_fun_eq_coe, function.comp_app, alg_equiv.commutes] }
-
-lemma alg_equiv.comp_apply (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) (x : A) : f.comp g x = g (f x) := rfl
-
-end alg_equiv
-
-def adjoin_root.id_alg_equiv {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
-  adjoin_root p ≃ₐ[K] adjoin_root q :=
-alg_equiv.of_alg_hom (adjoin_root.lift_hom p (adjoin_root.root q) (by 
-  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self])) 
-  (adjoin_root.lift_hom q (adjoin_root.root p) (by
-  rw [h_eq, adjoin_root.aeval_eq, adjoin_root.mk_self]))
-  (power_basis.alg_hom_ext (adjoin_root.power_basis hq) (by
-    rw [adjoin_root.power_basis_gen hq, alg_hom.coe_comp, function.comp_app, adjoin_root.lift_hom_root, adjoin_root.lift_hom_root,
-     alg_hom.coe_id, id.def]))
-  (power_basis.alg_hom_ext (adjoin_root.power_basis hp) (by
-    rw [adjoin_root.power_basis_gen hp, alg_hom.coe_comp, function.comp_app, adjoin_root.lift_hom_root, adjoin_root.lift_hom_root,
-     alg_hom.coe_id, id.def]))
-
-
-lemma adjoin_root.id_alg_equiv_apply_root {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
-  adjoin_root.id_alg_equiv hp hq h_eq (adjoin_root.root p) = adjoin_root.root q :=
-by rw [adjoin_root.id_alg_equiv, alg_equiv.of_alg_hom, alg_equiv.coe_mk, adjoin_root.lift_hom_root]
-
 def minpoly.alg_equiv {x y : L} (h_mp : minpoly K x = minpoly K y) : K⟮x⟯ ≃ₐ[K] K⟮y⟯ := 
 alg_equiv.comp ((intermediate_field.adjoin_root_equiv_adjoin K 
   (is_algebraic_iff_is_integral.mp (h_alg _))).symm)
@@ -407,6 +347,16 @@ begin
     (is_algebraic_iff_is_integral.mp (h_alg _))],
 end
 
+lemma minpoly.eq_of_root (h_alg : algebra.is_algebraic K L) {x y : L}
+ (h_ev : (polynomial.aeval y) (minpoly K x) = 0) : minpoly K y = minpoly K x  := 
+polynomial.eq_of_monic_of_associated
+   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
+   (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg _)))
+   (irreducible.associated_of_dvd
+    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
+    (minpoly.irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
+    (minpoly.dvd K y h_ev))
+
 lemma minpoly.conj_of_root (h_alg : algebra.is_algebraic K L) (hn : normal K L) {x y : L}
  (h_ev : (polynomial.aeval x) (minpoly K y) = 0) : ∃ (σ : L ≃ₐ[K] L), σ x = y  := 
 begin
@@ -418,7 +368,93 @@ begin
     intermediate_field.adjoin_simple.algebra_map_gen K y],
 end
 
-lemma spectral_value.unique_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
+end minpoly
+
+
+/- In this section we prove Theorem 3.2.1/2 from BGR. -/
+
+section spectral_norm
+
+variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
+(h_alg : algebra.is_algebraic K L)
+
+-- The spectral norm |y|_sp is the spectral value of the minimal polynomial of y over K.
+def spectral_norm (y : L) : nnreal :=
+spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
+
+variable (y : L)
+
+lemma spectral_norm.zero : spectral_norm h_alg (0 : L) = 0 := 
+begin
+  have h_lr: list.range 1 = [0] := rfl,
+  rw [spectral_norm, spectral_value, spectral_value_terms, minpoly.zero, polynomial.nat_degree_X],
+  convert csupr_const,
+  ext m,
+  by_cases hm : m < 1,
+  { rw [if_pos hm, nnreal.coe_eq, nat.lt_one_iff.mp hm, nat.cast_one, nat.cast_zero, sub_zero,
+      div_one, nnreal.rpow_one, polynomial.coeff_X_zero, nnnorm_zero] },
+  { rw if_neg hm },
+  apply_instance,
+end
+
+lemma spectral_norm.zero_lt {y : L} (hy : y ≠ 0) : 0 < spectral_norm h_alg y := 
+begin
+  rw lt_iff_le_and_ne,
+  refine ⟨zero_le _, _⟩,
+  rw [spectral_norm, ne.def, eq_comm, spectral_value_eq_zero_iff],
+  have h0 : polynomial.coeff (minpoly K y) 0 ≠ 0  :=
+  minpoly.coeff_zero_ne_zero (is_algebraic_iff_is_integral.mp (h_alg y)) hy,
+  intro h,
+  have h0' : (minpoly K y).coeff 0 = 0,
+  { rw [h, polynomial.coeff_X_pow,
+      if_neg (ne_of_lt ( minpoly.nat_degree_pos (is_algebraic_iff_is_integral.mp (h_alg y))))] },
+  exact h0 h0',
+end
+
+lemma spectral_norm.ge_norm {f : L → nnreal} (hf_pm : is_pow_mult f)
+  (hf_u : is_ultrametric f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
+  (hf1 : is_norm_le_one_class f) (x : L) : f x ≤ spectral_norm h_alg x :=
+begin
+  apply root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1,
+  rw [minpoly.aeval],
+end
+
+lemma spectral_norm.aut_isom (σ : L ≃ₐ[K] L) (x : L) : 
+  spectral_norm h_alg x = spectral_norm h_alg (σ x) :=
+by simp only [spectral_norm, minpoly.eq_of_conj h_alg]
+
+-- We first assume that the extension is finite and normal
+section finite
+
+variable (h_fin : finite_dimensional K L)
+
+section normal
+
+variable (hn : normal K L)
+
+lemma spectral_norm.is_pow_mult_of_fd : is_pow_mult (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.is_algebra_norm_of_fd :
+  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.is_nonarchimedean_of_fd (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
+  is_nonarchimedean (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.extends_norm_of_fd : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.unique_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
   (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
   (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x y : L), f (y - x) = f (σ (y - x)))
@@ -427,7 +463,7 @@ begin
   sorry
 end
 
-lemma spectral_value.max_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
+lemma spectral_norm.max_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) :
   spectral_norm h_alg x = supr (λ (σ : L ≃ₐ[K] L), f (σ x)) :=
@@ -443,56 +479,50 @@ end finite
 
 -- The spectral norm is a power-multiplicative K-algebra norm on L extending the norm on K.
 
-lemma spectral_norm_pow_mult (y : L) (n : ℕ) (hK : ∀ k : K, ∥ k^n ∥ = ∥ k ∥^n) :
-  spectral_norm h_alg (y^n) = spectral_norm h_alg y^n :=
-begin
-  rw spectral_norm,
-  rw spectral_norm,
-  rw spectral_value,
-  rw spectral_value,
-  sorry
-end
-
-lemma spectral_norm_zero : spectral_norm h_alg (0 : L) = 0 := 
-begin
-  have h_lr: list.range 1 = [0] := rfl,
-  rw [spectral_norm, spectral_value, spectral_value_terms, minpoly.zero, polynomial.nat_degree_X],
-  convert csupr_const,
-  ext m,
-  by_cases hm : m < 1,
-  { rw [if_pos hm, nnreal.coe_eq, nat.lt_one_iff.mp hm, nat.cast_one, nat.cast_zero, sub_zero,
-      div_one, nnreal.rpow_one, polynomial.coeff_X_zero, nnnorm_zero] },
-  { rw if_neg hm },
-  apply_instance,
-end
-
-lemma spectral_norm_zero_lt {y : L} (hy : y ≠ 0) : 0 < spectral_norm h_alg y := 
-begin
-  rw lt_iff_le_and_ne,
-  refine ⟨zero_le _, _⟩,
-  rw [spectral_norm, ne.def, eq_comm, spectral_value_eq_zero_iff],
-  have h0 : polynomial.coeff (minpoly K y) 0 ≠ 0  :=
-  minpoly.coeff_zero_ne_zero (is_algebraic_iff_is_integral.mp (h_alg y)) hy,
-  intro h,
-  have h0' : (minpoly K y).coeff 0 = 0,
-  { rw [h, polynomial.coeff_X_pow,
-      if_neg (ne_of_lt ( minpoly.nat_degree_pos (is_algebraic_iff_is_integral.mp (h_alg y))))] },
-  exact h0 h0',
-end
-
-lemma spectral_norm_nonarchimedean (x y : L) (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
-  spectral_norm h_alg (x + y) ≤ max (spectral_norm h_alg x) (spectral_norm h_alg y) :=
+lemma spectral_norm.is_pow_mult : is_pow_mult (spectral_norm h_alg) :=
 begin
   sorry
 end
 
-lemma spectral_norm_smul (k : K) (y : L) :
-  spectral_norm h_alg (k • y) ≤ ⟨∥ k ∥, norm_nonneg _⟩  * spectral_norm h_alg y :=
+lemma spectral_norm.is_norm_le_one_class : is_norm_le_one_class (spectral_norm h_alg) :=
 begin
   sorry
 end
 
-lemma spectral_norm_extends (k : K) : ∥ k ∥ = spectral_norm h_alg (algebra_map K L k) :=
+
+lemma spectral_norm.smul (k : K) (y : L) :
+  spectral_norm h_alg (k • y) ≤ ∥ k ∥₊ * spectral_norm h_alg y :=
+begin
+  sorry
+end
+
+lemma spectral_norm.is_algebra_norm :
+  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.is_nonarchimedean (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
+  is_nonarchimedean (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.extends_norm : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
+begin
+  sorry
+end
+
+lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
+  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
+  (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x y : L), f (y - x) = f (σ (y - x)))
+  (x : L) : f x = spectral_norm h_alg x :=
+begin
+  sorry
+end
+
+lemma spectral_norm.extends (k : K) : ∥ k ∥ = spectral_norm h_alg (algebra_map K L k) :=
 begin
 
   sorry
@@ -502,13 +532,15 @@ end spectral_norm
 
 section spectral_valuation
 
-variables {K : Type*} [hK : field K] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
+variables {K : Type*} [normed_field K] [complete_space K] {L : Type*} [field L] [algebra K L]
+(h_alg : algebra.is_algebraic K L)
+
+/- variables {K : Type*} [hK : field K] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
 [val : valued K Γ₀] [hv : is_rank_one val.v] [complete_space K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L) 
 
 include hK
 
---instance valued_field.to_normed_field : normed_field K := sorry
 
 --@[priority 10]
 instance valued_field.to_normed_field : normed_field K := 
@@ -522,17 +554,34 @@ instance valued_field.to_normed_field : normed_field K :=
   norm_mul'          := sorry,
   ..hK }
 
---instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry
+instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry -/
 
-lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) := sorry
-
-lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
-   (x : L) : f x = spectral_norm h_alg x := sorry
+-- Theorem 3.2.4/2 
+lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (x : L) :
+  f x = spectral_norm h_alg x := sorry
 
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
    (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
 
-instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
+lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) :=
+{ mul_eq := λ x y, begin
+    by_cases hx : 0 = spectral_norm h_alg x,
+    { sorry },
+    { set f := c_seminorm (spectral_norm.is_norm_le_one_class h_alg) hx
+        (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
+        (spectral_norm.is_pow_mult h_alg) with hf,
+      have hf_pow : is_pow_mult f := c_seminorm_is_pow_mult (spectral_norm.is_norm_le_one_class 
+        h_alg) hx (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
+        (spectral_norm.is_pow_mult h_alg),
+      have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := sorry,
+      simp only [← spectral_norm.unique' h_alg hf_pow hf_alg_norm],
+      rw [hf, c_seminorm_c_is_mult (spectral_norm.is_norm_le_one_class h_alg) hx
+        (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
+        (spectral_norm.is_pow_mult h_alg)] }
+  end
+  ..spectral_norm.is_algebra_norm h_alg }
+
+--instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
 
 end spectral_valuation

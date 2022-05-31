@@ -390,6 +390,8 @@ end
 
 end seminorm_from_bounded
 
+
+-- Prop. 1.3.2/1 from BGR
 section smoothing_seminorm
 
 variable {f}
@@ -796,8 +798,6 @@ begin
   simp_rw h_eq,
   exact smoothing_seminorm_seq_lim_is_limit hsn hf1 _
 end
-
-
 
 variable {x}
 

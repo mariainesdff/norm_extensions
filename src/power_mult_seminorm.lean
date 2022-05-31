@@ -6,6 +6,8 @@ noncomputable theory
 
 open_locale topological_space
 
+-- Proposition 1.3.2/2 in BGR
+
 variables {α : Type*} [comm_ring α] (c : α) (f : α → nnreal) (hf1 : is_norm_le_one_class f)
   (hc : 0 ≠ f c) (hsn : is_seminorm f) (hpm : is_pow_mult f)
 
