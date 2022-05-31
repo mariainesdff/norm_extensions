@@ -38,9 +38,8 @@ begin
   exact sub_eq_zero.mp (hv finset.univ (λ i, (f i - g i)) heq i (finset.mem_univ i)),
 end
 
--- TODO: add is_algebra_norm (not compiling for some reason)
 lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L) :
-  ∃ f : L → nnreal, /- is_algebra_norm (normed_ring.to_is_norm K) f ∧ -/ is_pow_mult f ∧
+  ∃ f : L → nnreal, is_algebra_norm (normed_ring.to_is_norm K) f ∧ is_pow_mult f ∧
     function_extends (λ (k : K), ∥ k ∥₊) f :=
 begin
   -- Choose a basis B = {1, e2,..., en} of the K-vector space L
@@ -140,12 +139,12 @@ begin
   { have h1 : (1 : L) = (algebra_map K L) 1 := by rw map_one,
     simp only [h1, hF_ext (1 : K), nnnorm_one], },
   use F,
-  refine ⟨/- ⟨field.is_norm_of_is_seminorm (smoothing_seminorm_is_seminorm hf_sn hf_1 hf_na)
-      ⟨(1 : L), hF_1.symm ▸ zero_ne_one⟩, _⟩, -/ smoothing_seminorm_is_pow_mult hf_sn hf_1, hF_ext⟩,
-  /- { intros k y,
+  refine ⟨⟨field.is_norm_of_is_seminorm (smoothing_seminorm_is_seminorm hf_sn hf_1 hf_na)
+      ⟨(1 : L), hF_1.symm ▸ zero_ne_one⟩, _⟩, smoothing_seminorm_is_pow_mult hf_sn hf_1, hF_ext⟩,
+  { intros k y,
     have hk : ∀ y : L, f ((algebra_map K L k) * y) = f (algebra_map K L k) * f y,
     { exact seminorm_from_bounded_of_mul_is_mul hg_bdd (hg_mul k), },
     have hfk : f ((algebra_map K L) k) = ∥k∥₊ := hf_ext k,
-    rw [hF, ← hfk, ← smoothing_seminorm_apply_of_is_mult hf_sn hf_1 hk],
-    exact smoothing_seminorm_of_mult hf_sn hf_1 hk y, }, -/
+    rw [hF, ← hfk, ← smoothing_seminorm_apply_of_is_mult hf_sn hf_1 hk, algebra.smul_def],
+    exact smoothing_seminorm_of_mult hf_sn hf_1 hk y, },
 end

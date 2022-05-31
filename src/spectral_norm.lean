@@ -393,7 +393,7 @@ alg_equiv.comp ((intermediate_field.adjoin_root_equiv_adjoin K
   (alg_equiv.comp (adjoin_root.id_alg_equiv
     (minpoly.ne_zero (is_algebraic_iff_is_integral.mp (h_alg _))) 
     (minpoly.ne_zero (is_algebraic_iff_is_integral.mp (h_alg _))) h_mp)
-    (intermediate_field.adjoin_root_equiv_adjoin K (is_algebraic_iff_is_integral.mp (h_alg _))))
+    (intermediate_field.adjoin_root_equiv_adjoin K(is_algebraic_iff_is_integral.mp (h_alg _))))
 
 lemma minpoly.alg_equiv_apply {x y : L} (h_mp : minpoly K x = minpoly K y) :
   minpoly.alg_equiv h_alg h_mp ((intermediate_field.adjoin_simple.gen K x)) =
