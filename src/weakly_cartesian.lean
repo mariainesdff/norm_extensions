@@ -9,23 +9,14 @@ def is_weakly_cartesian : Prop :=
 --Prop. 2.3.3/4
 lemma is_weakly_cartesian_over_complete_of_fd [complete_space K] (h : finite_dimensional K V) : 
   is_weakly_cartesian K V := 
-begin
-  unfreezingI{
-  induction hn : finite_dimensional.finrank K V using nat.strong_rec' with n IH hn generalizing V,
-  { intros U hU,
-    by_cases hU_dim : finite_dimensional.finrank K U < n,
-    { specialize IH (finite_dimensional.finrank K U) hU_dim U hU rfl,
-      haveI hV_compl : complete_space V := finite_dimensional.complete K V,
-      exact is_complete.is_closed (submodule.complete_of_finite_dimensional U), },
-    { have hdim : finite_dimensional.finrank K ↥U = finite_dimensional.finrank K V,
-      { rw ← hn at hU_dim,
-        exact eq_of_le_of_not_lt U.finrank_le hU_dim },
-      rw finite_dimensional.eq_top_of_finrank_eq hdim,
-      exact submodule.closed_of_finite_dimensional _, }}}
-end
+λ U hU, submodule.closed_of_finite_dimensional _
 
 lemma is_weakly_cartesian_over_complete [complete_space K] : 
-  is_weakly_cartesian K V := sorry
+  is_weakly_cartesian K V :=
+by { introsI U hU, exact submodule.closed_of_finite_dimensional U }
 
 instance is_complete_of_fd_over_complete [complete_space K] (h : finite_dimensional K V): 
-  complete_space V := sorry
+  complete_space V := 
+finite_dimensional.complete K V
+
+-- TODO: probably won't need is_weakly_cartesian, since these lemmas are essentially in mathlib
