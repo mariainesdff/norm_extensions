@@ -582,9 +582,8 @@ begin
             exact (add_pos_of_nonneg_of_pos (zero_le _) (nnreal.half_pos hε)), },
           rw [heq, ← tsub_le_iff_left],
           nth_rewrite 2 ← mul_one (L + ⟨ε, _⟩ / 2),
-          sorry,
-          /- rw [mul_assoc, ← mul_tsub, mul_comm, ← le_div_iff₀ hL0, div_div_eq_div_mul],
-          exact hm2 n (le_trans (le_max_right m1 m2) hn), -/ },
+          rw [mul_assoc, ← mul_tsub, mul_comm, ← le_div_iff₀ hL0, div_div],
+          exact hm2 n (le_trans (le_max_right m1 m2) hn) },
       calc f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)) + n % m1)) ^ (1 / (n : ℝ)) = 
               f (x ^ ((m1 : ℕ) * (n /(m1 : ℕ))) * x ^(n % m1)) ^ (1 / (n : ℝ)) : by rw pow_add
         ... ≤ (f (x ^ ((m1 : ℕ) * (n / (m1 : ℕ)))) * f (x ^(n % m1))) ^ (1 / (n : ℝ)) :

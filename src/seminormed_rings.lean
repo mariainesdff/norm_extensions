@@ -155,9 +155,6 @@ end
 
 /- f ((finset.range n).sum (λ (i : ℕ), g i) -/
 
-lemma is_nonarchimedean_finset_range_add_le {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
-  (hna : is_nonarchimedean f) (n : ℕ) (g : ℕ → α) : ∃ (m : ℕ) (hm : 0 < n → m < n),
-  f ((finset.range n).sum (λ (i : ℕ), g i)) ≤ f (g m) := sorry
 
 lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
   (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
@@ -189,6 +186,15 @@ begin
           apply le_trans (hna _ _),
           rw h0,
           exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩, }}} 
+end
+
+lemma is_nonarchimedean_finset_range_add_le {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) (n : ℕ) (g : ℕ → α) : ∃ (m : ℕ) (hm : 0 < n → m < n),
+  f ((finset.range n).sum g) ≤ f (g m) :=
+begin
+  obtain ⟨m, hm, h⟩ := is_nonarchimedean_finset_image_add hf0 hna g (finset.range n),
+  rw [finset.nonempty_range_iff, ← zero_lt_iff, finset.mem_range] at hm,
+  exact ⟨m, hm, h⟩,
 end
 
 lemma is_nonarchimedean_add_pow {α : Type*} [comm_ring α] {f : α → nnreal} (hsn : is_seminorm f)
