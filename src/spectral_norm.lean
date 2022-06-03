@@ -210,19 +210,58 @@ finset.univ.prod (λ (i : σ), ⇑polynomial.C (r i) + polynomial.X) =
  (finset.range (fintype.card σ + 1)).sum (λ (i : ℕ), (finset.powerset_len i finset.univ).sum (λ (t : finset σ), t.prod (λ (i : σ), ⇑polynomial.C (r i))) * polynomial.X ^ (fintype.card σ - i))
 -/
 
-universe u
+lemma polynomial.C_finset_add {α : Type*} (s : finset α) (b : α → K) :
+  s.sum (λ (x : α), polynomial.C (b x)) = polynomial.C (s.sum  b) := 
+begin
+  classical,
+  apply s.induction_on,
+  { simp only [finset.sum_empty, map_zero] },
+  { intros a s ha hs,
+    rw [finset.sum_insert ha, finset.sum_insert ha, hs, polynomial.C_add], }
+end
+
+lemma polynomial.C_finset_prod {α : Type*} (s : finset α) (b : α → K) :
+  s.prod (λ (x : α), polynomial.C (b x)) = polynomial.C (s.prod  b) := 
+begin
+  classical,
+  apply s.induction_on,
+  { simp only [finset.prod_empty, map_one] },
+  { intros a s ha hs,
+    rw [finset.prod_insert ha, finset.prod_insert ha, hs, polynomial.C_mul], }
+end
+
+
 lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
   {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
   (finset.powerset_len (n - m) finset.univ).sum
     (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) := 
 begin
   simp_rw [sub_eq_neg_add, ← polynomial.C_neg, ← pi.neg_apply],
-  rw finprod_eq_prod_of_fintype,
-  rw mv_polynomial.prod_X_add_C_eval,
-  simp only [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
-
-  -- (λ (x : finset (fin n)), x.prod (λ (x : fin n), -⇑polynomial.C (b x))) * polynomial.X ^ (n - b_1)).coeff m
-  sorry
+  rw [finprod_eq_prod_of_fintype, mv_polynomial.prod_X_add_C_eval],
+  simp_rw [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
+  have h_coeff : ∀ (k : ℕ), ((finset.powerset_len k finset.univ).sum (λ (x : finset (fin n)), 
+    x.prod (λ (x : fin n), - polynomial.C (b x))) * polynomial.X ^ (n - k)).coeff m = 
+    if k = n - m then (finset.powerset_len (n - m) finset.univ).sum
+    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) else 0,
+  { intro k,
+    simp_rw [← polynomial.C_neg, polynomial.C_finset_prod, polynomial.C_finset_add],
+    rw polynomial.coeff_C_mul_X_pow,
+    split_ifs with h1 h2 h3,
+    { rw h2 },
+    { by_cases hk : k ≤ n,
+      { rw [h1, tsub_tsub_cancel_of_le hk, ne_self_iff_false] at h2, contradiction },
+      { rw not_le at hk,
+        have hempt : finset.powerset_len k (finset.univ : finset (fin n)) = ∅,
+        { apply finset.powerset_len_empty,
+          rw [finset.card_fin],
+          exact hk, },
+        rw [hempt, finset.sum_empty], }},
+    { rw [h3, tsub_tsub_cancel_of_le hm, ne_self_iff_false] at h1, contradiction },
+    { refl }},
+  simp_rw h_coeff,
+  rw [finset.sum_ite_eq', if_pos],
+  rw finset.mem_range,
+  linarith,
 end
 
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
@@ -508,10 +547,16 @@ begin
   sorry
 end
 
-lemma spectral_norm.extends_norm : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
+/- lemma spectral_norm.extends_norm : function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
 begin
   sorry
-end
+end -/
+
+lemma spectral_norm.extends (k : K) : ∥ k ∥₊ = spectral_norm h_alg (algebra_map K L k) :=
+begin
+
+  sorry
+end 
 
 lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
@@ -522,19 +567,15 @@ begin
   sorry
 end
 
-lemma spectral_norm.extends (k : K) : ∥ k ∥ = spectral_norm h_alg (algebra_map K L k) :=
-begin
-
-  sorry
-end 
 
 end spectral_norm
 
 section spectral_valuation
 
-variables {K : Type*} [normed_field K] [complete_space K] {L : Type*} [field L] [algebra K L]
+variables {K : Type*} [normed_field K] [complete_space K] {L : Type*} [hL: field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L)
 
+include hL
 /- variables {K : Type*} [hK : field K] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
 [val : valued K Γ₀] [hv : is_rank_one val.v] [complete_space K] {L : Type*} [field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L) 
@@ -558,8 +599,8 @@ instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))
 
 -- Theorem 3.2.4/2 
 lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (x : L) :
-  f x = spectral_norm h_alg x := sorry
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) :
+  f = spectral_norm h_alg  := sorry
 
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
    (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
@@ -567,14 +608,27 @@ lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is
 lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) :=
 { mul_eq := λ x y, begin
     by_cases hx : 0 = spectral_norm h_alg x,
-    { sorry },
+    { rw [← hx, zero_mul],
+      rw [eq_comm, (spectral_norm.is_algebra_norm h_alg).to_is_norm.zero_iff] at hx,
+      rw [hx, zero_mul, (spectral_norm.is_algebra_norm h_alg).to_is_norm.zero] },
     { set f := c_seminorm (spectral_norm.is_norm_le_one_class h_alg) hx
         (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
         (spectral_norm.is_pow_mult h_alg) with hf,
       have hf_pow : is_pow_mult f := c_seminorm_is_pow_mult (spectral_norm.is_norm_le_one_class 
         h_alg) hx (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
         (spectral_norm.is_pow_mult h_alg),
-      have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := sorry,
+      have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
+      { smul := λ k y,
+        begin
+          rw [spectral_norm.extends h_alg, algebra.smul_def, hf],
+          have h_mul : ∀ (y : L), spectral_norm h_alg ((algebra_map K L k) * y) = 
+            spectral_norm h_alg (algebra_map K L k) * spectral_norm h_alg y,
+          { intro y, rw [← spectral_norm.extends h_alg, ← algebra.smul_def],
+            exact (spectral_norm.is_algebra_norm h_alg).smul _ _ },
+          rw ← c_seminorm_apply_of_is_mult _ _ _ _ h_mul,
+          exact c_seminorm_is_mult_of_is_mult _ _ _ _ h_mul _,
+        end,
+        ..(c_seminorm_is_norm _ _ _ _ _) },
       simp only [← spectral_norm.unique' h_alg hf_pow hf_alg_norm],
       rw [hf, c_seminorm_c_is_mult (spectral_norm.is_norm_le_one_class h_alg) hx
         (spectral_norm.is_algebra_norm h_alg).to_is_norm.to_is_seminorm
@@ -582,6 +636,24 @@ lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) :=
   end
   ..spectral_norm.is_algebra_norm h_alg }
 
---instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
+
+instance spectral_norm.normed_field : normed_field L := 
+{ norm := sorry,
+  dist := sorry,
+  dist_self := sorry,
+  dist_comm := sorry,
+  dist_triangle := sorry,
+  edist := sorry,
+  edist_dist := sorry,
+  to_uniform_space := sorry,
+  uniformity_dist := sorry,
+  to_bornology := sorry,
+  cobounded_sets := sorry,
+  eq_of_dist_eq_zero := sorry,
+  dist_eq := sorry,
+  norm_mul' := sorry ,
+  ..hL}
+
+instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
 
 end spectral_valuation

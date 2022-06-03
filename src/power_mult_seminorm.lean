@@ -8,6 +8,8 @@ open_locale topological_space
 
 -- Proposition 1.3.2/2 in BGR
 
+section ring
+
 variables {α : Type*} [comm_ring α] (c : α) (f : α → nnreal) (hf1 : is_norm_le_one_class f)
   (hc : 0 ≠ f c) (hsn : is_seminorm f) (hpm : is_pow_mult f)
 
@@ -88,7 +90,6 @@ def c_seminorm : α → nnreal := λ x, c_seminorm_seq_lim hf1 hc hsn hpm x
 lemma c_seminorm_zero : c_seminorm hf1 hc hsn hpm 0 = 0 :=
 tendsto_nhds_unique (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm 0) 
   (by simpa [c_seminorm_seq_zero c hsn.zero] using tendsto_const_nhds)
-
 
 lemma c_seminorm_is_norm_one_class : is_norm_one_class (c_seminorm hf1 hc hsn hpm) :=
 begin
@@ -246,4 +247,17 @@ begin
   simpa [hterm] using filter.tendsto.mul tendsto_const_nhds hlim,
 end
 
+end ring
+
+section field
+
+variables {K : Type*} [field K] (k : K) {g : K → nnreal} (hg1 : is_norm_le_one_class g)
+  (hg_k : 0 ≠ g k) (hg_sn : is_seminorm g) (hg_pm : is_pow_mult g)
+
+lemma c_seminorm_is_norm :
+  is_norm (c_seminorm hg1 hg_k hg_sn hg_pm) :=
+field.is_norm_of_is_seminorm (c_seminorm_is_seminorm hg1 hg_k hg_sn hg_pm) 
+  ⟨k, by simpa [c_seminorm_apply_c] using hg_k⟩
+
+end field
 --#lint

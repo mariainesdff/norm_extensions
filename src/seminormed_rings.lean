@@ -56,7 +56,12 @@ structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f (a • x) = g a * f x)
 
-
+lemma is_norm.zero_iff {α : Type*} [ring α] {f : α → nnreal} (hf : is_norm f) (a : α ) :
+  f a = 0 ↔ a = 0 :=
+begin
+  refine ⟨_, λ h, by simpa [h] using hf.to_is_seminorm.zero⟩,
+  { contrapose, intro h, exact ne_of_gt (hf.ne_zero a h), },
+end
 /- lemma root_norm_le_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) {p : K[X]} (hp : p.monic) {x : L}
   (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp  -/
