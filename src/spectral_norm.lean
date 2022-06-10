@@ -400,10 +400,10 @@ lemma minpoly.conj_of_root (h_alg : algebra.is_algebraic K L) (hn : normal K L) 
  (h_ev : (polynomial.aeval x) (minpoly K y) = 0) : ∃ (σ : L ≃ₐ[K] L), σ x = y  := 
 begin
   set f : K⟮x⟯ ≃ₐ[K] K⟮y⟯ := minpoly.alg_equiv h_alg (minpoly.eq_of_root h_alg h_ev),
-  set h : L ≃ₐ[K] L := alg_equiv.lift_normal' L f,
-  use alg_equiv.lift_normal' L f,
+  set h : L ≃ₐ[K] L := alg_equiv.lift_normal f L,
+  use alg_equiv.lift_normal f L,
   simp_rw ← intermediate_field.adjoin_simple.algebra_map_gen K x,
-  rw [alg_equiv.lift_normal_commutes' L f, minpoly.alg_equiv_apply,
+  rw [alg_equiv.lift_normal_commutes f L, minpoly.alg_equiv_apply,
     intermediate_field.adjoin_simple.algebra_map_gen K y],
 end
 
