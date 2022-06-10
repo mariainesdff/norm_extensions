@@ -635,6 +635,12 @@ begin
   sorry
 end
 
+lemma spectral_norm.neg (y : L) :
+  spectral_norm h_alg (-y) = spectral_norm h_alg y :=
+begin
+  sorry
+end
+
 lemma spectral_norm.is_norm_le_one_class : is_norm_le_one_class (spectral_norm h_alg) :=
 begin
   sorry
@@ -684,7 +690,7 @@ end spectral_norm
 
 section spectral_valuation
 
-variables {K : Type*} [normed_field K] [complete_space K] {L : Type*} [hL: field L] [algebra K L]
+variables {K : Type*} [normed_field K] [complete_space K] {L : Type*} [hL : field L] [algebra K L]
 (h_alg : algebra.is_algebraic K L)
 
 include hL
@@ -748,24 +754,42 @@ lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) :=
   end
   ..spectral_norm.is_algebra_norm h_alg }
 
-
-instance spectral_norm.normed_field : normed_field L := 
-{ norm := sorry,
-  dist := sorry,
-  dist_self := sorry,
-  dist_comm := sorry,
+noncomputable! instance spectral_norm.normed_field : normed_field L := 
+{ norm      := λ (x : L), (spectral_norm h_alg x : ℝ),
+  dist      := λ (x y : L), (spectral_norm h_alg (x - y) : ℝ),
+  dist_self := λ x, by simp only [sub_self, nnreal.coe_eq_zero, spectral_norm.zero],
+  dist_comm := λ x y, by rw [nnreal.coe_eq, ← neg_sub, spectral_norm.neg h_alg],
   dist_triangle := sorry,
-  edist := sorry,
-  edist_dist := sorry,
-  to_uniform_space := sorry,
-  uniformity_dist := sorry,
-  to_bornology := sorry,
-  cobounded_sets := sorry,
-  eq_of_dist_eq_zero := sorry,
-  dist_eq := sorry,
-  norm_mul' := sorry ,
-  ..hL}
+  eq_of_dist_eq_zero := λ x y hxy,
+  begin
+    simp only [nnreal.coe_eq_zero] at hxy,
+    rw ← sub_eq_zero,
+    rw is_norm.zero_iff (spectral_norm.is_mul_norm h_alg).to_is_norm at hxy,
+    exact hxy,
+  end,
+  dist_eq := λ x y, by refl,
+  norm_mul' := λ x y,
+  begin
+    simp only [← nnreal.coe_mul, nnreal.coe_eq],
+    exact (spectral_norm.is_mul_norm h_alg).mul_eq x y,
+  end,
+  ..hL }
 
-instance spectral_norm.complete_space (h_fin : finite_dimensional K L) : complete_space L := sorry
+
+/- noncomputable! instance spectral_norm.normed_field : normed_field L := 
+{ norm      := sorry, --λ (x : L), (spectral_norm h_alg x : ℝ),
+  dist      := sorry, --λ (x y : L), (spectral_norm h_alg (x - y) : ℝ),
+  dist_self := sorry, -- λ x, by simp only [sub_self, nnreal.coe_eq_zero, spectral_norm.zero],
+  dist_comm := sorry, -- λ x y, by rw [nnreal.coe_eq, ← neg_sub, spectral_norm.neg h_alg],
+  dist_triangle := sorry,
+  eq_of_dist_eq_zero := sorry,
+  dist_eq := sorry, --λ x y, by refl,
+  norm_mul' := sorry ,
+  ..hL }
+ -/
+/- noncomputable! instance us : uniform_space L := infer_instance
+
+instance spectral_norm.complete_space (h_fin : @finite_dimensional K L _ _ _) :
+  complete_space L := sorry -/
 
 end spectral_valuation
