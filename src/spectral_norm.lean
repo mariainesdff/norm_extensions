@@ -421,6 +421,116 @@ variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 def spectral_norm (y : L) : nnreal :=
 spectral_value (minpoly.monic (is_algebraic_iff_is_integral.mp (h_alg y)))
 
+lemma spectral_value.eq_of_tower {E : Type*} [field E] [algebra K E] [algebra E L]
+  [is_scalar_tower K E L] (h_alg_E : algebra.is_algebraic K E) (h_alg_L : algebra.is_algebraic K L)
+  (x : E) : spectral_norm h_alg_E x = spectral_norm h_alg_L (algebra_map E L x) :=
+begin
+  have hx : minpoly K x = minpoly K  (algebra_map E L x),
+  { exact minpoly.eq_of_algebra_map_eq (algebra_map E L).injective 
+      (is_algebraic_iff_is_integral.mp (h_alg_E x)) rfl, },
+  simp only [spectral_norm, hx],
+end
+
+lemma splitting_field.is_algebraic (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  algebra.is_algebraic K (minpoly K x).splitting_field := 
+begin
+  exact algebra.is_algebraic_of_finite K (minpoly K x).splitting_field,
+end
+
+instance (h_alg_L : algebra.is_algebraic K L) (x : L) : comm_semiring K⟮x⟯ := infer_instance
+instance (h_alg_L : algebra.is_algebraic K L) (x : L) : semiring (minpoly K x).splitting_field := 
+infer_instance
+
+noncomputable! def adjoin_simple.map (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  ↥K⟮x⟯ → (minpoly K x).splitting_field := λ y, sorry
+
+noncomputable! def adjoin_simple.ring_hom (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  ring_hom ↥K⟮x⟯ (minpoly K x).splitting_field := 
+{ to_fun     := adjoin_simple.map h_alg_L x,
+   map_one'  := sorry,
+   map_mul'  := sorry,
+   map_zero' := sorry,
+  map_add'   := sorry }
+
+noncomputable! instance foo (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  algebra ↥K⟮x⟯ (minpoly K x).splitting_field :=
+ring_hom.to_algebra (adjoin_simple.ring_hom h_alg_L x)
+
+instance tower (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  @is_scalar_tower K ↥K⟮x⟯ (minpoly K x).splitting_field _ (foo h_alg_L x).to_has_scalar _ := sorry
+
+lemma intermediate_field.adjoin.is_algebraic (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  algebra.is_algebraic K K⟮x⟯ := λ y,
+begin
+  obtain ⟨p, hp0, hp⟩ := h_alg_L ↑y,
+  rw [subalgebra.aeval_coe, add_submonoid_class.coe_eq_zero] at hp,
+  exact ⟨p, hp0, hp⟩,
+end
+
+-- This does not find the algebra_instance right above. I think maybe it has to be a def.
+lemma spectral_value.eq_normal_fd (h_alg_L : algebra.is_algebraic K L) (x : L) (z : K⟮x⟯) :
+  spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
+    (@algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field _ _ (foo h_alg_L x) z) = 
+    spectral_norm h_alg_L (algebra_map K⟮x⟯ L z) := 
+begin
+  have h_alg : algebra.is_algebraic K K⟮x⟯ := intermediate_field.adjoin.is_algebraic h_alg_L x,
+  have h1 : spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
+    (@algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field _ _ (foo h_alg_L x) z) = spectral_norm h_alg z,
+  { rw spectral_value.eq_of_tower h_alg _ z, exact tower h_alg_L x, },
+  have h2 : spectral_norm h_alg_L (algebra_map K⟮x⟯ L z) = spectral_norm h_alg z,
+  { rw ← spectral_value.eq_of_tower _ h_alg_L z, },
+  rw [h1, ← spectral_value.eq_of_tower _ h_alg_L z],
+end
+
+-- TODO: fix this mess
+noncomputable! def splitting_field.gen (h_alg_L : algebra.is_algebraic K L) (x : L) : 
+  (minpoly K x).splitting_field := 
+begin
+  set F := K⟮x⟯ with hF,
+  set g := intermediate_field.adjoin_simple.gen K x with hg,
+  have hg_int : is_integral K g,
+  { rw [intermediate_field.adjoin_simple.is_integral_gen K x],
+    exact is_algebraic_iff_is_integral.mp (h_alg_L x) },
+
+  have h : (∀ (a : F), a ∈ {g} → is_integral K a ∧
+   polynomial.splits (algebra_map K (minpoly K g).splitting_field) (minpoly K a)),
+  { intros a ha,
+    rw finset.mem_singleton.mp ha,
+    exact ⟨hg_int, polynomial.splitting_field.splits (minpoly K g)⟩, },
+
+  have : (minpoly K g).splitting_field = (minpoly K x).splitting_field,
+  { exact congr_arg _ ( minpoly.eq_of_algebra_map_eq (algebra_map ↥K⟮x⟯ L).injective hg_int rfl), },
+  rw ← this,
+
+  set f := nonempty.some (lift_of_splits ({g} : finset F) h),
+  apply f.to_fun,
+  rw [finset.coe_singleton, ← intermediate_field.adjoin_simple_to_subalgebra_of_integral _ g hg_int],
+  exact intermediate_field.adjoin_simple.gen K g,
+end 
+--algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field (intermediate_field.adjoin_simple.gen K x)
+
+/- begin
+  set F := K⟮x⟯ with hF,
+  set g := intermediate_field.adjoin_simple.gen K x,
+  haveI : algebra K (minpoly K x).splitting_field := sorry,
+  
+  have h : (∀ (a : F), a ∈ {g} → is_integral K a ∧
+   polynomial.splits (algebra_map K L) (minpoly K a)),
+  { sorry },
+  set hs := lift_of_splits ({g} : finset F) h,
+  set f := nonempty.some (lift_of_splits ({g} : finset F) h),
+
+  let m : K⟮x⟯ →ₐ[K] ↥(algebra.adjoin K ↑{g}) := sorry,
+  exact f (m g),
+  sorry
+end -/
+
+lemma spectral_value.eq_normal_fd' (h_alg_L : algebra.is_algebraic K L) (x : L) :
+  spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
+    (splitting_field.gen h_alg_L x) = spectral_norm h_alg_L x := sorry
+
+
+
 variable (y : L)
 
 lemma spectral_norm.zero : spectral_norm h_alg (0 : L) = 0 := 
@@ -520,6 +630,8 @@ end finite
 
 lemma spectral_norm.is_pow_mult : is_pow_mult (spectral_norm h_alg) :=
 begin
+  intros x n hn,
+  rw spectral_norm,
   sorry
 end
 
