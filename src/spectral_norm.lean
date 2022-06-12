@@ -671,17 +671,6 @@ begin
     ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
   exact spectral_norm.is_pow_mult_of_fd (normal_closure.is_algebraic K E h_alg_E)
     (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) _ hn,
-  /- rw ← h_map,
-  rw ← map_pow,
-  --rw map_pow,
-  rw ← spectral_value.eq_of_tower h_alg_E h_alg,
-  rw ← spectral_value.eq_of_tower h_alg_E h_alg,
-  rw spectral_value.eq_of_tower h_alg_E (normal_closure.is_algebraic K E h_alg_E),
-  rw spectral_value.eq_of_tower h_alg_E (normal_closure.is_algebraic K E h_alg_E),
-  rw map_pow,
-  have h := spectral_norm.is_pow_mult_of_fd (normal_closure.is_algebraic K E h_alg_E)
-    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E),
-  exact h _ hn, -/
 end
 
 lemma spectral_norm.neg (y : L) :
@@ -842,5 +831,3 @@ instance spectral_norm.complete_space (h_fin : @finite_dimensional K L _ _ _) :
   complete_space L := sorry -/
 
 end spectral_valuation
-
-#lint
