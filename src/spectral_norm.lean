@@ -5,6 +5,7 @@ import data.list.min_max
 import field_theory.normal
 import topology.algebra.valuation
 import ring_theory.polynomial.vieta
+import normal_closure
 
 noncomputable theory
 
@@ -437,9 +438,9 @@ begin
   exact algebra.is_algebraic_of_finite K (minpoly K x).splitting_field,
 end
 
-instance (h_alg_L : algebra.is_algebraic K L) (x : L) : comm_semiring K⟮x⟯ := infer_instance
-instance (h_alg_L : algebra.is_algebraic K L) (x : L) : semiring (minpoly K x).splitting_field := 
-infer_instance
+--instance (h_alg_L : algebra.is_algebraic K L) (x : L) : comm_semiring K⟮x⟯ := infer_instance
+/- instance (h_alg_L : algebra.is_algebraic K L) (x : L) : semiring (minpoly K x).splitting_field := 
+infer_instance -/
 
 noncomputable! def adjoin_simple.map (h_alg_L : algebra.is_algebraic K L) (x : L) :
   ↥K⟮x⟯ → (minpoly K x).splitting_field := λ y, sorry
@@ -459,8 +460,18 @@ ring_hom.to_algebra (adjoin_simple.ring_hom h_alg_L x)
 instance tower (h_alg_L : algebra.is_algebraic K L) (x : L) :
   @is_scalar_tower K ↥K⟮x⟯ (minpoly K x).splitting_field _ (foo h_alg_L x).to_has_scalar _ := sorry
 
+--TODO: remove (the following lemma is more general)
 lemma intermediate_field.adjoin.is_algebraic (h_alg_L : algebra.is_algebraic K L) (x : L) :
   algebra.is_algebraic K K⟮x⟯ := λ y,
+begin
+  obtain ⟨p, hp0, hp⟩ := h_alg_L ↑y,
+  rw [subalgebra.aeval_coe, add_submonoid_class.coe_eq_zero] at hp,
+  exact ⟨p, hp0, hp⟩,
+end
+
+lemma intermediate_field.is_algebraic (h_alg_L : algebra.is_algebraic K L)
+  (E : intermediate_field K L) :
+  algebra.is_algebraic K E := λ y,
 begin
   obtain ⟨p, hp0, hp⟩ := h_alg_L ↑y,
   rw [subalgebra.aeval_coe, add_submonoid_class.coe_eq_zero] at hp,
@@ -530,6 +541,10 @@ lemma spectral_value.eq_normal_fd' (h_alg_L : algebra.is_algebraic K L) (x : L) 
     (splitting_field.gen h_alg_L x) = spectral_norm h_alg_L x := sorry
 
 
+lemma spectral_value.eq_normal (h_alg_L : algebra.is_algebraic K L) 
+  (E : intermediate_field K L) (x : E) :
+  spectral_norm (normal_closure.is_algebraic K E (intermediate_field.is_algebraic h_alg_L E))
+    (algebra_map E (normal_closure K E) x) = spectral_norm h_alg_L (algebra_map E L x) := sorry
 
 variable (y : L)
 
@@ -581,7 +596,8 @@ section normal
 
 variable (hn : normal K L)
 
-lemma spectral_norm.is_pow_mult_of_fd : is_pow_mult (spectral_norm h_alg) :=
+lemma spectral_norm.is_pow_mult_of_fd (h_fin : finite_dimensional K L) (hn : normal K L) :
+  is_pow_mult (spectral_norm h_alg) :=
 begin
   sorry
 end
@@ -628,11 +644,44 @@ end finite
 
 -- The spectral norm is a power-multiplicative K-algebra norm on L extending the norm on K.
 
+/-lemma spectral_value.eq_normal (h_alg_L : algebra.is_algebraic K L) 
+  (E : intermediate_field K L) (x : E) :
+  spectral_norm (normal_closure.is_algebraic K E (intermediate_field.is_algebraic h_alg_L E))
+    (algebra_map E (normal_closure K E) x) = spectral_norm h_alg_L (algebra_map E L x) := sorry
+    
+  lemma spectral_value.eq_of_tower {E : Type*} [field E] [algebra K E] [algebra E L]
+  [is_scalar_tower K E L] (h_alg_E : algebra.is_algebraic K E) (h_alg_L : algebra.is_algebraic K L)
+  (x : E) : spectral_norm h_alg_E x = spectral_norm h_alg_L (algebra_map E L x) :=  -/
+
+lemma spectral_value.eq_normal' (h_alg_L : algebra.is_algebraic K L) 
+  {E : intermediate_field K L} {x : L} (g : E) (h_map : algebra_map E L g = x) :
+  spectral_norm (normal_closure.is_algebraic K E (intermediate_field.is_algebraic h_alg_L E))
+    (algebra_map E (normal_closure K E) g) = spectral_norm h_alg_L x := sorry
+
 lemma spectral_norm.is_pow_mult : is_pow_mult (spectral_norm h_alg) :=
 begin
   intros x n hn,
-  rw spectral_norm,
-  sorry
+  set E := K⟮x⟯ with hE,
+  haveI h_fd_E : finite_dimensional K E := 
+  intermediate_field.adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg x)),
+  have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
+  set g := intermediate_field.adjoin_simple.gen K x with hg,
+  have h_map : algebra_map E L g^n = x^n := rfl,
+  rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
+    ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
+  exact spectral_norm.is_pow_mult_of_fd (normal_closure.is_algebraic K E h_alg_E)
+    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) _ hn,
+  /- rw ← h_map,
+  rw ← map_pow,
+  --rw map_pow,
+  rw ← spectral_value.eq_of_tower h_alg_E h_alg,
+  rw ← spectral_value.eq_of_tower h_alg_E h_alg,
+  rw spectral_value.eq_of_tower h_alg_E (normal_closure.is_algebraic K E h_alg_E),
+  rw spectral_value.eq_of_tower h_alg_E (normal_closure.is_algebraic K E h_alg_E),
+  rw map_pow,
+  have h := spectral_norm.is_pow_mult_of_fd (normal_closure.is_algebraic K E h_alg_E)
+    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E),
+  exact h _ hn, -/
 end
 
 lemma spectral_norm.neg (y : L) :
@@ -754,7 +803,7 @@ lemma spectral_norm.is_mul_norm : is_mul_norm (spectral_norm h_alg) :=
   end
   ..spectral_norm.is_algebra_norm h_alg }
 
-noncomputable! instance spectral_norm.normed_field : normed_field L := 
+def spectral_norm.normed_field : normed_field L := 
 { norm      := λ (x : L), (spectral_norm h_alg x : ℝ),
   dist      := λ (x y : L), (spectral_norm h_alg (x - y) : ℝ),
   dist_self := λ x, by simp only [sub_self, nnreal.coe_eq_zero, spectral_norm.zero],
@@ -793,3 +842,5 @@ instance spectral_norm.complete_space (h_fin : @finite_dimensional K L _ _ _) :
   complete_space L := sorry -/
 
 end spectral_valuation
+
+#lint
