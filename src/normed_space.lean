@@ -24,7 +24,7 @@ end
 
 -- Lemma 3.2.1./3
 
-variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]  
+variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 
 variables {ι : Type*} [fintype ι] {R : Type*} [ring R] {M : Type*} [add_comm_group M]
   [module R M] 
@@ -82,10 +82,21 @@ begin
 end
 
 lemma basis.norm_is_nonarchimedean {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι]
-  {B : basis ι K L} {i : ι} (hBi : B i = (1 : L)) :
-  is_nonarchimedean B.norm  :=
+  {B : basis ι K L} {i : ι} (hBi : B i = (1 : L))
+  (hna : ∀ (a b : K), ∥a + b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) : is_nonarchimedean B.norm  :=
 begin
-  sorry
+  intros x y,
+  simp only [basis.norm],
+  set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x + y) i∥)) with hixy_def,
+  have hxy : ∥B.equiv_fun (x + y) ixy∥₊ ≤ max (∥B.equiv_fun x ixy∥₊) (∥B.equiv_fun y ixy∥₊),
+  { rw [linear_equiv.map_add, pi.add_apply], exact hna _ _ , },
+  have hix := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥)),
+  have hiy := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
+  cases le_max_iff.mp hxy with hx hy,
+  { apply le_max_of_le_left,
+    exact le_trans hx (hix ixy), },
+  { apply le_max_of_le_right,
+    exact le_trans hy (hiy ixy), },
 end
 
 lemma basis.norm_is_bdd {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
@@ -108,21 +119,39 @@ begin
     sorry },
 end
 
+lemma basis.repr_smul {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] (B : basis ι K L)
+  (i : ι) (k : K) (y : L) : B.equiv_fun ((algebra_map K L k) * y) i = k * (B.equiv_fun y i) :=
+by rw [← smul_eq_mul, algebra_map_smul, linear_equiv.map_smul]; refl
+
 lemma basis.norm_smul {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
   {i : ι} (hBi : B i = (1 : L)) (k : K) (y : L) :
   B.norm ((algebra_map K L) k * y) = B.norm ((algebra_map K L) k) * B.norm y :=
 begin
-  rw basis.norm_extends hBi,
-  simp only [basis.norm],
-  simp only [basis.equiv_fun_apply],
-  
-  sorry
+  by_cases hk : k = 0,
+  { rw [hk, map_zero, zero_mul, B.norm_zero, zero_mul],},
+  { rw basis.norm_extends hBi,
+    simp only [basis.norm],
+    set i := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)) with hi_def,
+    have hi := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
+    set j := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥))
+      with hj_def,
+    have hj := classical.some_spec
+      (fintype.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥)),
+    have hij : ∥B.equiv_fun y i∥₊ = ∥B.equiv_fun y j∥₊,
+    { refine le_antisymm _ (hi j),
+      { specialize hj i,
+        rw ← hj_def at hj,
+        simp only [basis.repr_smul, norm_mul] at hj,
+        exact (mul_le_mul_left (lt_of_le_of_ne (norm_nonneg _)
+          (ne.symm (norm_ne_zero_iff.mpr hk)))).mp hj }},
+    rw [basis.repr_smul, nnnorm_mul, ← hi_def, ← hj_def, hij] },
 end
 
 lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
   (hB1 : ∃ i : ι, B i = (1 : L)) : Prop := false
 
-lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L) :
+lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L)
+  (hna : ∀ (a b : K), ∥a + b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) :
   ∃ f : L → nnreal, is_algebra_norm (normed_ring.to_is_norm K) f ∧ is_pow_mult f ∧
     function_extends (λ (k : K), ∥ k ∥₊) f :=
 begin
@@ -149,7 +178,7 @@ begin
   -- g extends the norm on K
   have hg_ext : function_extends (λ x : K, ∥x∥₊) g := basis.norm_extends hB1,
   -- g is nonarchimedean
-  have hg_na : is_nonarchimedean g := basis.norm_is_nonarchimedean hB1,
+  have hg_na : is_nonarchimedean g := basis.norm_is_nonarchimedean hB1 hna,
   -- g is multiplicatively bounded
   have hg_bdd : ∃ (c : nnreal) (hc : 0 < c), ∀ (x y : L), g (x * y) ≤ c * g x * g y,
   { exact basis.norm_is_bdd hB1 },

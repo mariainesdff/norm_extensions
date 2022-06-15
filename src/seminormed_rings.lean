@@ -80,8 +80,6 @@ def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*
 def is_ultrametric {α : Type*} [add_group α] (f : α → nnreal) : Prop := 
 ∀ a b, f (a - b) ≤ max (f a) (f b)
 
-
-
 lemma is_ultrametric.neg {α : Type*} [add_group α] {f : α → nnreal} (hu : is_ultrametric f) 
   (h0 : f 0 = 0) (x : α) : f (-x) = f x := 
 begin

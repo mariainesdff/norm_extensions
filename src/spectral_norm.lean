@@ -26,9 +26,8 @@ begin
     { exact le_max_of_le_right (IH hl) }}
 end
 
-def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → nnreal := 
-λ (n : ℕ), if n < p.nat_degree then 
-∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) else 0
+def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ≥0 := 
+λ (n : ℕ), if n < p.nat_degree then ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) else 0
 
 lemma spectral_value_terms_of_lt_nat_degree {p : R[X]} (hp : p.monic) {n : ℕ}
   (hn : n < p.nat_degree) : spectral_value_terms hp n = ∥ p.coeff n ∥₊^(1/(p.nat_degree - n : ℝ)) := 
@@ -324,7 +323,6 @@ lemma alg_equiv.comp_apply (f : A ≃ₐ[S] B) (g : B ≃ₐ[S] C) (x : A) : f.c
 
 end alg_equiv
 
-
 section minpoly
 
 variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
@@ -409,7 +407,6 @@ begin
 end
 
 end minpoly
-
 
 /- In this section we prove Theorem 3.2.1/2 from BGR. -/
 
