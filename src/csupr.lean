@@ -14,7 +14,6 @@ variables [nonempty ι] [cg : linear_ordered_comm_group_with_zero α]
 /- variables {α : Type*} [linear_ordered_comm_group_with_zero α] [conditionally_complete_lattice α]
 [covariant_class α α (*) (≤)]
 
-
 #exit -/
 variables {ι : Sort*} [nonempty ι] 
 
