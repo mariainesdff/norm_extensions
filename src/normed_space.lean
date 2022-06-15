@@ -4,7 +4,7 @@ import smoothing_procedure
 
 noncomputable theory
 
-open_locale big_operators
+open_locale big_operators nnreal
 
 structure is_continuous_linear_map (𝕜 : Type*) [normed_field 𝕜]
   {E : Type*} [normed_group E] [normed_space 𝕜 E]
@@ -38,6 +38,90 @@ begin
   exact sub_eq_zero.mp (hv finset.univ (λ i, (f i - g i)) heq i (finset.mem_univ i)),
 end
 
+lemma basis_one {ι : Type*} [fintype ι] [decidable_eq ι] {B : basis ι K L} {i : ι}
+  (hBi : B i = (1 : L)) (k : K) :
+  (B.equiv_fun) ((algebra_map K L) k) = λ (j : ι), if (j = i) then k else 0 := 
+begin
+  ext j,
+  apply linear_independent.eq_coords_of_eq B.linear_independent,
+  rw basis.sum_equiv_fun B (algebra_map K L k),
+  have h_sum : ∑ (j : ι), ite (j = i) k 0 • B j = ∑ (j : ι), ite (j = i) (k • B j) 0,
+  { apply finset.sum_congr (eq.refl _),
+    { rintros h -,
+      split_ifs,
+      exacts [rfl, zero_smul _ _] }},
+  rw [h_sum, algebra.algebra_map_eq_smul_one,
+    finset.sum_ite_eq' finset.univ (i : ι) (λ j : ι, k • B j)],
+  simp only [finset.mem_univ, if_true, hBi],
+end
+
+def basis.norm {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) : L → ℝ≥0 := 
+λ x, ∥B.equiv_fun x (classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥₊
+
+lemma basis.norm_zero {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) :  B.norm 0 = 0 :=
+by simp only [basis.norm, nnnorm_eq_zero, map_zero, pi.zero_apply, norm_zero]
+
+lemma basis.norm_extends {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
+  {i : ι} (hBi : B i = (1 : L)) :
+  function_extends (λ x : K, ∥x∥₊) B.norm :=
+begin
+  intro k,
+  { by_cases hk : k = 0,
+  { simp only [hk, map_zero, B.norm_zero, nnnorm_zero] },
+  { simp only [basis.norm,  basis_one hBi],
+    have h_max : (classical.some (fintype.exists_max (λ j : ι, 
+      ∥(λ (n : ι), if (n = i) then k else 0) j ∥))) = i,
+    { by_contradiction h,
+      have h_max := classical.some_spec (fintype.exists_max (λ j : ι, 
+        ∥(λ (n : ι), if (n = i) then k else 0) j ∥)),
+      simp only [if_neg h] at h_max,
+      specialize h_max i,
+      rw [if_pos rfl, norm_zero, norm_le_zero_iff] at h_max,
+      exact hk h_max },
+    rw if_pos h_max, }}
+end
+
+lemma basis.norm_is_nonarchimedean {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι]
+  {B : basis ι K L} {i : ι} (hBi : B i = (1 : L)) :
+  is_nonarchimedean B.norm  :=
+begin
+  sorry
+end
+
+lemma basis.norm_is_bdd {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
+  {i : ι} (hBi : B i = (1 : L)) : 
+  ∃ (c : nnreal) (hc : 0 < c), ∀ (x y : L), B.norm (x * y) ≤ c * B.norm x * B.norm y :=
+begin
+  set M := classical.some (fintype.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))) with hM_def,
+  have hM := classical.some_spec (fintype.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))),
+  use B.norm (B M.1 * B M.2),
+  split,
+  { have h_pos : (0 : nnreal) < B.norm (B i * B i),
+    { have h1 : (1 : L) = (algebra_map K L) 1 := by rw map_one,
+      rw [hBi, mul_one, h1, basis.norm_extends hBi],
+      simp only [nnnorm_one, zero_lt_one] },
+    exact lt_of_lt_of_le h_pos (hM (i, i)) },
+  { intros x y,
+    --conv_lhs{rw [← basis.sum_equiv_fun B x, ← basis.sum_equiv_fun B y]},
+    
+    --rw hg,
+    sorry },
+end
+
+lemma basis.norm_smul {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
+  {i : ι} (hBi : B i = (1 : L)) (k : K) (y : L) :
+  B.norm ((algebra_map K L) k * y) = B.norm ((algebra_map K L) k) * B.norm y :=
+begin
+  rw basis.norm_extends hBi,
+  simp only [basis.norm],
+  simp only [basis.equiv_fun_apply],
+  
+  sorry
+end
+
+lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
+  (hB1 : ∃ i : ι, B i = (1 : L)) : Prop := false
+
 lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L) :
   ∃ f : L → nnreal, is_algebra_norm (normed_ring.to_is_norm K) f ∧ is_pow_mult f ∧
     function_extends (λ (k : K), ∥ k ∥₊) f :=
@@ -46,77 +130,32 @@ begin
   classical,
   set h1 : linear_independent K (λ (x : ({1} : set L)), (x : L)) := 
   linear_independent_singleton one_ne_zero,
-  set ι := {x // x ∈  (h1.extend (set.subset_univ ({1} : set L)))} with hι,
+  set ι := {x // x ∈ (h1.extend (set.subset_univ ({1} : set L)))} with hι,
   set B : basis ι K L  := basis.extend h1 with hB,
   letI hfin : fintype ι := finite_dimensional.fintype_basis_index B,
   haveI hem : nonempty ι := B.index_nonempty,
   have h1L : (1 : L) ∈ h1.extend _,
   { apply basis.subset_extend,
     exact set.mem_singleton 1 },
+  have hB1 : B ⟨1, h1L⟩ = (1 : L),
+  { rw [basis.coe_extend, subtype.coe_mk] },
   -- For every k ∈ K, k = k • 1 + 0 • e2 + ... + 0 • en
   have h_k : ∀ (k : K), (B.equiv_fun) ((algebra_map K L) k) = λ (i : ι), 
-    if (i = ⟨(1 : L), h1L⟩) then k else 0,
-  { intro k,
-    ext i,
-    apply linear_independent.eq_coords_of_eq B.linear_independent,
-    rw basis.sum_equiv_fun B (algebra_map K L k),
-    have h_sum : ∑ (i : ι), ite (i = ⟨1, h1L⟩) k 0 • B i = ∑ (i : ι), ite (i = ⟨1, h1L⟩) (k • B i) 0,
-    { simp only [basis.coe_extend],
-      apply finset.sum_congr (eq.refl _),
-      { rintros h -,
-        split_ifs,
-        exacts [rfl, zero_smul _ _] }},
-    rw [h_sum, algebra.algebra_map_eq_smul_one],
-    simp_rw hι,
-    rw [finset.sum_ite_eq' finset.univ (⟨1, h1L⟩ : ι) (λ i : ι, k • B i), basis.coe_extend],
-    simp only [finset.mem_univ, subtype.coe_mk, if_true], },
+    if (i = ⟨(1 : L), h1L⟩) then k else 0 := basis_one hB1,
   -- Define a function g : L → ℝ≥0 by setting g (∑ki • ei) = maxᵢ ∥ ki ∥  
-  set g : L → nnreal := λ x,
-    ∥B.equiv_fun x (classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥₊ with hg,
+  set g : L → nnreal := B.norm with hg,
   -- g 0 = 0
-  have hg0 : g 0 = 0,
-  { simp only [nnnorm_eq_zero, map_zero, pi.zero_apply, norm_zero] },
+  have hg0 : g 0 = 0 := B.norm_zero,
   -- g extends the norm on K
-  have hg_ext : function_extends (λ x : K, ∥x∥₊) g,
-  { intro k,
-    { by_cases hk : k = 0,
-    { simp only [hk, map_zero, hg0, nnnorm_zero] },
-    { simp only [hg],
-      rw h_k,
-      simp_rw hι,
-      have h_max : (classical.some (fintype.exists_max (λ i : ι, 
-        ∥(λ (i : ι), if (i = ⟨(1 : L), h1L⟩) then k else 0) i ∥))) = ⟨(1 : L), h1L⟩,
-      { by_contradiction h,
-        have h_max := classical.some_spec (fintype.exists_max (λ i : ι, 
-          ∥(λ (i : ι), if (i = ⟨(1 : L), h1L⟩) then k else 0) i ∥)),
-        simp only [if_neg h] at h_max,
-        specialize h_max ⟨(1 : L), h1L⟩,
-        rw [if_pos rfl, norm_zero, norm_le_zero_iff] at h_max,
-        exact hk h_max },
-      rw if_pos h_max, }}},
+  have hg_ext : function_extends (λ x : K, ∥x∥₊) g := basis.norm_extends hB1,
   -- g is nonarchimedean
-  have hg_na : is_nonarchimedean g := sorry,
+  have hg_na : is_nonarchimedean g := basis.norm_is_nonarchimedean hB1,
   -- g is multiplicatively bounded
   have hg_bdd : ∃ (c : nnreal) (hc : 0 < c), ∀ (x y : L), g (x * y) ≤ c * g x * g y,
-  { set M := classical.some (fintype.exists_max (λ (i : ι × ι), g (B i.1 * B i.2))) with hM_def,
-    have hM := classical.some_spec (fintype.exists_max (λ (i : ι × ι), g (B i.1 * B i.2))),
-    use g (B M.1 * B M.2),
-    split,
-    { have h_pos : (0 : nnreal) < g (B ⟨(1 : L), h1L⟩ * B ⟨(1 : L), h1L⟩),
-      { have h1 : (1 : L) = (algebra_map K L) 1 := by rw map_one,
-        simp only [basis.coe_extend, subtype.coe_mk, mul_one],
-        rw [h1, hg_ext],
-        simp only [nnnorm_one,
-          ← nnreal.coe_pos, subtype.coe_mk, zero_lt_one], },
-      exact lt_of_lt_of_le h_pos (hM (⟨(1 : L), h1L⟩, ⟨(1 : L), h1L⟩)) },
-    { intros x y,
-      sorry }},
+  { exact basis.norm_is_bdd hB1 },
   -- g is a K-module norm
-  have hg_mul : ∀ (k : K) (y : L), g ((algebra_map K L) k * y) = g ((algebra_map K L) k) * g y,
-  { intros k y,
-    rw hg_ext,
-    simp only [hg],
-    sorry },
+  have hg_mul : ∀ (k : K) (y : L), g ((algebra_map K L) k * y) = g ((algebra_map K L) k) * g y :=
+  λ k y, basis.norm_smul hB1 k y,
   -- Using BGR Prop. 1.2.1/2, we can smooth g to a ring norm f on L that extends the norm on K.
   set f := seminorm_from_bounded g with hf,
   have hf_sn : is_seminorm f := seminorm_from_bounded_is_seminorm hg0 hg_bdd 
