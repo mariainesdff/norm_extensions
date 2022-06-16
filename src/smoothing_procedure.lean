@@ -261,15 +261,15 @@ begin
   apply csupr_le,
   intro z,
   rw le_max_iff,
-  suffices hf : f ((x + y) * z) / f z ≤ f (x * z) / f z ∨
-    f ((x + y) * z) / f z ≤ f (y * z) / f z,
+  suffices hf : f ((x - y) * z) / f z ≤ f (x * z) / f z ∨
+    f ((x - y) * z) / f z ≤ f (y * z) / f z,
   cases hf with hfx hfy; [left, right],
   { exact le_csupr_of_le (seminorm_from_bounded_bdd_range x f_mul) z hfx },
   { exact le_csupr_of_le (seminorm_from_bounded_bdd_range y f_mul) z hfy },
   { by_cases hz : f z = 0,
     { simp only [hz, div_zero, le_refl, or_self], },
-    { rw [div_le_div_right₀ hz, div_le_div_right₀ hz, add_mul, ← le_max_iff],
-      exact hna _ _, }}
+    { rw [div_le_div_right₀ hz, div_le_div_right₀ hz, sub_mul, ← le_max_iff],
+      exact hna _ _ }},
 end
 
 lemma seminorm_from_bounded_of_mul_apply 
@@ -769,7 +769,8 @@ end
 lemma smoothing_seminorm_is_seminorm (hna : is_nonarchimedean f) :
   is_seminorm (smoothing_seminorm hf1) :=
 { zero := smoothing_seminorm_zero hsn hf1,
-  add  := add_le_of_is_nonarchimedean (smoothing_seminorm_is_nonarchimedean hsn hf1 hna),
+  add  := add_le_of_is_nonarchimedean (smoothing_seminorm_zero hsn hf1)
+    (smoothing_seminorm_is_nonarchimedean hsn hf1 hna),
   mul  := smoothing_seminorm_mul hsn hf1 }
 
 lemma smoothing_seminorm_is_seminorm_is_norm_le_one_class : 

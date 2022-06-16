@@ -77,10 +77,10 @@ def function_extends {α : Type*} [comm_ring α] (g : α → nnreal) {β : Type*
   (f : β → nnreal) : Prop :=
 ∀ x : α, f (algebra_map α β x) = g x 
 
-def is_ultrametric {α : Type*} [add_group α] (f : α → nnreal) : Prop := 
+def is_nonarchimedean {α : Type*} [add_group α] (f : α → nnreal) : Prop := 
 ∀ a b, f (a - b) ≤ max (f a) (f b)
 
-lemma is_ultrametric.neg {α : Type*} [add_group α] {f : α → nnreal} (hu : is_ultrametric f) 
+lemma is_nonarchimedean.neg {α : Type*} [add_group α] {f : α → nnreal} (hu : is_nonarchimedean f) 
   (h0 : f 0 = 0) (x : α) : f (-x) = f x := 
 begin
   apply le_antisymm,
@@ -89,14 +89,14 @@ begin
     rw [neg_eq_zero_sub, ← max_eq_right (zero_le (f (-x))), ← h0], exact hu _ _, },
 end
 
-lemma is_ultrametric.add_le {α : Type*} [add_group α] {f : α → nnreal} (h0 : f 0 = 0)
-  (hu : is_ultrametric f) (a b : α) : f (a + b) ≤ max (f a) (f b) := 
+lemma is_nonarchimedean.add_le {α : Type*} [add_group α] {f : α → nnreal} (h0 : f 0 = 0)
+  (hu : is_nonarchimedean f) (a b : α) : f (a + b) ≤ max (f a) (f b) := 
 begin
   rw [← neg_neg b, ← sub_eq_add_neg, neg_neg, ← hu.neg h0 b], exact hu _ _,
 end
 
-def is_nonarchimedean {α : Type*} [add_monoid α] (f : α → nnreal) : Prop := 
-∀ a b, f (a + b) ≤ max (f a) (f b)
+/- def is_nonarchimedean {α : Type*} [add_monoid α] (f : α → nnreal) : Prop := 
+∀ a b, f (a + b) ≤ max (f a) (f b) -/
 
 lemma is_nonarchimedean_nmul {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
   (hna : is_nonarchimedean f) (n : ℕ) (a : α) : f (n * a) ≤ (f a) := 
@@ -104,11 +104,11 @@ begin
   induction n with n hn,
   { rw [nat.cast_zero, zero_mul, hsn.zero], exact zero_le _ },
   { rw [nat.cast_succ, add_mul, one_mul],
-    exact le_trans (hna _ _) (max_le_iff.mpr ⟨hn, le_refl _⟩), }
+    exact le_trans (is_nonarchimedean.add_le hsn.zero hna _ _) (max_le_iff.mpr ⟨hn, le_refl _⟩) }
 end
 
 lemma is_nonarchimedean_add_eq_max_of_ne {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
-  (hu : is_ultrametric f) {x y : α} (hne : f y ≠ f x) :
+  (hu : is_nonarchimedean f) {x y : α} (hne : f y ≠ f x) :
   f (x + y) = max (f x) (f y) :=
 begin
   wlog hle := le_total (f y) (f x) using [x y],
@@ -141,13 +141,14 @@ begin
   { rintros a s has ⟨M, hMs, hM⟩,
     rw [finset.sum_insert has, id.def],
     by_cases hMa : f M ≤ f a,
-    { exact ⟨a, by simp only [finset.insert_nonempty, finset.mem_insert, if_true, eq_self_iff_true,
-        true_or],
-        le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩, },
+    { refine ⟨a, by simp only [finset.insert_nonempty, finset.mem_insert, if_true, eq_self_iff_true,
+        true_or], le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+        ( max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩ },
     { rw not_le at hMa,
       by_cases hs : s.nonempty,
       { rw if_pos hs at hMs,
-        refine ⟨M, _, le_trans (hna _ _) (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
+        refine ⟨M, _, le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+          (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
         simp only [finset.insert_nonempty, finset.mem_insert, if_true],
         exact or.intro_right _ hMs, },
       { rw if_neg hs at hMs,
@@ -171,12 +172,14 @@ begin
   { rintros a s has ⟨M, hMs, hM⟩,
     rw [finset.sum_insert has],
     by_cases hMa : f (g M) ≤ f (g a),
-    { refine ⟨a, _, le_trans (hna _ _) ( max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩,
+    { refine ⟨a, _, le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+        (max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩))⟩,
       simp only [finset.nonempty_coe_sort, finset.insert_nonempty, finset.mem_insert,
         eq_self_iff_true, true_or, forall_true_left], },
     { rw not_le at hMa,
       by_cases hs : s.nonempty,
-      { refine ⟨M, _, le_trans (hna _ _) (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
+      { refine ⟨M, _, le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+          (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩)⟩,
         simp only [finset.nonempty_coe_sort, finset.insert_nonempty, finset.mem_insert,
           forall_true_left],
           exact or.intro_right _ (hMs hs) },
@@ -186,7 +189,7 @@ begin
             forall_true_left] },
           have h0 : f (s.sum g) = 0,
           { rw [finset.not_nonempty_iff_eq_empty.mp hs, finset.sum_empty, hf0],},
-          apply le_trans (hna _ _),
+          apply le_trans (is_nonarchimedean.add_le hf0 hna _ _),
           rw h0,
           exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩, }}} 
 end
@@ -214,10 +217,10 @@ begin
   exact le_trans hM (le_trans (is_nonarchimedean_nmul hsn hna _ _) (hsn.mul _ _)),
 end
 
-lemma add_le_of_is_nonarchimedean {α : Type*} [ring α] {f : α → nnreal} (hf : is_nonarchimedean f) 
-  (a b : α) : f (a + b) ≤ f a + f b :=
+lemma add_le_of_is_nonarchimedean {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) (a b : α) : f (a + b) ≤ f a + f b :=
 begin
-  apply le_trans (hf a b),
+  apply le_trans (is_nonarchimedean.add_le hf0 hna _ _),
   simp only [max_le_iff, le_add_iff_nonneg_right, zero_le', le_add_iff_nonneg_left, and_self],
 end
 

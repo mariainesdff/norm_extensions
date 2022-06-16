@@ -83,13 +83,13 @@ end
 
 lemma basis.norm_is_nonarchimedean {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι]
   {B : basis ι K L} {i : ι} (hBi : B i = (1 : L))
-  (hna : ∀ (a b : K), ∥a + b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) : is_nonarchimedean B.norm  :=
+  (hna : ∀ (a b : K), ∥a - b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) : is_nonarchimedean B.norm  :=
 begin
   intros x y,
   simp only [basis.norm],
-  set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x + y) i∥)) with hixy_def,
-  have hxy : ∥B.equiv_fun (x + y) ixy∥₊ ≤ max (∥B.equiv_fun x ixy∥₊) (∥B.equiv_fun y ixy∥₊),
-  { rw [linear_equiv.map_add, pi.add_apply], exact hna _ _ , },
+  set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x - y) i∥)) with hixy_def,
+  have hxy : ∥B.equiv_fun (x - y) ixy∥₊ ≤ max (∥B.equiv_fun x ixy∥₊) (∥B.equiv_fun y ixy∥₊),
+  { rw [linear_equiv.map_sub, pi.sub_apply], exact hna _ _ , },
   have hix := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥)),
   have hiy := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
   cases le_max_iff.mp hxy with hx hy,
@@ -113,9 +113,37 @@ begin
       simp only [nnnorm_one, zero_lt_one] },
     exact lt_of_lt_of_le h_pos (hM (i, i)) },
   { intros x y,
-    --conv_lhs{rw [← basis.sum_equiv_fun B x, ← basis.sum_equiv_fun B y]},
+    set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x*y) i∥))
+      with hixy_def,
+    conv_lhs{simp only [basis.norm],
+    rw [← hixy_def, ← basis.sum_equiv_fun B x, ← basis.sum_equiv_fun B y] },
+    rw finset.sum_mul,
+    --rw basis.equiv_fun_apply,
     
-    --rw hg,
+    have h_sum : B.equiv_fun (∑ (x_1 : ι), B.equiv_fun x x_1 • B x_1 * 
+    ∑ (i : ι), B.equiv_fun y i •  B i) ixy = 
+    ∑ (x_1 : ι), B.equiv_fun (B.equiv_fun x x_1 • B x_1 * 
+    ∑ (i : ι), B.equiv_fun y i •  B i) ixy,
+    { 
+      sorry },
+/-     have h_sum : B.repr (∑ (x_1 : ι), B.repr x x_1 • B x_1 * 
+    ∑ (i : ι), B.equiv_fun y i •  B i) ixy = 
+    ∑ (x_1 : ι), B.repr (B.equiv_fun x x_1 • B x_1 * 
+    ∑ (i : ι), B.equiv_fun y i •  B i) ixy,
+    { 
+      sorry }, -/
+    simp_rw h_sum,
+
+    /- have hj : ∃ (j : ι) (hj : finset.univ.nonempty → j ∈ finset.univ), ∥∑ (x_1 : ι), B.equiv_fun (B.equiv_fun x x_1 • B x_1 * 
+      ∑ (i : ι), B.equiv_fun y i • B i) ixy∥₊ ≤ 
+    ∥B.equiv_fun (B.equiv_fun x j • B j * ∑ (i : ι), B.equiv_fun y i • B i) ixy∥₊,
+    { apply @is_nonarchimedean_finset_image_add _ _ (λ (x : K), ∥x∥₊) (nnnorm_zero) B.equiv_fun, 
+    }, -/ 
+    
+    /- lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
+  ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := -/
+    
     sorry },
 end
 
@@ -151,7 +179,7 @@ lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
   (hB1 : ∃ i : ι, B i = (1 : L)) : Prop := false
 
 lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L)
-  (hna : ∀ (a b : K), ∥a + b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) :
+  (hna : ∀ (a b : K), ∥a - b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) :
   ∃ f : L → nnreal, is_algebra_norm (normed_ring.to_is_norm K) f ∧ is_pow_mult f ∧
     function_extends (λ (k : K), ∥ k ∥₊) f :=
 begin
@@ -188,7 +216,7 @@ begin
   -- Using BGR Prop. 1.2.1/2, we can smooth g to a ring norm f on L that extends the norm on K.
   set f := seminorm_from_bounded g with hf,
   have hf_sn : is_seminorm f := seminorm_from_bounded_is_seminorm hg0 hg_bdd 
-    (add_le_of_is_nonarchimedean hg_na),
+    (add_le_of_is_nonarchimedean hg0 hg_na),
   have hf_na : is_nonarchimedean f := seminorm_from_bounded_is_nonarchimedean hg_bdd hg_na,
   have hf_1 : is_norm_le_one_class f := seminorm_from_bounded_is_norm_le_one_class hg_bdd,
   have hf_ext : function_extends (λ x : K, ∥x∥₊) f,

@@ -141,7 +141,7 @@ polynomial.nat_degree_pos_of_aeval_root (polynomial.ne_zero_of_ne_zero_of_monic 
   ((injective_iff_map_eq_zero (algebra_map K L)).mp (algebra_map K L).injective)
 
 -- Part (1): the norm of any root of p is bounded by the spectral value of p.
-lemma root_norm_le_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
+lemma root_norm_le_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_le_one_class f)
   {p : K[X]} (hp : p.monic) {x : L} (hx : polynomial.aeval x p = 0) : f x ≤ spectral_value hp := 
 begin
@@ -179,8 +179,7 @@ begin
           rw mul_lt_mul_right (pow_pos (pos_iff_ne_zero.mpr hx0) _),
           exact hn_lt n hn }},
       have hf0 : f 0 = 0 := hf_alg_norm.to_is_norm.to_is_seminorm.zero,
-      have hna : is_nonarchimedean f := hf_u.add_le hf0,
-      obtain ⟨m, hm_in, hm⟩ := is_nonarchimedean_finset_range_add_le hf0 hna p.nat_degree 
+      obtain ⟨m, hm_in, hm⟩ := is_nonarchimedean_finset_range_add_le hf0 hf_na p.nat_degree 
         (λ (i : ℕ), p.coeff i • x ^ i),
       exact lt_of_le_of_lt hm (hn' m (hm_in h_deg)) },
     have h0 : f 0 ≠ 0,
@@ -188,7 +187,7 @@ begin
       { rw [← hx, polynomial.aeval_eq_sum_range, finset.sum_range_succ, add_comm, hp.coeff_nat_degree,
         one_smul, ← max_eq_left_of_lt h_lt],
         exact is_nonarchimedean_add_eq_max_of_ne hf_alg_norm.to_is_norm.to_is_seminorm 
-        hf_u (ne_of_lt h_lt), },
+        hf_na (ne_of_lt h_lt), },
       rw h_eq,
       exact ne_of_gt (lt_of_le_of_lt (zero_le _) h_lt) },
     exact h0 hf_alg_norm.to_is_norm.to_is_seminorm.zero, }
@@ -266,7 +265,7 @@ end
 
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
-lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_u : is_ultrametric f)
+lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_le_one_class f)
   (p : K[X]) {n : ℕ} (hn : 0 < n) (b : fin n → L)
   (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
@@ -287,7 +286,7 @@ begin
       rw [polynomial.map_alg_eq_map, polynomial.aeval_map] at hm',
       exact hm', },
     rw function.comp_apply,
-    exact root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1 _ hm, },
+    exact root_norm_le_spectral_value hf_pm hf_na hf_alg_norm hf1 _ hm, },
   { apply csupr_le,
     intros m,
     by_cases hm : m < p.nat_degree,
@@ -573,10 +572,10 @@ begin
 end
 
 lemma spectral_norm.ge_norm {f : L → nnreal} (hf_pm : is_pow_mult f)
-  (hf_u : is_ultrametric f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
+  (hf_na : is_nonarchimedean f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
   (hf1 : is_norm_le_one_class f) (x : L) : f x ≤ spectral_norm h_alg x :=
 begin
-  apply root_norm_le_spectral_value hf_pm hf_u hf_alg_norm hf1,
+  apply root_norm_le_spectral_value hf_pm hf_na hf_alg_norm hf1,
   rw [minpoly.aeval],
 end
 
