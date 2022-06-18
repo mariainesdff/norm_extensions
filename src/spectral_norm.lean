@@ -451,43 +451,6 @@ begin
   simp only [spectral_norm, hx],
 end
 
-lemma splitting_field.is_algebraic (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  algebra.is_algebraic K (minpoly K x).splitting_field := 
-begin
-  exact algebra.is_algebraic_of_finite K (minpoly K x).splitting_field,
-end
-
---instance (h_alg_L : algebra.is_algebraic K L) (x : L) : comm_semiring K⟮x⟯ := infer_instance
-/- instance (h_alg_L : algebra.is_algebraic K L) (x : L) : semiring (minpoly K x).splitting_field := 
-infer_instance -/
-
-noncomputable! def adjoin_simple.map (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  ↥K⟮x⟯ → (minpoly K x).splitting_field := λ y, sorry
-
-noncomputable! def adjoin_simple.ring_hom (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  ring_hom ↥K⟮x⟯ (minpoly K x).splitting_field := 
-{ to_fun     := adjoin_simple.map h_alg_L x,
-   map_one'  := sorry,
-   map_mul'  := sorry,
-   map_zero' := sorry,
-  map_add'   := sorry }
-
-noncomputable! instance foo (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  algebra ↥K⟮x⟯ (minpoly K x).splitting_field :=
-ring_hom.to_algebra (adjoin_simple.ring_hom h_alg_L x)
-
-instance tower (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  @is_scalar_tower K ↥K⟮x⟯ (minpoly K x).splitting_field _ (foo h_alg_L x).to_has_scalar _ := sorry
-
---TODO: remove (the following lemma is more general)
-lemma intermediate_field.adjoin.is_algebraic (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  algebra.is_algebraic K K⟮x⟯ := λ y,
-begin
-  obtain ⟨p, hp0, hp⟩ := h_alg_L ↑y,
-  rw [subalgebra.aeval_coe, add_submonoid_class.coe_eq_zero] at hp,
-  exact ⟨p, hp0, hp⟩,
-end
-
 lemma intermediate_field.is_algebraic (h_alg_L : algebra.is_algebraic K L)
   (E : intermediate_field K L) :
   algebra.is_algebraic K E := λ y,
@@ -496,69 +459,6 @@ begin
   rw [subalgebra.aeval_coe, add_submonoid_class.coe_eq_zero] at hp,
   exact ⟨p, hp0, hp⟩,
 end
-
--- This does not find the algebra_instance right above. I think maybe it has to be a def.
-lemma spectral_value.eq_normal_fd (h_alg_L : algebra.is_algebraic K L) (x : L) (z : K⟮x⟯) :
-  spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
-    (@algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field _ _ (foo h_alg_L x) z) = 
-    spectral_norm h_alg_L (algebra_map K⟮x⟯ L z) := 
-begin
-  have h_alg : algebra.is_algebraic K K⟮x⟯ := intermediate_field.adjoin.is_algebraic h_alg_L x,
-  have h1 : spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
-    (@algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field _ _ (foo h_alg_L x) z) = spectral_norm h_alg z,
-  { rw spectral_value.eq_of_tower h_alg _ z, exact tower h_alg_L x, },
-  have h2 : spectral_norm h_alg_L (algebra_map K⟮x⟯ L z) = spectral_norm h_alg z,
-  { rw ← spectral_value.eq_of_tower _ h_alg_L z, },
-  rw [h1, ← spectral_value.eq_of_tower _ h_alg_L z],
-end
-
--- TODO: fix this mess
-noncomputable! def splitting_field.gen (h_alg_L : algebra.is_algebraic K L) (x : L) : 
-  (minpoly K x).splitting_field := 
-begin
-  set F := K⟮x⟯ with hF,
-  set g := intermediate_field.adjoin_simple.gen K x with hg,
-  have hg_int : is_integral K g,
-  { rw [intermediate_field.adjoin_simple.is_integral_gen K x],
-    exact is_algebraic_iff_is_integral.mp (h_alg_L x) },
-
-  have h : (∀ (a : F), a ∈ {g} → is_integral K a ∧
-   polynomial.splits (algebra_map K (minpoly K g).splitting_field) (minpoly K a)),
-  { intros a ha,
-    rw finset.mem_singleton.mp ha,
-    exact ⟨hg_int, polynomial.splitting_field.splits (minpoly K g)⟩, },
-
-  have : (minpoly K g).splitting_field = (minpoly K x).splitting_field,
-  { exact congr_arg _ ( minpoly.eq_of_algebra_map_eq (algebra_map ↥K⟮x⟯ L).injective hg_int rfl), },
-  rw ← this,
-
-  set f := nonempty.some (lift_of_splits ({g} : finset F) h),
-  apply f.to_fun,
-  rw [finset.coe_singleton, ← intermediate_field.adjoin_simple_to_subalgebra_of_integral _ g hg_int],
-  exact intermediate_field.adjoin_simple.gen K g,
-end 
---algebra_map ↥K⟮x⟯ (minpoly K x).splitting_field (intermediate_field.adjoin_simple.gen K x)
-
-/- begin
-  set F := K⟮x⟯ with hF,
-  set g := intermediate_field.adjoin_simple.gen K x,
-  haveI : algebra K (minpoly K x).splitting_field := sorry,
-  
-  have h : (∀ (a : F), a ∈ {g} → is_integral K a ∧
-   polynomial.splits (algebra_map K L) (minpoly K a)),
-  { sorry },
-  set hs := lift_of_splits ({g} : finset F) h,
-  set f := nonempty.some (lift_of_splits ({g} : finset F) h),
-
-  let m : K⟮x⟯ →ₐ[K] ↥(algebra.adjoin K ↑{g}) := sorry,
-  exact f (m g),
-  sorry
-end -/
-
-lemma spectral_value.eq_normal_fd' (h_alg_L : algebra.is_algebraic K L) (x : L) :
-  spectral_norm (algebra.is_algebraic_of_finite K (minpoly K x).splitting_field) 
-    (splitting_field.gen h_alg_L x) = spectral_norm h_alg_L x := sorry
-
 
 lemma spectral_value.eq_normal (h_alg_L : algebra.is_algebraic K L) 
   (E : intermediate_field K L) (x : E) :
@@ -615,7 +515,7 @@ section normal
 
 variable (hn : normal K L)
 
-lemma spectral_norm.is_pow_mult_of_fd (h_fin : finite_dimensional K L) (hn : normal K L) :
+lemma spectral_norm.is_pow_mult_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) :
   is_pow_mult (spectral_norm h_alg) :=
 begin
   sorry
@@ -627,7 +527,8 @@ begin
   sorry
 end
 
-lemma spectral_norm.is_nonarchimedean_of_fd (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) :
+lemma spectral_norm.is_nonarchimedean_of_fd_normal
+  (h : is_nonarchimedean (λ k : K, ⟨∥k∥, norm_nonneg _⟩)) (hn : normal K L) :
   is_nonarchimedean (spectral_norm h_alg) :=
 begin
   sorry
@@ -663,19 +564,14 @@ end finite
 
 -- The spectral norm is a power-multiplicative K-algebra norm on L extending the norm on K.
 
-/-lemma spectral_value.eq_normal (h_alg_L : algebra.is_algebraic K L) 
-  (E : intermediate_field K L) (x : E) :
-  spectral_norm (normal_closure.is_algebraic K E (intermediate_field.is_algebraic h_alg_L E))
-    (algebra_map E (normal_closure K E) x) = spectral_norm h_alg_L (algebra_map E L x) := sorry
-    
-  lemma spectral_value.eq_of_tower {E : Type*} [field E] [algebra K E] [algebra E L]
-  [is_scalar_tower K E L] (h_alg_E : algebra.is_algebraic K E) (h_alg_L : algebra.is_algebraic K L)
-  (x : E) : spectral_norm h_alg_E x = spectral_norm h_alg_L (algebra_map E L x) :=  -/
-
 lemma spectral_value.eq_normal' (h_alg_L : algebra.is_algebraic K L) 
   {E : intermediate_field K L} {x : L} (g : E) (h_map : algebra_map E L g = x) :
   spectral_norm (normal_closure.is_algebraic K E (intermediate_field.is_algebraic h_alg_L E))
-    (algebra_map E (normal_closure K E) g) = spectral_norm h_alg_L x := sorry
+    (algebra_map E (normal_closure K E) g) = spectral_norm h_alg_L x :=
+begin
+  rw ← h_map,
+  exact spectral_value.eq_normal h_alg_L E g,
+end
 
 lemma spectral_norm.is_pow_mult : is_pow_mult (spectral_norm h_alg) :=
 begin
@@ -688,7 +584,7 @@ begin
   have h_map : algebra_map E L g^n = x^n := rfl,
   rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
     ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
-  exact spectral_norm.is_pow_mult_of_fd (normal_closure.is_algebraic K E h_alg_E)
+  exact spectral_norm.is_pow_mult_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
     (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) _ hn,
 end
 
@@ -700,34 +596,94 @@ begin
   intermediate_field.adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg y)),
   have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
   set g := intermediate_field.adjoin_simple.gen K y with hg,
-
   have hgy : k • y = (algebra_map ↥K⟮y⟯ L) (k • g) := rfl,
-  
-  rw ← spectral_value.eq_normal' h_alg g (intermediate_field.adjoin_simple.algebra_map_gen K y),
-  rw hgy,
-  rw ← spectral_value.eq_normal' h_alg (k • g) rfl,
   have h : algebra_map K⟮y⟯ (normal_closure K K⟮y⟯) (k • g) = 
     k • algebra_map K⟮y⟯ (normal_closure K K⟮y⟯) g,
   { rw [algebra.algebra_map_eq_smul_one, algebra.algebra_map_eq_smul_one, smul_assoc] },
-  rw h,
+    rw [← spectral_value.eq_normal' h_alg g (intermediate_field.adjoin_simple.algebra_map_gen K y),
+      hgy, ← spectral_value.eq_normal' h_alg (k • g) rfl, h],
   exact (spectral_norm.is_algebra_norm_of_fd (normal_closure.is_algebraic K E h_alg_E)).smul _ _,
 end
+
+lemma intermediate_field.adjoin_adjoin.finite_dimensional {x y : L} (hx : is_integral K x)
+  (hy : is_integral K y) : finite_dimensional K K⟮x, y⟯ := 
+begin
+  haveI hx_fd : finite_dimensional K K⟮x⟯ := intermediate_field.adjoin.finite_dimensional hx,
+  have hy' : is_integral K⟮x⟯ y := is_integral_of_is_scalar_tower  y hy,
+  haveI hy_fd : finite_dimensional K⟮x⟯ K⟮x⟯⟮y⟯ := intermediate_field.adjoin.finite_dimensional hy',
+  rw ← intermediate_field.adjoin_simple_adjoin_simple,
+  apply finite_dimensional.trans K K⟮x⟯ K⟮x⟯⟮y⟯,
+end
+
+lemma intermediate_field.mem_adjoin_adjoin_left (F : Type u_1) [field F] {E : Type u_2} [field E]
+  [algebra F E] (x y : E) : x ∈ F⟮x, y⟯ := 
+begin
+  rw [← intermediate_field.adjoin_simple_adjoin_simple, intermediate_field.adjoin_simple_comm],
+  exact intermediate_field.subset_adjoin F⟮y⟯ {x} (set.mem_singleton x),
+end
+
+lemma intermediate_field.mem_adjoin_adjoin_right (F : Type u_1) [field F] {E : Type u_2} [field E]
+  [algebra F E] (x y : E) : y ∈ F⟮x, y⟯ :=
+begin
+  rw ← intermediate_field.adjoin_simple_adjoin_simple,
+  exact intermediate_field.subset_adjoin F⟮x⟯ {y} (set.mem_singleton y),
+end
+
+def intermediate_field.adjoin_adjoin.gen_1 (F : Type u_1) [field F] {E : Type u_2} [field E]
+  [algebra F E] (x y : E) : F⟮x, y⟯ := 
+⟨x, intermediate_field.mem_adjoin_adjoin_left F x y⟩
+
+def intermediate_field.adjoin_adjoin.gen_2 (F : Type u_1) [field F] {E : Type u_2} [field E]
+  [algebra F E] (x y : E) : F⟮x, y⟯ :=
+⟨y, intermediate_field.mem_adjoin_adjoin_right F x y⟩
+
+@[simp]
+theorem intermediate_field.adjoin_adjoin.algebra_map_gen_1 (F : Type u_1) [field F] {E : Type u_2}
+  [field E] [algebra F E] (x y : E) : 
+  (algebra_map ↥F⟮x, y⟯ E) (intermediate_field.adjoin_adjoin.gen_1 F x y) = x := rfl
+
+@[simp]
+theorem intermediate_field.adjoin_adjoin.algebra_map_gen_2 (F : Type u_1) [field F] {E : Type u_2}
+  [field E] [algebra F E] (x y : E) : 
+  (algebra_map ↥F⟮x, y⟯ E) (intermediate_field.adjoin_adjoin.gen_2 F x y) = y := rfl
+
 
 lemma spectral_norm.mul (x y : L) :
   spectral_norm h_alg (x * y) ≤ spectral_norm h_alg x * spectral_norm h_alg y :=
 begin
-  sorry
-end
-
-lemma spectral_norm.ne_zero (x : L) (hx : x ≠ 0) : 0 < spectral_norm h_alg x :=
- begin
-  sorry
+  set E := K⟮x, y⟯ with hE,
+  haveI h_fd_E : finite_dimensional K E :=
+  intermediate_field.adjoin_adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg x))
+    (is_algebraic_iff_is_integral.mp (h_alg y)),
+  have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
+  set gx := intermediate_field.adjoin_adjoin.gen_1 K x y with hgx,
+  set gy := intermediate_field.adjoin_adjoin.gen_2 K x y with hgy,
+  have hxy : x * y = (algebra_map K⟮x, y⟯ L) (gx * gy) := rfl,
+  rw [hxy, ← spectral_value.eq_normal' h_alg (gx*gy) hxy,
+    ← spectral_value.eq_normal' h_alg gx (intermediate_field.adjoin_adjoin.algebra_map_gen_1
+    K x y), ← spectral_value.eq_normal' h_alg gy (intermediate_field.adjoin_adjoin.algebra_map_gen_2
+    K x y), map_mul],
+  exact (spectral_norm.is_algebra_norm_of_fd (normal_closure.is_algebraic K E h_alg_E)).mul _ _,
 end
 
 lemma spectral_norm.is_nonarchimedean (h : is_nonarchimedean (λ k : K, ∥k∥₊)) :
   is_nonarchimedean (spectral_norm h_alg) :=
 begin
-  sorry
+  intros x y,
+  set E := K⟮x, y⟯ with hE,
+  haveI h_fd_E : finite_dimensional K E :=
+  intermediate_field.adjoin_adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg x))
+    (is_algebraic_iff_is_integral.mp (h_alg y)),
+  have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
+  set gx := intermediate_field.adjoin_adjoin.gen_1 K x y with hgx,
+  set gy := intermediate_field.adjoin_adjoin.gen_2 K x y with hgy,
+  have hxy : x - y = (algebra_map K⟮x, y⟯ L) (gx - gy) := rfl,
+  rw [hxy, ← spectral_value.eq_normal' h_alg (gx - gy) hxy,
+    ← spectral_value.eq_normal' h_alg gx (intermediate_field.adjoin_adjoin.algebra_map_gen_1
+    K x y), ← spectral_value.eq_normal' h_alg gy (intermediate_field.adjoin_adjoin.algebra_map_gen_2
+    K x y), map_sub],
+  exact spectral_norm.is_nonarchimedean_of_fd_normal (normal_closure.is_algebraic K E h_alg_E) h
+    (normal_closure.is_normal K E h_alg_E) _ _,
 end
 
 lemma spectral_norm.is_algebra_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) :
@@ -736,10 +692,8 @@ lemma spectral_norm.is_algebra_norm (hna : is_nonarchimedean (λ k : K, ∥k∥�
   add     := add_le_of_is_nonarchimedean (spectral_norm.zero h_alg)
     (spectral_norm.is_nonarchimedean h_alg hna),
   mul     := spectral_norm.mul h_alg,
-  ne_zero := spectral_norm.ne_zero h_alg,
+  ne_zero := λ x hx, spectral_norm.zero_lt h_alg hx,
   smul    := spectral_norm.smul h_alg }
-
-
 
 lemma spectral_norm.neg (h : is_nonarchimedean (λ k : K, ∥k∥₊)) (y : L)  :
   spectral_norm h_alg (-y) = spectral_norm h_alg y :=
