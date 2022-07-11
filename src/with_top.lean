@@ -189,7 +189,6 @@ lemma nsmul_comm (m : ℕ) (q : M) (x : with_top M) :
 begin 
   rw [nsmul_mul, with_top.coe_mul, ←mul_assoc, mul_comm x, mul_assoc, nsmul_with_top],
   congr' 1,
-  norm_cast,
 end
 
 lemma mul_coe_one (x : with_top M) :

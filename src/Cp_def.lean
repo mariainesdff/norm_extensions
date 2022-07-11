@@ -15,8 +15,17 @@ variables (p : ℕ) [fact p.prime]
 lemma Q_p_alg.is_algebraic : algebra.is_algebraic ℚ_[p] (Q_p_alg p) := 
 algebraic_closure.is_algebraic _
 
+lemma padic.is_nonarchimedean : is_nonarchimedean (λ (k : ℚ_[p]), ∥k∥₊) :=
+begin
+  intros x y,
+  simp only [← nnreal.coe_le_coe, nnreal.coe_max, coe_nnnorm],
+  rw sub_eq_add_neg,
+  convert padic_norm_e.nonarchimedean x (-y) using 2,
+  rw norm_neg,
+end
+
 instance Q_p_alg.normed_field : normed_field (Q_p_alg p) := 
-spectral_norm.normed_field (Q_p_alg.is_algebraic p)
+spectral_norm.normed_field (Q_p_alg.is_algebraic p) (padic.is_nonarchimedean p)
 
 /- instance Q_p_alg.abv : is_absolute_value (Q_p_alg.normed_field p).norm :=
 normed_field.is_absolute_value -/

@@ -1,4 +1,4 @@
-import analysis.normed.normed_field
+import analysis.normed.field.basic
 import analysis.special_functions.pow
 
 noncomputable theory
@@ -23,8 +23,21 @@ lemma is_seminorm.pow_le {α : Type*} [ring α] {f : α → nnreal} (hf : is_sem
 
 def is_norm_one_class {α : Type*} [ring α] (f : α → nnreal) : Prop := f 1 = 1
 
+lemma is_norm_one_le_class_norm_one {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
+  (hf1 : is_norm_le_one_class f) : f 1 = 0 ∨ f 1 = 1 :=
+begin
+  by_cases h0 : f 1 = 0,
+  { exact or.inl h0 },
+  { have h1 : f 1 * 1 ≤ f 1 * f 1,
+    { conv_lhs{ rw ← one_mul (1 : α)},
+      convert hsn.mul 1 1,
+      rw mul_one, },
+    rw mul_le_mul_left (lt_of_le_of_ne (zero_le (f 1)) (ne.symm h0)) at h1,
+    exact or.inr (le_antisymm hf1 h1), }
+end
+
 lemma is_norm_one_class_iff_nontrivial {α : Type*} [ring α] {f : α → nnreal} (hsn : is_seminorm f)
-  (hf1 : f 1 ≤ 1) :
+  (hf1 : is_norm_le_one_class f) :
   is_norm_one_class f ↔ ∃ x : α, f x ≠ 0 :=
 begin
   rw is_norm_one_class,
@@ -38,12 +51,8 @@ begin
         apply le_trans (hsn.mul x 1) _,
         rw [hf0, mul_zero], },
       exact absurd (le_antisymm hx' (f x).2 ) hx, },
-    { have h1 : f 1 * 1 ≤ f 1 * f 1,
-      { conv_lhs{ rw ← one_mul (1 : α)},
-        convert hsn.mul 1 1,
-        rw mul_one, },
-      rw mul_le_mul_left (lt_of_le_of_ne (zero_le (f 1)) (ne.symm hf0)) at h1,
-      exact le_antisymm hf1 h1, }}
+    { cases is_norm_one_le_class_norm_one hsn hf1 with h0 h1,
+      exacts [absurd h0 hf0, h1] }}
 end
 
 structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminorm f) : Prop :=
@@ -55,6 +64,23 @@ structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_nor
 structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f (a • x) = g a * f x)
+
+lemma is_algebra_norm_extends' {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
+  {β : Type*} [ring β] [algebra α β] {f : β → nnreal} (hf : is_algebra_norm hg f) 
+  (hf1 : is_norm_one_class f) (a : α) : f (a • 1) = g a :=
+begin
+  rw is_norm_one_class at hf1,
+  rw [← mul_one (g a), ← hf1],
+  exact hf.smul _ _,
+end
+
+lemma is_algebra_norm_extends {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
+  {β : Type*} [ring β] [algebra α β] {f : β → nnreal} (hf : is_algebra_norm hg f) 
+  (hf1 : is_norm_one_class f) (a : α) : f (algebra_map α β a) = g a :=
+begin
+  rw algebra.algebra_map_eq_smul_one,
+  exact is_algebra_norm_extends' hg hf hf1 _,
+end
 
 lemma is_norm.zero_iff {α : Type*} [ring α] {f : α → nnreal} (hf : is_norm f) (a : α ) :
   f a = 0 ↔ a = 0 :=

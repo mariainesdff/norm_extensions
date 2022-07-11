@@ -93,9 +93,18 @@ lemma bar {p : ℕ} [hp : fact p.prime] : is_rank_one (val_p p) :=
   begin
     use p,
     rw [valuation.ne_zero_iff, nat.cast_ne_zero, val_p, padic.add_valuation.valuation_apply,
-      ne.def, ne.def, of_add_eq_one, padic.add_valuation.apply
-      ((@nat.cast_ne_zero ℚ_[p] _ _ _ _).mpr (nat.prime.ne_zero hp.elim)), padic.valuation_p],
-    exact ⟨nat.prime.ne_zero hp.elim, one_ne_zero⟩,
+      ne.def, ne.def, of_add_eq_one],
+    
+    --   padic.add_valuation.apply
+    -- ((@nat.cast_ne_zero ℚ_[p] _ _ _ _).mpr (nat.prime.ne_zero hp.elim)), padic.valuation_p],
+    refine ⟨nat.prime.ne_zero hp.elim, _⟩,
+    rw padic.add_valuation.apply _,
+
+    simp only [padic.valuation_p, with_top.coe_one],
+    sorry,
+    sorry,
+    --exact (nat.prime.ne_zero hp.elim),
+    --exact ⟨nat.prime.ne_zero hp.elim, one_ne_zero⟩,
   end }
 
 -- Requires choice

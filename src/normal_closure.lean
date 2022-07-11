@@ -39,7 +39,7 @@ This is the bundled version of `set.range_factorization`. -/
 
 end field_range
 
-section inclusion
+/- section inclusion
 
 noncomputable lemma intermediate_field.inclusion {K L : Type*} [field K] [field L] [algebra K L]
   {S T : intermediate_field K L} (h : S ≤ T) : (↥S →ₐ[K] ↥T) :=
@@ -50,7 +50,7 @@ noncomputable lemma intermediate_field.inclusion {K L : Type*} [field K] [field 
   map_zero' := rfl,
   commutes' := λ _, rfl }
 
-end inclusion
+end inclusion -/
 
 variables (K L : Type*) [field K] [field L] [algebra K L]
 

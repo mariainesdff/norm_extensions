@@ -233,7 +233,7 @@ finset.univ.prod (λ (i : σ), ⇑polynomial.C (r i) + polynomial.X) =
 -/
 
 lemma polynomial.C_finset_add {α : Type*} (s : finset α) (b : α → K) :
-  s.sum (λ (x : α), polynomial.C (b x)) = polynomial.C (s.sum  b) := 
+  s.sum (λ (x : α), polynomial.C (b x)) = polynomial.C (s.sum b) := 
 begin
   classical,
   apply s.induction_on,
@@ -251,7 +251,6 @@ begin
   { intros a s ha hs,
     rw [finset.prod_insert ha, finset.prod_insert ha, hs, polynomial.C_mul], }
 end
-
 
 lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
   {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
@@ -286,10 +285,28 @@ begin
   linarith,
 end
 
+lemma prod_X_add_C_nat_degree {n : ℕ} (b : fin n → L) :
+  (finset.univ.prod (λ (i : fin n), polynomial.X - polynomial.C (b i))).nat_degree = n :=
+begin
+  rw polynomial.nat_degree_prod _ _ (λ m hm, polynomial.X_sub_C_ne_zero (b m)),
+  simp only [polynomial.nat_degree_X_sub_C, finset.sum_const, finset.card_fin,
+    algebra.id.smul_eq_mul, mul_one],
+end
+
+lemma foo (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) {n : ℕ} (hn : 0 < n) (b : fin n → L)
+  {m : ℕ} (hm : m < n) :
+∃ (s : (finset.powerset_len (fintype.card (fin n) - m) (@finset.univ (fin n) _))),
+ f ((finset.powerset_len (fintype.card (fin n) - m) finset.univ).sum 
+  (λ (t : finset (fin n)), t.prod (λ (i : fin n), -b i))) ≤  f (s.val.prod (λ (i : fin n), -b i)) := 
+begin
+  sorry
+end
+
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
 lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_le_one_class f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_one_class f)
   (p : K[X]) {n : ℕ} (hn : 0 < n) (b : fin n → L)
   (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
   (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
@@ -309,16 +326,48 @@ begin
       rw [polynomial.map_alg_eq_map, polynomial.aeval_map] at hm',
       exact hm', },
     rw function.comp_apply,
-    exact root_norm_le_spectral_value hf_pm hf_na hf_alg_norm hf1 _ hm, },
+    exact root_norm_le_spectral_value hf_pm hf_na hf_alg_norm (le_of_eq hf1) _ hm, },
   { apply csupr_le,
     intros m,
     by_cases hm : m < p.nat_degree,
     { rw spectral_value_terms_of_lt_nat_degree _ hm,
-      have h : 0 < (p.nat_degree - m : ℝ) := sorry,
+      have h : 0 < (p.nat_degree - m : ℝ),
+      { rw [sub_pos, nat.cast_lt], exact hm },
       rw [← nnreal.rpow_le_rpow_iff h, ← nnreal.rpow_mul, one_div_mul_cancel (ne_of_gt h),
         nnreal.rpow_one, ← nat.cast_sub (le_of_lt hm), nnreal.rpow_nat_cast],
-
-      sorry },
+      have hpn : n = p.nat_degree,
+      { rw [← polynomial.nat_degree_map (algebra_map K L), ← polynomial.map_alg_eq_map, hp,
+          finprod_eq_prod_of_fintype, prod_X_add_C_nat_degree] },
+      have hc : ∥p.coeff m∥₊ = f (((polynomial.map_alg K L) p).coeff m),
+      { have : ∥p.coeff m∥₊ = (λ (r : K), ∥r∥₊) (p.coeff m) := rfl,
+        rw [this, ← is_algebra_norm_extends (normed_ring.to_is_norm K) hf_alg_norm hf1,
+          polynomial.map_alg_eq_map, polynomial.coeff_map] },
+        have hm_le : m ≤ fintype.card (fin n),
+        { rw [fintype.card_fin, hpn],
+          exact le_of_lt hm, },
+      rw [hc, hp, finprod_eq_prod_of_fintype],
+      simp_rw sub_eq_neg_add,
+      simp_rw ← polynomial.C_neg,
+      rw mv_polynomial.prod_X_add_C_coeff _ _ _ hm_le,
+      have : m < n,
+      { rw hpn, exact hm },
+      obtain ⟨s, hs⟩ := foo hf_pm hf_na hf_alg_norm hn b this,
+      apply le_trans hs,
+      have  h_pr: f (s.val.prod (λ (i : fin n), -b i)) ≤ s.val.prod (λ (i : fin n), f(-b i)) := 
+      sorry,
+      apply le_trans h_pr,
+      have : s.val.prod (λ (i : fin n), f (-b i)) ≤ s.val.prod (λ (i : fin n), supr (f ∘ b)),
+      { apply finset.prod_le_prod,
+        sorry,
+        sorry },
+      apply le_trans this,
+      apply le_of_eq,
+      simp only [subtype.val_eq_coe, finset.prod_const],
+      suffices h_card : (s : finset (fin n)).card = p.nat_degree - m,
+      { rw h_card },
+      have hs' := s.property,
+      simp only [subtype.val_eq_coe, fintype.card_fin, finset.mem_powerset_len] at hs',
+      rw [hs'.right, hpn], },
     { rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
       exact zero_le _, }}
 end

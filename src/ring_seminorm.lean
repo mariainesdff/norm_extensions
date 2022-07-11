@@ -1,77 +1,56 @@
 import analysis.seminorm
 
 noncomputable theory
+open_locale nnreal
 
-structure ring_seminorm (𝕜 : Type*) (E : Type*) [semi_normed_ring 𝕜] [semiring E] [has_scalar 𝕜 E]
-  extends seminorm 𝕜 E :=
+structure ring_seminorm (E : Type*) [ring E]
+  extends add_group_seminorm E :=
 (mul : ∀ x y : E, to_fun (x * y) ≤ to_fun x * to_fun y)
 
-variables {K : Type*} [semi_normed_ring K] 
-
-lemma ring_seminorm.pow_le [norm_one_class K] {R : Type*} [ring R] [module K R]
-  (f : ring_seminorm K R) (r : R) : ∀ {n : ℕ}, 0 < n → f.to_fun (r ^ n) ≤ (f.to_fun r) ^ n
+lemma ring_seminorm.pow_le {R : Type*} [ring R] 
+  (f : ring_seminorm R) (r : R) : ∀ {n : ℕ}, 0 < n → f.to_fun (r ^ n) ≤ (f.to_fun r) ^ n
 | 1 h := by simp only [pow_one]
 | (n + 2) h := 
 begin
-  simpa [pow_succ _ (n + 1)] using
-  le_trans (f.mul r _) (mul_le_mul_of_nonneg_left (ring_seminorm.pow_le n.succ_pos) (f.to_seminorm.nonneg _)),
+  sorry
+  --simpa [pow_succ _ (n + 1)] using
+  --le_trans (f.mul r _) (mul_le_mul_of_nonneg_left (ring_seminorm.pow_le n.succ_pos) (f.to_seminorm.nonneg _)),
 end
+
 /- by simpa [pow_succ _ (n + 1)] using le_trans (f.mul r _)
     (mul_le_mul_left' (f.pow_le n.succ_pos) _) -/
 
-variables {R : Type*} [ring R]
-
-instance has_scalar' : has_scalar punit R := { smul := λ r x, 0 }
-
-instance asdf : module punit R := {
-  one_smul := λ b,
-  begin
-    simp only [punit.one_eq], 
-    rw ← punit.zero_eq,
-    sorry,
-  end,
-  mul_smul := sorry,
-  smul_add := sorry,
-  smul_zero := sorry,
-  add_smul := sorry,
-  zero_smul := sorry,
-  ..has_scalar'  }
-
-def foo : ring_seminorm unit ℝ :=
-{ to_fun := λ r, ∥r∥,
-  smul' := λ r x, by { rw [punit.norm_eq_zero, zero_mul, norm_eq_zero], refl },
-  triangle' := sorry,
-  mul := sorry }
-
-#exit
-
 /-- A function `f : R → ℝ≥0` satisfies `is_norm_le_one_class` if `f 1 ≤ 1`. -/
-def is_norm_le_one_class {R : Type*} [semiring R] (f : R → ℝ≥0) : Prop := f 1 ≤ 1
+def is_norm_le_one_class {R : Type*} [semiring R] (f : R → ℝ) : Prop := f 1 ≤ 1
 
 /-- A function `f : R → ℝ≥0` satisfies `is_norm_one_class` if `f 1 = 1`. -/
-def is_norm_one_class {R : Type*} [semiring R] (f : R → ℝ≥0) : Prop := f 1 = 1
+def is_norm_one_class {R : Type*} [semiring R] (f : R → ℝ) : Prop := f 1 = 1
 
-lemma is_ring_norm_one_class_iff_nontrivial {R : Type*} [semiring R] {f : R → ℝ≥0}
-  (hsn : is_ring_seminorm f) (hf1 : f 1 ≤ 1) : is_norm_one_class f ↔ ∃ r : R, f r ≠ 0 :=
+lemma is_ring_norm_one_class_iff_nontrivial {R : Type*} [ring R] (f : ring_seminorm R)
+  (hf1 : f.to_fun 1 ≤ 1) : is_norm_one_class f.to_fun ↔ ∃ r : R, f.to_fun r ≠ 0 :=
 begin
   rw is_norm_one_class,
   refine ⟨λ h, _, λ h, _⟩,
   { use 1,
     rw h, exact one_ne_zero, },
   { obtain ⟨x, hx⟩ := h,
-    by_cases hf0 : f 1 = 0,
-    { have hx' : f x ≤ 0,
+    by_cases hf0 : f.to_fun 1 = 0,
+    { have hx' : f.to_fun x ≤ 0,
       { rw ← mul_one x,
-        apply le_trans (hsn.mul x 1) _,
+        apply le_trans (f.mul x 1) _,
         rw [hf0, mul_zero], },
-      exact absurd (le_antisymm hx' (f x).2 ) hx, },
-    { have h1 : f 1 * 1 ≤ f 1 * f 1,
+      sorry,
+      /- exact absurd (le_antisymm hx' (f.to_fun x).2 ) hx -/},
+    { have h1 : f.to_fun 1 * 1 ≤ f.to_fun 1 * f.to_fun 1,
       { conv_lhs{ rw ← one_mul (1 : R)},
-        convert hsn.mul 1 1,
+        convert f.mul 1 1,
         rw mul_one, },
-      rw mul_le_mul_left (lt_of_le_of_ne (zero_le (f 1)) (ne.symm hf0)) at h1,
-      exact le_antisymm hf1 h1, }}
+      sorry,
+      /- rw mul_le_mul_left (lt_of_le_of_ne (zero_le (f.to_fun 1)) (ne.symm hf0)) at h1,
+      exact le_antisymm hf1 h1, -/ }}
 end
+
+#exit
 
 /-- A function `f : R → ℝ≥0` is a norm if it is a seminorm and `f x = 0` implies `x = 0`. -/
 structure is_ring_norm {R : Type*} [semiring R] (f : R → ℝ≥0) extends (is_ring_seminorm f) : Prop :=

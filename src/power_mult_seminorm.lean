@@ -145,12 +145,12 @@ lemma c_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (c_seminorm hf1 hc hsn hpm)  :=
 begin
   intros x y,
-  apply le_of_tendsto_of_tendsto' (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm (x + y))
+  apply le_of_tendsto_of_tendsto' (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm (x - y))
     (filter.tendsto.max (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm x)
     (c_seminorm_seq_lim_is_limit hf1 hc hsn hpm y)),
   intro n,
-  have hmax : f ((x + y) * c ^ n) ≤ max (f (x * c ^ n)) (f (y * c ^ n)),
-  { rw add_mul, exact hna _ _ },
+  have hmax : f ((x - y) * c ^ n) ≤ max (f (x * c ^ n)) (f (y * c ^ n)),
+  { rw sub_mul, exact hna _ _ },
   rw le_max_iff at hmax ⊢,
   cases hmax; [left, right];
   exact (div_le_div_right₀ (pow_ne_zero _ (ne.symm hc))).mpr hmax,
