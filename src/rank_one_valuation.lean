@@ -83,28 +83,16 @@ lemma int.cast_add_strict_mono : strict_mono (int.cast_add_hom ℝ) := λ x y hx
 by { rw [int.coe_cast_add_hom, int.cast_lt], exact hxy }
 
 lemma bar {p : ℕ} [hp : fact p.prime] : is_rank_one (val_p p) :=
-{ rank_le_one := 
-  begin
-    use int.mulcast_hom_R,
-    intros x y hxy,
-    exact (mulcast_lt_mulcast int.cast_add_strict_mono x y).mpr hxy,
-  end,
+{ rank_le_one := ⟨int.mulcast_hom_R,
+    λ  x y hxy, (mulcast_lt_mulcast int.cast_add_strict_mono x y).mpr hxy⟩,
   nontrivial := 
   begin
+    have h0 : (p : ℚ_[p]) ≠ 0 := nat.cast_ne_zero.mpr hp.elim.ne_zero,
     use p,
-    rw [valuation.ne_zero_iff, nat.cast_ne_zero, val_p, padic.add_valuation.valuation_apply,
-      ne.def, ne.def, of_add_eq_one],
-    
-    --   padic.add_valuation.apply
-    -- ((@nat.cast_ne_zero ℚ_[p] _ _ _ _).mpr (nat.prime.ne_zero hp.elim)), padic.valuation_p],
-    refine ⟨nat.prime.ne_zero hp.elim, _⟩,
-    rw padic.add_valuation.apply _,
-
-    simp only [padic.valuation_p, with_top.coe_one],
-    sorry,
-    sorry,
-    --exact (nat.prime.ne_zero hp.elim),
-    --exact ⟨nat.prime.ne_zero hp.elim, one_ne_zero⟩,
+    refine ⟨(valuation.ne_zero_iff _).mpr h0, _⟩,
+    rw [val_p, padic.add_valuation.valuation_apply, ne.def, of_add_eq_one,
+      padic.add_valuation.apply h0, padic.valuation_p, with_top.coe_one],
+    exact one_ne_zero,
   end }
 
 -- Requires choice
@@ -252,7 +240,6 @@ begin
   let s := (order_dual.of_dual (some r) : with_top ℝ),
   exact classical.some_spec (with_top.ne_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)),
 end
-
 
 lemma mult_with_top_R_to_R_strict_mono {e : ℝ} (he0 : 0 < e) (he1 : e < 1) :
   strict_mono (mult_with_top_R_to_R (ne_of_lt he0)) :=
