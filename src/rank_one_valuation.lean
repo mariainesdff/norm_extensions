@@ -10,17 +10,32 @@ open function multiplicative
 
 variables {R : Type*} [ring R] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
 
+lemma mult_with_top_R_zero : multiplicative.of_add (order_dual.to_dual ⊤) = 
+  (0 : multiplicative (with_top ℝ)ᵒᵈ) := rfl 
+
 class is_rank_one (v : valuation R Γ₀) : Prop :=
-(rank_le_one : ∃ f : Γ₀ →* multiplicative (order_dual (with_top ℝ)), strict_mono f) --(rank_le_one : ∃ f : Γ₀ →* nnreal, strict_mono f)
+(rank_le_one : ∃ f : Γ₀ →*₀ multiplicative (order_dual (with_top ℝ)), strict_mono f) 
+--(rank_le_one : ∃ f : Γ₀ →* nnreal, strict_mono f)
 (nontrivial : ∃ r : R, v r ≠ 0 ∧ v r ≠ 1)
 
 def is_rank_one_hom (v : valuation R Γ₀) [hv : is_rank_one v] :
-  Γ₀ →* multiplicative (order_dual (with_top ℝ)) :=
+  Γ₀ →*₀ multiplicative (order_dual (with_top ℝ)) :=
 classical.some hv.rank_le_one
 
 lemma is_rank_one_strict_mono (v : valuation R Γ₀) [hv : is_rank_one v] :
   strict_mono (is_rank_one_hom v) :=
 classical.some_spec hv.rank_le_one
+
+lemma is_rank_one_hom_zero (v : valuation R Γ₀) [hv : is_rank_one v] {x : Γ₀}
+ (hx : is_rank_one_hom v x = multiplicative.of_add (order_dual.to_dual ⊤)) : x = 0 :=
+begin
+  have hx0 : 0 ≤ x := zero_le',
+  cases le_iff_lt_or_eq.mp hx0 with h_lt h_eq,
+  { have hs := is_rank_one_strict_mono v h_lt,
+    rw [map_zero, hx, mult_with_top_R_zero] at hs,
+    exact absurd hs not_lt_zero', },
+  { exact h_eq.symm }
+end
 
 structure is_discrete (v : valuation R Γ₀) : Prop :=
 (rank_le_one : ∃ f : Γ₀ →* with_zero (multiplicative ℤ), strict_mono f)
@@ -72,12 +87,9 @@ open_locale classical
 def val_p (p : ℕ) [fact p.prime] : valuation ℚ_[p] (multiplicative (order_dual (with_top ℤ))) :=
 padic.add_valuation.valuation
 
---variables (Γ : Type*) [linear_ordered_add_comm_monoid_with_top Γ]
-
---instance : linear_ordered_comm_monoid_with_zero nnreal := infer_instance
 def int.mulcast_hom_R :
-  multiplicative (order_dual (with_top ℤ)) →* multiplicative (order_dual (with_top ℝ)) := 
-mulcast (int.cast_add_hom ℝ)
+  multiplicative (order_dual (with_top ℤ)) →*₀ multiplicative (order_dual (with_top ℝ)) := 
+mulcast' (int.cast_add_hom ℝ)
 
 lemma int.cast_add_strict_mono : strict_mono (int.cast_add_hom ℝ) := λ x y hxy,
 by { rw [int.coe_cast_add_hom, int.cast_lt], exact hxy }
@@ -95,38 +107,15 @@ lemma bar {p : ℕ} [hp : fact p.prime] : is_rank_one (val_p p) :=
     exact one_ne_zero,
   end }
 
--- Requires choice
-/- def mult_with_top_R_to_nnreal {e : nnreal} (he : 0 ≠ e) :
-  multiplicative (order_dual (with_top ℝ)) → nnreal := λ x,
-begin
-  let y : order_dual (with_top ℝ) := to_add x,
-  by_cases hy : y = ⊥,
-  { exact 0 },
-  { exact e^(classical.some (with_bot.ne_bot_iff_exists.mp hy)) }
-end -/
-
 lemma ne_dual_top_iff_exists {α : Type*} {x : order_dual (with_top α)} :
   order_dual.of_dual x ≠ ⊤ ↔ ∃ (a : α), ↑a = order_dual.of_dual x :=
 option.ne_none_iff_exists
 
-def mult_with_top_R_to_nnreal {e : nnreal} (he : 0 ≠ e) :
+def mult_with_top_R_to_nnreal (e : nnreal)  :
   multiplicative (order_dual (with_top ℝ)) → nnreal := λ x,
-begin
-  let y : order_dual (with_top ℝ) := to_add x,
-  by_cases hy : order_dual.of_dual y = ⊤,
-  { exact 0 },
-  { exact e^(classical.some (ne_dual_top_iff_exists.mp hy)) }
-end
+if hx : order_dual.of_dual (to_add x : order_dual (with_top ℝ)) = ⊤ then 0
+  else e^(classical.some (ne_dual_top_iff_exists.mp hx))
 
-/- def mult_with_top_R_to_nnreal (e : nnreal) :
-  multiplicative (order_dual (with_top ℝ)) → nnreal := λ x,
-begin
-  let y : order_dual (with_top ℝ) := to_add x,
-  by_cases hy : y = none,
-  { exact 0 },
-  { rw [← ne.def, with_bot.none_eq_bot, with_bot.ne_bot_iff_exists] at hy,
-    exact e^(classical.some hy) }
-end -/
 
 /- lemma foo (e : nnreal) (r : ℝ) (hr : r ≠ 0) :
   mult_with_top_R_to_nnreal e (r : order_dual (with_top ℝ)) = r :=
@@ -141,25 +130,10 @@ begin
   exact classical.some_spec (with_bot.ne_bot_iff_exists.mp (with_bot.coe_ne_bot r)), -/
 end -/
 
-/- lemma mult_with_top_apply (r : ℝ) :
- classical.some (with_bot.ne_bot_iff_exists.mp (with_bot.coe_ne_bot r)) = r :=
-begin
-  rw ← with_bot.coe_eq_coe,
-  exact classical.some_spec (with_bot.ne_bot_iff_exists.mp (with_bot.coe_ne_bot r)),
-end 
-
-lemma mult_with_top_apply (r : ℝ) :
- classical.some (with_top.ne_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)) = r :=
-begin
-  rw ← with_bot.coe_eq_coe,
-  exact classical.some_spec (with_top.ne_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)),
-end-/
-
 lemma mult_with_top_apply (r : ℝ) :
  classical.some (ne_dual_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)) = r :=
 begin
   rw ← with_bot.coe_eq_coe,
-  let s := (order_dual.of_dual (some r) : with_top ℝ),
   exact classical.some_spec (with_top.ne_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)),
 end
 
@@ -167,7 +141,7 @@ lemma with_top.of_dual_eq_top_iff {α : Type*} {x : order_dual (with_top α)} :
   order_dual.of_dual x = ⊤ ↔ x = ⊥ := iff.rfl
 
 lemma mult_with_top_R_to_nnreal_strict_mono {e : nnreal} (he0 : 0 < e) (he1 : e < 1) :
-  strict_mono (mult_with_top_R_to_nnreal (ne_of_lt he0)) :=
+  strict_mono (mult_with_top_R_to_nnreal e) :=
 begin
   intros x y hxy,
   simp only [mult_with_top_R_to_nnreal],
@@ -192,7 +166,7 @@ end
 
 def mult_with_top_R_to_nnreal_monoid_hom {e : nnreal} (he : 0 ≠ e) :
   multiplicative (order_dual (with_top ℝ)) →* nnreal :=
-{ to_fun   := mult_with_top_R_to_nnreal he,
+{ to_fun   := mult_with_top_R_to_nnreal e,
   map_one' := begin
     simp only [mult_with_top_R_to_nnreal, to_add_one],
     erw [dif_neg with_bot.coe_ne_bot, mult_with_top_apply (0 : ℝ)],
@@ -224,15 +198,12 @@ def mult_with_top_R_to_nnreal_monoid_hom {e : nnreal} (he : 0 ≠ e) :
         }},   
   end, }
 
-def mult_with_top_R_to_R {e : ℝ} (he : 0 ≠ e) :
+def mult_with_top_R_to_R (e : ℝ) :
   multiplicative (order_dual (with_top ℝ)) → ℝ := λ x,
-begin
-  let y : order_dual (with_top ℝ) := to_add x,
-  by_cases hy : order_dual.of_dual y = ⊤,
-  { exact 0 },
-  { exact e^(classical.some (ne_dual_top_iff_exists.mp hy)) }
-end
+if hx : order_dual.of_dual (to_add x : order_dual (with_top ℝ)) = ⊤ then 0
+  else e^(classical.some (ne_dual_top_iff_exists.mp hx))
 
+--#print mult_with_top_R_to_R
 lemma mult_with_top_apply' (r : ℝ) :
  classical.some (ne_dual_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)) = r :=
 begin
@@ -242,7 +213,7 @@ begin
 end
 
 lemma mult_with_top_R_to_R_strict_mono {e : ℝ} (he0 : 0 < e) (he1 : e < 1) :
-  strict_mono (mult_with_top_R_to_R (ne_of_lt he0)) :=
+  strict_mono (mult_with_top_R_to_R e) :=
 begin
   intros x y hxy,
   simp only [mult_with_top_R_to_R],
@@ -265,15 +236,19 @@ begin
         exact hxy, }}, 
 end
 
-def mult_with_top_R_to_R_monoid_hom {e : ℝ} (he : 0 < e) :
-  multiplicative (order_dual (with_top ℝ)) →* ℝ :=
-{ to_fun   := mult_with_top_R_to_R (ne_of_lt he),
-  map_one' := begin
+def mult_with_top_R_to_R_monoid_with_zero_hom {e : ℝ} (he : 0 < e) :
+  multiplicative (order_dual (with_top ℝ)) →*₀ ℝ :=
+{ to_fun    := mult_with_top_R_to_R e,
+  map_one'  := begin
     simp only [mult_with_top_R_to_R, to_add_one],
     erw [dif_neg with_bot.coe_ne_bot, mult_with_top_apply (0 : ℝ)],
     exact real.rpow_zero e,
   end,
-  map_mul' := λ x y,
+  map_zero' := begin
+    rw [mult_with_top_R_to_R, ← mult_with_top_R_zero],
+    simp only [order_dual.to_dual_top, to_add_of_add, order_dual.of_dual_bot, dif_pos], 
+  end,
+  map_mul'  := λ x y,
   begin
     simp only [mult_with_top_R_to_R],
     by_cases  hx : order_dual.of_dual (x.to_add) = ⊤,

@@ -49,6 +49,14 @@ def mulcast : multiplicative (order_dual (with_top M)) →*
 
 omit hM hN
 
+def mulcast' {E F : Type*} [linear_ordered_add_comm_monoid E] [linear_ordered_add_comm_monoid F]
+  (g : add_monoid_hom E F) : multiplicative (order_dual (with_top E)) →*₀
+  multiplicative (order_dual (with_top F)) := 
+{ to_fun  := with_top.cast_fun g,
+  map_zero' := rfl,
+  map_one'  := with_top.cast_fun_zero,
+  map_mul'  := with_top.cast_fun_add }
+
 variable {f}
 
 lemma mulcast_injective (hf : injective f) : function.injective (mulcast f):=
