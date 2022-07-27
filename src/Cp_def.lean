@@ -1,3 +1,4 @@
+import analysis.normed.field.unit_ball
 import field_theory.is_alg_closed.algebraic_closure
 import number_theory.padics.padic_numbers
 import topology.metric_space.cau_seq_filter
@@ -40,10 +41,41 @@ instance : field ℂ_[p] := sorry
 
 instance : has_norm ℂ_[p] := sorry
 
-def C_p_integers := {x : ℂ_[p] // ∥x∥ ≤ 1}
+instance : normed_field ℂ_[p] := sorry
+
+lemma C_p.is_nonarchimedean : is_nonarchimedean (λ (x : ℂ_[p]), ∥x∥₊) := sorry
+
+def C_p_integers := metric.closed_ball (0 : ℂ_[p]) 1 --{x : ℂ_[p] // ∥x∥ ≤ 1}
 
 notation `𝓞_ℂ_[`p`]` := C_p_integers p
 
-instance : comm_ring 𝓞_ℂ_[p] := sorry
+instance : comm_monoid 𝓞_ℂ_[p] := metric.closed_ball.comm_monoid
 
+lemma metric.mem_closed_ball_zero_add {α : Type*} [semi_normed_group α] {x y : α} {ε : ℝ}
+  (hx : x ∈ metric.closed_ball (0 : α) ε) (hy : y ∈ metric.closed_ball (0 : α) ε)
+  (h_na : is_nonarchimedean (λ x : α, ∥x∥₊)) :
+  x + y ∈ metric.closed_ball (0 : α) ε := 
+begin
+  rw [mem_closed_ball_zero_iff, ← coe_nnnorm] at *,
+  have h := is_nonarchimedean.add_le (nnnorm_zero) 
+h_na x y, 
+  simp only [← nnreal.coe_le_coe] at h,
+  apply le_trans h,
+  rw [nnreal.coe_max, max_le_iff],
+  exact ⟨hx, hy⟩
+end
 
+lemma metric.mem_closed_ball_zero_neg {α : Type*} [semi_normed_group α] {x : α} {ε : ℝ}
+  (hx : x ∈ metric.closed_ball (0 : α) ε) : - x ∈ metric.closed_ball (0 : α) ε := 
+by { rw [mem_closed_ball_zero_iff, norm_neg, ← mem_closed_ball_zero_iff], exact hx }
+
+def subring.unit_closed_ball (𝕜 : Type*) [semi_normed_ring 𝕜] [norm_one_class 𝕜] 
+  (h_na : is_nonarchimedean (λ x : 𝕜, ∥x∥₊)) : subring 𝕜 := 
+{ carrier   := metric.closed_ball (0 : 𝕜) 1,
+  add_mem'  := λ x y hx hy, metric.mem_closed_ball_zero_add hx hy h_na,
+  zero_mem' := metric.mem_closed_ball_self zero_le_one,
+  neg_mem'  := λ x hx, metric.mem_closed_ball_zero_neg hx,
+  .. submonoid.unit_closed_ball  𝕜 }
+
+instance : comm_ring 𝓞_ℂ_[p] :=
+subring_class.to_comm_ring (subring.unit_closed_ball ℂ_[p] (C_p.is_nonarchimedean p))
