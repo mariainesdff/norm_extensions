@@ -24,6 +24,15 @@ end
 
 -- Lemma 3.2.1./3
 
+section
+
+variables {K : Type*} [field K] {L : Type*} [field L] [algebra K L] {g : K → ℝ≥0} (hg : is_norm g)
+lemma finite_extension_pow_mul_seminorm' (hfd : finite_dimensional K L)
+  (hna : ∀ (a b : K), g(a - b) ≤ max (g a) (g b)) :
+  ∃ f : L → nnreal, is_algebra_norm hg f ∧ is_pow_mult f ∧ function_extends g f :=
+sorry 
+end
+
 variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 
 variables {ι : Type*} [fintype ι] {R : Type*} [ring R] {M : Type*} [add_comm_group M]
@@ -133,13 +142,21 @@ begin
     { 
       sorry }, -/
     simp_rw h_sum,
-
-    /- have hj : ∃ (j : ι) (hj : finset.univ.nonempty → j ∈ finset.univ), ∥∑ (x_1 : ι), B.equiv_fun (B.equiv_fun x x_1 • B x_1 * 
+ --apply @is_nonarchimedean_finset_image_add _ _ (λ (x : K), ∥x∥₊) (nnnorm_zero) _ B.equiv_fun, 
+   -- }, 
+    /- have hj : ∃ (j : ι) (hj : finset.univ.nonempty → j ∈ finset.univ), ∥∑ (x_1 : ι), 
+      B.equiv_fun (B.equiv_fun x x_1 • B x_1 * 
       ∑ (i : ι), B.equiv_fun y i • B i) ixy∥₊ ≤ 
     ∥B.equiv_fun (B.equiv_fun x j • B j * ∑ (i : ι), B.equiv_fun y i • B i) ixy∥₊,
-    { apply @is_nonarchimedean_finset_image_add _ _ (λ (x : K), ∥x∥₊) (nnnorm_zero) B.equiv_fun, 
-    }, -/ 
-    
+    { have hna : is_nonarchimedean (nnnorm : K → ℝ≥0) := sorry,
+      sorry,
+      /- have := @is_nonarchimedean_finset_image_add K _ nnnorm (nnnorm_zero) hna B.equiv_fun
+        finset.univ,  -/
+    },
+    obtain ⟨j, hjuniv, hj⟩ := hj,
+    apply le_trans hj,
+    simp, -/
+
     /- lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
   (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
   ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := -/

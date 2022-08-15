@@ -61,6 +61,18 @@ structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminor
 structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
 (mul_eq : ∀ a b, f (a * b) = f a * f b)
 
+lemma is_mul_norm.to_is_pow_mult {α : Type*} [ring α] {f : α → nnreal} (hf : is_mul_norm f) :
+  is_pow_mult f := λ x n hn,
+begin
+  induction n with n ih,
+  { exfalso, linarith },
+  { --rw [pow_succ, pow_succ, hf.mul_eq],
+    by_cases hn1 : 1 ≤ n,
+    { rw [pow_succ, pow_succ, hf.mul_eq, ih hn1] },
+    { rw [not_le, nat.lt_one_iff] at hn1,
+      rw [hn1, pow_one, pow_one], } }
+end
+
 structure is_algebra_norm {α : Type*} [comm_ring α] {g : α → nnreal} (hg : is_norm g) 
   {β : Type*} [ring β] [algebra α β] (f : β → nnreal) extends (is_norm f) : Prop :=
 (smul : ∀ (a : α) (x : β) , f (a • x) = g a * f x)

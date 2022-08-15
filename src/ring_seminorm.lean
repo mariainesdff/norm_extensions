@@ -22,6 +22,8 @@ variables [ring R]
 /-- Helper instance for when there's too many metavariables to apply `fun_like.has_coe_to_fun`. -/
 instance : has_coe_to_fun (ring_seminorm R) (λ _, R → ℝ) := ⟨λ p, p.to_fun⟩
 
+@[simp] lemma to_fun_eq_coe (p : ring_seminorm R) : p.to_fun = p := rfl
+
 @[ext] lemma ext {p q : ring_seminorm R} (h : ∀ x, p x = q x) : p = q :=
 by { cases p, cases q, simp only, ext, exact h x }
 
@@ -96,8 +98,18 @@ variable [ring R]
 /-- Helper instance for when there's too many metavariables to apply `fun_like.has_coe_to_fun`. -/
 instance : has_coe_to_fun (ring_norm R) (λ _, R → ℝ) := ⟨λ p, p.to_fun⟩
 
+@[simp] lemma to_fun_eq_coe (p : ring_norm R) : p.to_fun = p := rfl
+
 @[ext] lemma ext {p q : ring_norm R} (h : ∀ x, p x = q x) : p = q :=
 by { cases p, cases q, simp only, ext, exact h x }
+
+variables (p : ring_norm R)
+
+protected lemma nonneg : 0 ≤ p x := p.nonneg' _
+@[simp] protected lemma map_zero : p 0 = 0 := p.map_zero'
+protected lemma add_le : p (x + y) ≤ p x + p y := p.add_le' _ _
+@[simp] protected lemma neg : p (- x) = p x := p.neg' _
+protected lemma mul_le : p (x * y) ≤ p x * p y := p.mul_le' _ _
 
 variable (R)
 
@@ -149,14 +161,13 @@ def normed_ring.to_ring_norm (R : Type*) [normed_ring R] : ring_norm R :=
 { ne_zero := λ x, norm_pos_iff.mpr,
   ..seminormed_ring.to_ring_seminorm R}
 
-
-#lint
-
 /-- Given a ring `R` with a norm `f` and an `R`-algebra `A`, a function `g : A → ℝ` is an algebra
   norm if it is a norm on `A` and `g ((algebra_map R A r) * a) = f r * g a`. -/
 structure algebra_norm (R : Type*) [comm_ring R] (f : ring_norm R)
   (A : Type*) [ring A] [algebra R A] extends (ring_norm A) :=
 (smul : ∀ (r : R) (a : A) , to_fun ((algebra_map R A r) * a) = f r * to_fun a)
+
+attribute [nolint doc_blame] algebra_norm.to_ring_norm
 
 namespace algebra_norm
 
@@ -164,28 +175,27 @@ variables [comm_ring R] (A : Type*) [ring A] [algebra R A] (f : ring_norm R)
 
 instance : has_coe_to_fun (algebra_norm R f A) (λ _, A → ℝ) := ⟨λ p, p.to_fun⟩
 
-instance [decidable_eq R] : 
+@[simp] lemma to_fun_eq_coe (p : algebra_norm R f A) : p.to_fun = p := rfl
+
+lemma trivial_norm_of_ne_zero [decidable_eq R] {x : R} (hx : x ≠ 0) : 
+  ring_norm.trivial_norm R x = 1 := if_neg hx 
+
+instance [is_domain R] [decidable_eq R] : 
   inhabited (algebra_norm R (ring_norm.trivial_norm R) R) := ⟨ {
   smul := λ r s, 
-  begin 
-    simp only [ring_norm.trivial_norm, algebra.id.map_eq_id, ring_hom.id_apply],
+  begin
+    simp only [ring_norm.to_fun_eq_coe],    
     by_cases hr : r = 0,
-    { rw [hr, zero_mul, if_pos (eq.refl _), mul_ite, mul_zero, mul_one],
-      split_ifs, refl, sorry },
-    { sorry}
+    { rw [hr, algebra.id.map_eq_id, ring_hom.id_apply, zero_mul, ring_norm.map_zero, zero_mul] },
+    { rw [trivial_norm_of_ne_zero hr],
+      by_cases hs : s = 0,
+      { rw [hs, mul_zero, one_mul], },
+      { have hrs : r * s ≠ 0,
+        { exact mul_ne_zero hr hs, },
+        rw [trivial_norm_of_ne_zero hs, algebra.id.map_eq_id, ring_hom.id_apply, 
+          trivial_norm_of_ne_zero (mul_ne_zero hr hs), one_mul], }}
   end
   ..(ring_norm.trivial_norm R) }⟩
-
-/- instance [decidable_eq R] [decidable_eq A] : 
-  inhabited (algebra_norm R (ring_norm.trivial_norm R) A) := ⟨ {
-  smul := λ r a, 
-  begin
-    simp only [ring_norm.trivial_norm],
-    by_cases ha : a = 0,
-    { rw [if_pos ha, ha, mul_zero, mul_zero, if_pos (eq.refl _)] },
-    { simp only [if_neg ha, mul_one],  }
-  end,
-  ..ring_norm.trivial_norm A }⟩ -/
 
 end algebra_norm
 
@@ -199,5 +209,3 @@ def is_nonarchimedean (f : R → ℝ) : Prop := ∀ r s, f (r + s) ≤ max (f r)
   `f (r ^ n) = (f r) ^ n`. -/
 def is_pow_mul {R : Type*} [ring R] (f : R → ℝ) :=
 ∀ (r : R) {n : ℕ} (hn : 1 ≤ n), f (r ^ n) = (f r) ^ n
-
-

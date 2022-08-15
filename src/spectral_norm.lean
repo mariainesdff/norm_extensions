@@ -2,6 +2,7 @@ import rank_one_valuation
 import normed_space
 import power_mult_seminorm
 import data.list.min_max
+import field_theory.fixed
 import field_theory.normal
 import topology.algebra.valuation
 import ring_theory.polynomial.vieta
@@ -353,13 +354,15 @@ begin
       { rw hpn, exact hm },
       obtain ⟨s, hs⟩ := foo hf_pm hf_na hf_alg_norm hn b this,
       apply le_trans hs,
-      have  h_pr: f (s.val.prod (λ (i : fin n), -b i)) ≤ s.val.prod (λ (i : fin n), f(-b i)) := 
-      sorry,
+      have  h_pr: f (s.val.prod (λ (i : fin n), -b i)) ≤ s.val.prod (λ (i : fin n), f(-b i)),
+      { exact finset.le_prod_of_submultiplicative _ hf1 hf_alg_norm.mul _ _,},
       apply le_trans h_pr,
       have : s.val.prod (λ (i : fin n), f (-b i)) ≤ s.val.prod (λ (i : fin n), supr (f ∘ b)),
       { apply finset.prod_le_prod,
-        sorry,
-        sorry },
+        { intros i hi, exact zero_le _, },
+        { intros i hi, 
+          rw hf_na.neg hf_alg_norm.zero _, 
+          exact le_csupr (set.finite.bdd_above (set.range (f ∘ b)).to_finite) _, }},
       apply le_trans this,
       apply le_of_eq,
       simp only [subtype.val_eq_coe, finset.prod_const],
@@ -560,13 +563,149 @@ section finite
 
 variable (h_fin : finite_dimensional K L)
 
+def seminorm_of_auto (σ : L ≃ₐ[K] L) (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) : L → ℝ≥0 :=
+λ x, classical.some (finite_extension_pow_mul_seminorm h_fin hna) (σ x)
+
+lemma seminorm_of_auto.is_pow_mult (σ : L ≃ₐ[K] L) (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_pow_mult (seminorm_of_auto h_fin σ hna) :=
+begin
+  intros x n hn,
+  simp only [seminorm_of_auto, map_pow σ x n],
+  exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.1 _ hn,
+end
+
+lemma seminorm_of_auto.is_algebra_norm (σ : L ≃ₐ[K] L) (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_algebra_norm (normed_ring.to_is_norm K) (seminorm_of_auto h_fin σ hna) :=
+{ zero    := begin
+    simp only [seminorm_of_auto, map_zero σ],
+    exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1.zero,
+  end,
+  add     := begin
+    simp only [seminorm_of_auto, map_add σ],
+    intros x y,
+    exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1.add _ _,
+  end,
+  mul     := begin
+    simp only [seminorm_of_auto, map_mul σ],
+    intros x y,
+    exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1.mul _ _,
+  end,
+  ne_zero := λ a ha, begin
+    apply (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1.ne_zero _
+      ((add_equiv_class.map_ne_zero_iff σ).mpr ha),
+  end,
+  smul    := begin
+    simp only [seminorm_of_auto, map_smul σ],
+    intros r x,
+    exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1.smul _ _,
+  end }
+
+lemma seminorm_of_auto.extends (σ : L ≃ₐ[K] L) (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  function_extends (λ x : K, ∥x∥₊) (seminorm_of_auto h_fin σ hna) :=
+begin
+  intro r, simp only [seminorm_of_auto,  alg_equiv.commutes],
+  exact (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.2 _,
+end
+
+def seminorm_of_galois (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) : L → ℝ≥0 :=
+λ x, (supr (λ (σ : L ≃ₐ[K] L), seminorm_of_auto h_fin σ hna x))
+
+lemma csupr_univ {α : Type u_1} {β : Type u_2} [fintype β] [conditionally_complete_lattice α]
+  {f : β → α} :
+(⨆ (x : β) (H : x ∈ (finset.univ : finset β)), f x) = ⨆ (x : β), f x := by simp
+
+theorem finset.sup_eq_csupr {α : Type u_1} [nonempty α] (s : finset α) [nonempty s]
+  (f : α → ℝ≥0) : s.sup f = ⨆ (a : α) (H : a ∈ s), f a :=
+begin
+  apply le_antisymm,
+  { apply finset.sup_le,
+    intros a ha, apply le_csupr_of_le _ a,
+    { exact le_csupr_of_le (set.finite.bdd_above (set.finite_range (λ (ha : a ∈ s), f a)))
+        ha (le_refl _) },
+    { apply set.finite.bdd_above,
+      have hrange: set.range (λ (a : α), ⨆ (H : a ∈ s), f a) ⊆
+        set.range (λ (a : s), f a) ∪ {⊥},
+      { rintros y ⟨x, hxy⟩, 
+        simp only [set.mem_range, bot_eq_zero', set.union_singleton, set.mem_insert_iff] at y ⊢,
+        by_cases hx : x ∈ s,
+        { right, simp only [hx, csupr_pos] at hxy, exact ⟨⟨x, hx⟩, hxy⟩, },
+        { left, simp only [hx, csupr_false, bot_eq_zero'] at hxy, exact hxy.symm }},
+      exact set.finite.subset (set.range (λ (a : ↥s), f ↑a) ∪ {⊥}).to_finite hrange, }},
+  { apply csupr_le,
+    intro x,
+    by_cases hx : x ∈ s,
+    { haveI : nonempty (x ∈ s) := ⟨hx⟩,
+      apply csupr_le, intro hx', exact finset.le_sup hx, },
+    { simp only [(iff_false _).mpr hx, csupr_false, bot_eq_zero', zero_le'], }}
+end
+
+lemma nnreal.supr_pow {ι : Type*} [nonempty ι] [fintype ι] (f : ι → nnreal) (n : ℕ) :
+(⨆ (i : ι), f i)^n = ⨆ (i : ι), (f i)^n :=
+begin
+  induction n with n hn,
+  { simp only [pow_zero, csupr_const], },
+  { rw [pow_succ, hn],
+    apply le_antisymm,
+    { apply nnreal.csupr_mul_csupr_le,
+      intros i j,
+      by_cases hij : f i < f j,
+      { have hj : f i * f j ^ n ≤ f j ^ n.succ,
+        { rw pow_succ, apply mul_le_mul' (le_of_lt hij) (le_refl _) },
+        exact le_trans hj (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) j 
+          (le_refl _)), },
+      { have hi : f i * f j ^ n ≤ f i ^ n.succ,
+        { rw pow_succ, exact mul_le_mul' (le_refl _) (pow_le_pow_of_le (not_lt.mp hij)) },
+        exact le_trans hi (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) i
+          (le_refl _)), }},
+    { haveI : nonempty (finset.univ : finset ι),
+     { exact finset.nonempty_coe_sort.mpr finset.univ_nonempty },
+       simp only [← csupr_univ, ← finset.sup_eq_csupr, pow_succ],
+      apply finset.sup_mul_le_mul_sup_of_nonneg;
+      rintros i -; exact zero_le _ }},
+end
+
+lemma seminorm_of_galois.is_pow_mult (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_pow_mult (seminorm_of_galois h_fin hna) :=
+begin
+  intros x n hn,
+  simp only [seminorm_of_galois],
+  rw nnreal.supr_pow,
+  exact supr_congr (λ σ, seminorm_of_auto.is_pow_mult h_fin σ hna _ hn),
+end
+
+lemma lt_csupr_of_lt {α : Type*} {ι : Sort*} [conditionally_complete_lattice α] {a : α} {f : ι → α}
+  (H : bdd_above (set.range f)) (c : ι) (h : a < f c) : a < supr f :=
+lt_of_lt_of_le h (le_csupr H c)
+
+lemma seminorm_of_galois.is_algebra_norm (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_algebra_norm (normed_ring.to_is_norm K) (seminorm_of_galois h_fin hna) := 
+{ zero    := by simp only [seminorm_of_galois, (seminorm_of_auto.is_algebra_norm h_fin _ hna).zero,
+    csupr_const],
+  add     := λ x y, csupr_le (λ σ, le_trans ((seminorm_of_auto.is_algebra_norm h_fin σ hna).add x y)
+     (add_le_add (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) σ (le_refl _)) 
+       (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) σ (le_refl _)))),
+  mul     := λ x y, csupr_le (λ σ, le_trans ((seminorm_of_auto.is_algebra_norm h_fin σ hna).mul x y)
+   ( mul_le_mul'  (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) σ (le_refl _))
+  (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) σ (le_refl _)))),
+  ne_zero := λ x hx, lt_csupr_of_lt (set.finite.bdd_above 
+    (set.range (λ (σ : L ≃ₐ[K] L), seminorm_of_auto h_fin σ hna x)).to_finite) (alg_equiv.refl) 
+    ((seminorm_of_auto.is_algebra_norm h_fin _ hna).ne_zero _ hx),
+  smul    := λ r x, by simp only [seminorm_of_galois, 
+    (seminorm_of_auto.is_algebra_norm h_fin _ hna).smul, nnreal.mul_csupr (set.finite.bdd_above 
+      (set.finite_range (λ (i : L ≃ₐ[K] L), seminorm_of_auto h_fin i hna x)))] }
+
+lemma seminorm_of_galois.extends (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  function_extends (λ x : K, ∥x∥₊) (seminorm_of_galois h_fin hna) := 
+λ r, by simp only [seminorm_of_galois, seminorm_of_auto.extends h_fin _ hna r, csupr_const]
+
 section normal
 
-variable (hn : normal K L)
-
-lemma spectral_norm.is_pow_mult_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) :
-  is_pow_mult (spectral_norm h_alg) :=
+lemma spectral_norm.is_pow_mult_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) : is_pow_mult (spectral_norm h_alg) :=
 begin
+  obtain ⟨f, hf_norm, hf_pm, hf_ext⟩ := finite_extension_pow_mul_seminorm h_fin hna,
+  
+
   sorry
 end
 
@@ -588,21 +727,24 @@ begin
   sorry
 end
 
-lemma spectral_norm.unique_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
-  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
-  (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x y : L), f (y - x) = f (σ (y - x)))
-  (x : L) : f x = spectral_norm h_alg x :=
-begin
-  sorry
-end
-
-lemma spectral_norm.max_of_fd_normal {f : L → nnreal} (hf_pow : is_pow_mult f)
+lemma spectral_norm.max_of_fd_normal (hn: normal K L) {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) :
   spectral_norm h_alg x = supr (λ (σ : L ≃ₐ[K] L), f (σ x)) :=
 begin
   sorry
+end
+
+lemma spectral_norm.unique_of_fd_normal (hn : normal K L) {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
+  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
+  (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x : L), f x = f (σ x))
+  (x : L) : f x = spectral_norm h_alg x :=
+begin
+  have h_sup : supr (λ (σ : L ≃ₐ[K] L), f (σ x)) = f x,
+  { rw ← @csupr_const _ (L ≃ₐ[K] L) _ _ (f x),
+    exact supr_congr (λ σ, by rw hf_iso σ x), },
+  rw [spectral_norm.max_of_fd_normal h_alg hn hf_pow hf_alg_norm hf_ext, h_sup]
 end
 
 end normal
@@ -622,7 +764,8 @@ begin
   exact spectral_value.eq_normal h_alg_L E g,
 end
 
-lemma spectral_norm.is_pow_mult : is_pow_mult (spectral_norm h_alg) :=
+lemma spectral_norm.is_pow_mult (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_pow_mult (spectral_norm h_alg) :=
 begin
   intros x n hn,
   set E := K⟮x⟯ with hE,
@@ -634,7 +777,7 @@ begin
   rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
     ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
   exact spectral_norm.is_pow_mult_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
-    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) _ hn,
+    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) hna _ hn,
 end
 
 lemma spectral_norm.smul (k : K) (y : L) :
@@ -761,14 +904,15 @@ begin
   rw [h1, spectral_norm.extends, nnnorm_one],
 end
 
-lemma spectral_norm.unique {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
-  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
-  (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x y : L), f (y - x) = f (σ (y - x)))
-  (x : L) : f x = spectral_norm h_alg x :=
-begin
-  sorry
-end
+lemma adjoin.algebra_norm {f : L → nnreal} (hf_alg_norm : is_algebra_norm
+  (normed_ring.to_is_norm K) f) (x : L) : 
+  is_algebra_norm (normed_ring.to_is_norm K) (f ∘ (algebra_map ↥K⟮x⟯ L)) := 
+{ zero    := by rw [function.comp_app, map_zero, hf_alg_norm.zero],
+  add     := λ a b, by {rw [function.comp_app, map_add], exact hf_alg_norm.add _ _ },
+  mul     := λ a b, by {rw [function.comp_app, map_mul], exact hf_alg_norm.mul _ _ },
+  ne_zero := λ a ha, by { rw [function.comp_app],
+    exact hf_alg_norm.ne_zero _ ((ring_hom.map_ne_zero _).mpr ha) },
+  smul    := λ r a, by { rw [function.comp_app, function.comp_app], exact hf_alg_norm.smul _ _ }}
 
 end spectral_norm
 
@@ -799,13 +943,87 @@ instance valued_field.to_normed_field : normed_field K :=
 
 instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))) := sorry -/
 
--- Theorem 3.2.4/2 
+-- Theorem 3.2.4/2
+
+def adjoin.normed_field (x : L) {f : L → nnreal} (hf_pow : is_pow_mult f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) : normed_field ↥K⟮x⟯ :=
+{ norm := λ y, (f ((algebra_map ↥K⟮x⟯ L) y) : ℝ),
+  dist := sorry,
+  dist_self := sorry,
+  dist_comm := sorry,
+  dist_triangle := sorry,
+  eq_of_dist_eq_zero := sorry,
+  dist_eq := sorry,
+  norm_mul' := sorry,
+  ..intermediate_field.to_field K⟮x⟯ }
+
 lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) :
-  f = spectral_norm h_alg  := sorry
+  f = spectral_norm h_alg  := 
+begin
+  ext x,
+  rw nnreal.coe_eq,
+  set E := K⟮x⟯ with hE,
+  haveI h_fd_E : finite_dimensional K E := 
+  intermediate_field.adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg x)),
+  have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
+  --haveI : normal K (normal_closure K K⟮x⟯) := sorry,
+  set g := intermediate_field.adjoin_simple.gen K x with hg,
+  --rw ← (intermediate_field.adjoin_simple.algebra_map_gen K x),
+  rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x)],
+  
+  conv_lhs{ rw ← (intermediate_field.adjoin_simple.algebra_map_gen K x)},
+
+  --haveI : normed_field ↥K⟮x⟯ := sorry,
+  letI adjoin_normed := (adjoin.normed_field x hf_pow hf_alg_norm),
+  have hf_norm' : is_norm (nnnorm : ↥K⟮x⟯ → ℝ≥0) := sorry,
+  have hf_na' : is_nonarchimedean (nnnorm : ↥K⟮x⟯ → ℝ≥0) := sorry,
+  have h_fin' : finite_dimensional ↥K⟮x⟯ ↥(normal_closure K ↥K⟮x⟯ ) := sorry,
+  obtain ⟨φ, hφ_alg_norm, hφ_pow_mult, hφ_ext⟩ :=
+  finite_extension_pow_mul_seminorm' hf_norm' h_fin' hf_na',
+  have :  f ((algebra_map ↥K⟮x⟯ L) (intermediate_field.adjoin_simple.gen K x)) =
+    (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) := rfl,
+  rw this,
+  have : (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) =
+  ∥ (intermediate_field.adjoin_simple.gen K x)∥₊,
+  { sorry },
+  rw this,
+  rw ← hφ_ext,
+  have hφ_ext' : function_extends (λ (x : K), ∥x∥₊) φ := sorry,
+  refine spectral_norm.unique_of_fd_normal _ _ hφ_pow_mult _ hφ_ext' _ _,
+
+  --rw ← spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
+ --   (normal_closure.is_normal K E h_alg_E), 
+
+  --rw spectral_value.eq_normal,
+  --have hf_pow' : is_pow_mult (f ∘ (algebra_map ↥K⟮x⟯ L)) := sorry,
+  /- have :  f ((algebra_map ↥K⟮x⟯ L) (intermediate_field.adjoin_simple.gen K x)) =
+    (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) := rfl,
+  rw this,
+  rw spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
+    (normal_closure.is_normal K E h_alg_E) hf_pow', -/
+  --rw ← spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E) hf_pow,
+  /- intros x n hn,
+  
+  have h_map : algebra_map E L g^n = x^n := rfl,
+  rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
+    ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
+  exact spectral_norm.is_pow_mult_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
+    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) hna _ hn,
+  
+  -/
+sorry
+end
 
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
-   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := sorry
+   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := 
+begin
+  have hf_pow : is_pow_mult f := is_mul_norm.to_is_pow_mult hf_field_norm,
+  have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
+  { smul := λ k x, by rw [algebra.smul_def, hf_field_norm.mul_eq, hf_ext k],
+    ..hf_field_norm},
+  rw spectral_norm.unique' h_alg hf_pow hf_alg_norm,
+end
 
 lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) : 
   is_mul_norm (spectral_norm h_alg) :=
@@ -816,10 +1034,10 @@ lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊))
       rw [hx, zero_mul, (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.zero] },
     { set f := c_seminorm (spectral_norm.is_norm_le_one_class h_alg) hx
         (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg) with hf,
+        (spectral_norm.is_pow_mult h_alg hna) with hf,
       have hf_pow : is_pow_mult f := c_seminorm_is_pow_mult (spectral_norm.is_norm_le_one_class 
         h_alg) hx (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg),
+        (spectral_norm.is_pow_mult h_alg hna),
       have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
       { smul := λ k y,
         begin
@@ -835,7 +1053,7 @@ lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊))
       simp only [← spectral_norm.unique' h_alg hf_pow hf_alg_norm],
       rw [hf, c_seminorm_c_is_mult (spectral_norm.is_norm_le_one_class h_alg) hx
         (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg)] }
+        (spectral_norm.is_pow_mult h_alg hna)] }
   end
   ..spectral_norm.is_algebra_norm h_alg hna }
 
@@ -871,3 +1089,5 @@ instance spectral_norm.complete_space (h_fin : @finite_dimensional K L _ _ _) :
   complete_space L := sorry -/
 
 end spectral_valuation
+
+--#lint

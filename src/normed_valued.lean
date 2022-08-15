@@ -1,4 +1,5 @@
 import rank_one_valuation
+import seminormed_rings
 import analysis.special_functions.pow
 --import analysis.normed.field.basic
 --import ring_theory.algebraic
@@ -10,37 +11,22 @@ open_locale nnreal
 
 variables (K : Type*) [normed_field K]
 
-class is_nonarchimedean {α : Type*} [add_group α] (f : α → ℝ≥0) : Prop := 
-(add_le : ∀ a b, f (a + b) ≤ max (f a) (f b))
+/- class is_nonarchimedean' {α : Type*} [add_group α] (f : α → ℝ≥0) : Prop := 
+(add_le : ∀ a b, f (a + b) ≤ max (f a) (f b)) -/
 
-def valuation_from_norm [h : is_nonarchimedean (λ x : K, ∥x∥₊)] : valuation K ℝ≥0 := 
+def valuation_from_norm (h : is_nonarchimedean nnnorm) : valuation K ℝ≥0 := 
 { to_fun    := nnnorm,
   map_zero' := nnnorm_zero,
   map_one'  := nnnorm_one,
   map_mul'  := nnnorm_mul,
-  map_add_le_max' := λ x y, is_nonarchimedean.add_le x y, }
+  map_add_le_max' := λ x y, h.add_le nnnorm_zero x y, }
 
-def normed_field.to_valued [h : is_nonarchimedean (λ x : K, ∥x∥₊)] : valued K ℝ≥0 :=
-valued.mk' (valuation_from_norm K)
+def normed_field.to_valued (h : is_nonarchimedean nnnorm) : valued K ℝ≥0 :=
+valued.mk' (valuation_from_norm K h)
 
 variables {L : Type*} [hL : field L] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
   [val : valued L Γ₀] [hv : is_rank_one val.v]
 include hL val hv
-
-/-
-class is_rank_one (v : valuation R Γ₀) : Prop :=
-(rank_le_one : ∃ f : Γ₀ →* multiplicative (order_dual (with_top ℝ)), strict_mono f) 
---(rank_le_one : ∃ f : Γ₀ →* nnreal, strict_mono f)
-(nontrivial : ∃ r : R, v r ≠ 0 ∧ v r ≠ 1)
-
-def is_rank_one_hom (v : valuation R Γ₀) [hv : is_rank_one v] :
-  Γ₀ →* multiplicative (order_dual (with_top ℝ)) :=
-classical.some hv.rank_le_one
-
-def mult_with_top_R_to_R (e : ℝ) :
-  multiplicative (order_dual (with_top ℝ)) → ℝ := λ x,
-if hx : order_dual.of_dual (to_add x : order_dual (with_top ℝ)) = ⊤ then 0
-  else e^(classical.some (ne_dual_top_iff_exists.mp hx))-/
 
 def norm_def {e : ℝ} (he0 : 0 < e)  : L → ℝ :=
 λ x : L, mult_with_top_R_to_R_monoid_with_zero_hom he0 (is_rank_one_hom val.v (valued.v x))

@@ -28,7 +28,7 @@ instance : comm_ring (A_inf p) := witt_vector.comm_ring _ _
 def B_inf_plus := localization.away (p : A_inf p)
 instance : comm_ring (B_inf_plus p) := localization.comm_ring
 
-def theta : ring_hom (B_inf_plus p) ℂ_[p] := sorry
+/- lemma theta : ring_hom (B_inf_plus p) ℂ_[p] := sorry
 
 lemma theta.surjective : function.surjective (theta p) := sorry
 
@@ -36,7 +36,7 @@ def B_dR_plus := adic_completion (theta p).ker (B_inf_plus p)
 
 noncomputable! instance : comm_ring (B_dR_plus p) := sorry
 
-def B_dR := fraction_ring (B_dR_plus p)
+def B_dR := fraction_ring (B_dR_plus p) -/
 
 
 
