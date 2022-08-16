@@ -290,6 +290,14 @@ lemma normed_ring.to_is_norm (R : Type*) [normed_ring R] :
   mul     := nnnorm_mul_le,
   ne_zero := λ x hx, by { rw [pos_iff_ne_zero, ne.def, nnnorm_eq_zero], exact hx }}
 
+lemma normed_field.to_is_mul_norm (R : Type*) [normed_field R] :
+  is_mul_norm (λ r : R, ∥r∥₊) :=
+{ zero    := nnnorm_zero,
+  add     := nnnorm_add_le,
+  mul     := nnnorm_mul_le,
+  ne_zero := λ x hx, by { rw [pos_iff_ne_zero, ne.def, nnnorm_eq_zero], exact hx },
+  mul_eq  := nnnorm_mul }
+
 def ring_hom.is_bounded {α : Type*} [semi_normed_ring α] {β : Type*} [semi_normed_ring β] 
   (f : α →+* β) : Prop := ∃ C : nnreal, 0 < C ∧ ∀ x : α, norm (f x) ≤ C * norm x
 

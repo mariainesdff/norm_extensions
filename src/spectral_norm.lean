@@ -7,6 +7,7 @@ import field_theory.normal
 import topology.algebra.valuation
 import ring_theory.polynomial.vieta
 import normal_closure
+--import pow_mult_faithful
 
 noncomputable theory
 
@@ -945,84 +946,88 @@ instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))
 
 -- Theorem 3.2.4/2
 
-def adjoin.normed_field (x : L) {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) : normed_field ↥K⟮x⟯ :=
-{ norm := λ y, (f ((algebra_map ↥K⟮x⟯ L) y) : ℝ),
-  dist := sorry,
-  dist_self := sorry,
-  dist_comm := sorry,
-  dist_triangle := sorry,
-  eq_of_dist_eq_zero := sorry,
-  dist_eq := sorry,
-  norm_mul' := sorry,
-  ..intermediate_field.to_field K⟮x⟯ }
+lemma eq_of_pow_mult_faithful' {g : K → ℝ≥0} (hg : is_mul_norm g) {f₁ : L → ℝ≥0}
+  (hf₁_pm : is_pow_mult f₁) (hf₁_an : is_algebra_norm (hg.to_is_norm) f₁) {f₂ : L → ℝ≥0}
+  (hf₂_pm : is_pow_mult f₂) (hf₂_an : is_algebra_norm (hg.to_is_norm) f₂)
+  (h_eq : ∀ (y : L), ∃ (C₁ C₂ : ℝ≥0) (hC₁ : 0 < C₁) (hC₂ : 0 < C₂), ∀ (x : K⟮y⟯), 
+    f₁ x.val ≤ C₁ * (f₂ x.val) ∧ f₂ x.val ≤ C₂ * (f₁ x.val) ) : 
+  f₁ = f₂ := sorry
 
 lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) :
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
+  (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) :
   f = spectral_norm h_alg  := 
 begin
-  ext x,
-  rw nnreal.coe_eq,
-  set E := K⟮x⟯ with hE,
-  haveI h_fd_E : finite_dimensional K E := 
-  intermediate_field.adjoin.finite_dimensional (is_algebraic_iff_is_integral.mp (h_alg x)),
-  have h_alg_E : algebra.is_algebraic K E := intermediate_field.is_algebraic h_alg E,
-  --haveI : normal K (normal_closure K K⟮x⟯) := sorry,
-  set g := intermediate_field.adjoin_simple.gen K x with hg,
-  --rw ← (intermediate_field.adjoin_simple.algebra_map_gen K x),
-  rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x)],
-  
-  conv_lhs{ rw ← (intermediate_field.adjoin_simple.algebra_map_gen K x)},
+  apply eq_of_pow_mult_faithful' (normed_field.to_is_mul_norm K) hf_pow hf_alg_norm 
+    (spectral_norm.is_pow_mult h_alg hna) 
+    (spectral_norm.is_algebra_norm h_alg hna),
+  intro x,
+  let E : Type* := K⟮x⟯,
+  let hE : field E := infer_instance,
+  letI n1 : normed_field K⟮x⟯ := 
+  { norm             := λ y, (f((algebra_map K⟮x⟯ L) y) : ℝ),
+    dist               := sorry,
+    dist_self          := sorry,
+    dist_comm          := sorry,
+    dist_triangle      := sorry,
+    eq_of_dist_eq_zero := sorry,
+    dist_eq            := sorry,
+    norm_mul'          := sorry,
+    ..intermediate_field.to_field K⟮x⟯ },
 
-  --haveI : normed_field ↥K⟮x⟯ := sorry,
-  letI adjoin_normed := (adjoin.normed_field x hf_pow hf_alg_norm),
-  have hf_norm' : is_norm (nnnorm : ↥K⟮x⟯ → ℝ≥0) := sorry,
-  have hf_na' : is_nonarchimedean (nnnorm : ↥K⟮x⟯ → ℝ≥0) := sorry,
-  have h_fin' : finite_dimensional ↥K⟮x⟯ ↥(normal_closure K ↥K⟮x⟯ ) := sorry,
-  obtain ⟨φ, hφ_alg_norm, hφ_pow_mult, hφ_ext⟩ :=
-  finite_extension_pow_mul_seminorm' hf_norm' h_fin' hf_na',
-  have :  f ((algebra_map ↥K⟮x⟯ L) (intermediate_field.adjoin_simple.gen K x)) =
-    (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) := rfl,
-  rw this,
-  have : (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) =
-  ∥ (intermediate_field.adjoin_simple.gen K x)∥₊,
+  letI n2 : normed_field E := 
+  { norm             := λ x, spectral_norm h_alg x,
+    dist               := sorry,
+    dist_self          := sorry,
+    dist_comm          := sorry,
+    dist_triangle      := sorry,
+    eq_of_dist_eq_zero := sorry,
+    dist_eq            := sorry,
+    norm_mul'          := sorry,
+    ..hE },
+
+  let id1 : K⟮x⟯ →ₗ[K] E := 
+  { to_fun := λ y, y,
+    map_add' := sorry,
+    map_smul' := sorry },
+
+  let id2 : E →ₗ[K] K⟮x⟯ := 
+  { to_fun := λ y, y,
+    map_add' := sorry,
+    map_smul' := sorry },
+  
+  --need to improt analysis.normed_space.operator_norm
+  have hid1_cont : continuous id1 := sorry,-- linear_map.continuous_of_finite_dimensional id1,
+  have hid2_cont : continuous id2 := sorry,
+  
+  have := (@normed_field.to_has_norm _ n1).norm,
+
+  have hC1 : ∃ (C1 : ℝ), 0 < C1 ∧ ∀ (y : K⟮x⟯), ∥id1 y∥ ≤ C1 * ∥y∥ := sorry,
+  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ∥(y : K⟮x⟯)∥ ≤ C2 * ∥y∥ := sorry,
+
+  obtain ⟨C1, hC1_pos, hC1⟩ := hC1,
+  obtain ⟨C2, hC2_pos, hC2⟩ := hC2,
+  use [⟨C2, le_of_lt hC2_pos⟩, ⟨C1, le_of_lt hC1_pos⟩, hC2_pos, hC1_pos],
+  rw forall_and_distrib,
+  split,
+  { intro y, rw ← nnreal.coe_le_coe, simp at hC1 hC2, /- convert hC2 y, -/ sorry}, --need intermediate_field version of eq_of_pow_mult_faithful
   { sorry },
-  rw this,
-  rw ← hφ_ext,
-  have hφ_ext' : function_extends (λ (x : K), ∥x∥₊) φ := sorry,
-  refine spectral_norm.unique_of_fd_normal _ _ hφ_pow_mult _ hφ_ext' _ _,
 
-  --rw ← spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
- --   (normal_closure.is_normal K E h_alg_E), 
 
-  --rw spectral_value.eq_normal,
-  --have hf_pow' : is_pow_mult (f ∘ (algebra_map ↥K⟮x⟯ L)) := sorry,
-  /- have :  f ((algebra_map ↥K⟮x⟯ L) (intermediate_field.adjoin_simple.gen K x)) =
-    (f ∘ (algebra_map ↥K⟮x⟯ L)) (intermediate_field.adjoin_simple.gen K x) := rfl,
-  rw this,
-  rw spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
-    (normal_closure.is_normal K E h_alg_E) hf_pow', -/
-  --rw ← spectral_norm.unique_of_fd_normal (normal_closure.is_algebraic K E h_alg_E) hf_pow,
-  /- intros x n hn,
-  
-  have h_map : algebra_map E L g^n = x^n := rfl,
-  rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
-    ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
-  exact spectral_norm.is_pow_mult_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
-    (normal_closure.is_finite_dimensional K E) (normal_closure.is_normal K E h_alg_E) hna _ hn,
-  
-  -/
-sorry
+
 end
 
+#exit
+
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
-   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) : f x = spectral_norm h_alg x := 
+  (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) (x : L) :
+  f x = spectral_norm h_alg x := 
 begin
   have hf_pow : is_pow_mult f := is_mul_norm.to_is_pow_mult hf_field_norm,
   have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
   { smul := λ k x, by rw [algebra.smul_def, hf_field_norm.mul_eq, hf_ext k],
     ..hf_field_norm},
-  rw spectral_norm.unique' h_alg hf_pow hf_alg_norm,
+  rw spectral_norm.unique' h_alg hf_pow hf_alg_norm hna,
 end
 
 lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) : 
