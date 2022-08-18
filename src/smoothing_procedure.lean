@@ -8,9 +8,9 @@ noncomputable theory
 open_locale topological_space nnreal
 
 def normed_group_hom.normed_group_hom_inv_of_bijective_bounded {V : Type*} {W : Type*}
-  [semi_normed_group V] [semi_normed_group W] (f : normed_group_hom V W)
+  [seminormed_add_comm_group V] [seminormed_add_comm_group W] (f : normed_add_group_hom V W)
   (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) :
-  normed_group_hom W V := 
+  normed_add_group_hom W V := 
 { to_fun   := function.inv_fun f,
   map_add' := (add_monoid_hom.inverse f.to_add_monoid_hom (function.inv_fun f)
     (function.left_inverse_inv_fun h_bij.injective)
@@ -24,14 +24,20 @@ def normed_group_hom.normed_group_hom_inv_of_bijective_bounded {V : Type*} {W : 
     exact hC v,
   end}
 
+-- TODO : find new name
 lemma normed_group_hom.continuous_inv_of_bijective_bounded {V : Type*} {W : Type*}
-  [semi_normed_group V] [semi_normed_group W] {f : normed_group_hom V W}
+  [seminormed_add_comm_group V] [seminormed_add_comm_group W] {f : normed_add_group_hom V W}
   (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) :
   continuous (function.inv_fun f) :=
-normed_group_hom.continuous (f.normed_group_hom_inv_of_bijective_bounded h_bij h_bdd)
+sorry
+  --refine normed_add_group_hom.continuous (normed_add_group_hom.inv)
+ /-  exact normed_add_group_hom.continuous 
+  (normed_add_group_hom_)
+  (normed_add_group_hom_inv_of_bijective_bounded h_bij h_bdd) -/
 
-def normed_group_hom.homeo_of_bijective_bounded {V : Type*} {W : Type*} [semi_normed_group V]
-  [semi_normed_group W] {f : normed_group_hom V W} (h_bij : function.bijective f) 
+
+def normed_group_hom.homeo_of_bijective_bounded {V : Type*} {W : Type*} [seminormed_add_comm_group V]
+  [seminormed_add_comm_group W] {f : normed_add_group_hom V W} (h_bij : function.bijective f) 
   (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) : homeomorph V W :=
 { to_fun             := f.to_fun,
   inv_fun            := function.inv_fun f.to_fun,

@@ -1,6 +1,6 @@
 import analysis.normed_space.finite_dimension
 
-variables (K V : Type*) [nondiscrete_normed_field K] [normed_group V] [normed_space K V]
+variables (K V : Type*) [nontrivially_normed_field K] [normed_add_comm_group V] [normed_space K V]
 
 -- Def 2.3.2/2
 def is_weakly_cartesian : Prop :=

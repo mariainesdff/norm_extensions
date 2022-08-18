@@ -58,6 +58,13 @@ end
 structure is_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_seminorm f) : Prop :=
 (ne_zero : ∀ a, a ≠ 0 → 0 < f a)
 
+lemma is_norm.zero_of_norm_zero {α : Type*} [ring α] {f : α → nnreal} (hf : is_norm f) {x : α} 
+  (hfx : f x = 0) : x = 0 := 
+begin
+  by_contradiction hx,
+  exact (ne_of_gt (hf.ne_zero x hx)) hfx,
+end
+
 structure is_mul_norm {α : Type*} [ring α] (f : α → nnreal) extends (is_norm f) : Prop :=
 (mul_eq : ∀ a b, f (a * b) = f a * f b)
 
@@ -161,10 +168,11 @@ begin
     apply not_lt_of_ge this,
     assumption },
   have : f x ≤ f (x + y), by rwa [max_eq_left hnge] at this,
-  apply _root_.le_antisymm,
+  apply le_antisymm,
   { exact hu.add_le hsn.zero _ _ },
   { rw max_eq_left_of_lt hlt,
-    assumption }
+    assumption },
+  rw [add_comm, max_comm], exact this (ne.symm hne),
 end
 
 open_locale classical
@@ -204,8 +212,7 @@ lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnre
 begin
   apply finset.induction_on s,
   { rw [finset.sum_empty],
-    refine ⟨hβ.some, by simp only [finset.nonempty_coe_sort, finset.not_nonempty_empty,
-      forall_false_left], _⟩,
+    refine ⟨hβ.some, by simp only [finset.not_nonempty_empty, is_empty.forall_iff], _⟩,
     rw hf0, exact zero_le _, },
   { rintros a s has ⟨M, hMs, hM⟩,
     rw [finset.sum_insert has],

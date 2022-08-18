@@ -7,7 +7,7 @@ import field_theory.normal
 import topology.algebra.valuation
 import ring_theory.polynomial.vieta
 import normal_closure
---import pow_mult_faithful
+import pow_mult_faithful
 
 noncomputable theory
 
@@ -178,7 +178,7 @@ begin
       have hexp : (∥p.coeff n∥₊^(1/(p.nat_degree - n : ℝ)))^(p.nat_degree - n) = ∥p.coeff n∥₊,
       { rw [← nnreal.rpow_nat_cast, ← nnreal.rpow_mul, mul_comm, nnreal.rpow_mul, 
           nnreal.rpow_nat_cast, ← nat.cast_sub (le_of_lt hn), one_div,
-          nnreal.pow_nat_rpow_nat_inv _ (tsub_pos_of_lt hn)] },
+          nnreal.pow_nat_rpow_nat_inv _ (ne_of_gt (tsub_pos_of_lt hn))] },
       have h_base : ∥p.coeff n∥₊^(1/(p.nat_degree - n : ℝ)) < f x,
       { rw [spectral_value, supr, set.finite.cSup_lt_iff (spectral_value_terms_finite_range hp)
           (set.range_nonempty (spectral_value_terms hp))] at h_ge,
@@ -228,11 +228,12 @@ begin
   exact polynomial.monic_of_injective (algebra_map K L).injective hprod,
 end
 
-/-  theorem mv_polynomial.prod_X_add_C_eval {R : Type u} [comm_semiring R] (σ : Type u)
+/- universe u
+theorem mv_polynomial.prod_X_add_C_eval {R : Type u} [comm_semiring R] (σ : Type u)
  [fintype σ] (r : σ → R) :
 finset.univ.prod (λ (i : σ), ⇑polynomial.C (r i) + polynomial.X) =
  (finset.range (fintype.card σ + 1)).sum (λ (i : ℕ), (finset.powerset_len i finset.univ).sum (λ (t : finset σ), t.prod (λ (i : σ), ⇑polynomial.C (r i))) * polynomial.X ^ (fintype.card σ - i))
--/
+ -/
 
 lemma polynomial.C_finset_add {α : Type*} (s : finset α) (b : α → K) :
   s.sum (λ (x : α), polynomial.C (b x)) = polynomial.C (s.sum b) := 
@@ -259,8 +260,11 @@ lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
   (finset.powerset_len (n - m) finset.univ).sum
     (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) := 
 begin
-  simp_rw [sub_eq_neg_add, ← polynomial.C_neg, ← pi.neg_apply],
-  rw [finprod_eq_prod_of_fintype, mv_polynomial.prod_X_add_C_eval],
+  simp_rw [sub_eq_add_neg, ← polynomial.C_neg, ← pi.neg_apply],
+  rw [finprod_eq_prod_of_fintype],
+  --rw mv_polynomial.prod_X_add_C_coeff,
+  sorry
+  /- rw [finprod_eq_prod_of_fintype, mv_polynomial.prod_X_add_C_eval],
   simp_rw [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
   have h_coeff : ∀ (k : ℕ), ((finset.powerset_len k finset.univ).sum (λ (x : finset (fin n)), 
     x.prod (λ (x : fin n), - polynomial.C (b x))) * polynomial.X ^ (n - k)).coeff m = 
@@ -284,7 +288,7 @@ begin
   simp_rw h_coeff,
   rw [finset.sum_ite_eq', if_pos],
   rw finset.mem_range,
-  linarith,
+  linarith, -/
 end
 
 lemma prod_X_add_C_nat_degree {n : ℕ} (b : fin n → L) :
@@ -348,9 +352,11 @@ begin
         { rw [fintype.card_fin, hpn],
           exact le_of_lt hm, },
       rw [hc, hp, finprod_eq_prod_of_fintype],
-      simp_rw sub_eq_neg_add,
+      simp_rw sub_eq_add_neg,
       simp_rw ← polynomial.C_neg,
-      rw mv_polynomial.prod_X_add_C_coeff _ _ _ hm_le,
+      sorry,},
+      sorry },
+      /- rw mv_polynomial.prod_X_add_C_coeff _ _ _ hm_le,
       have : m < n,
       { rw hpn, exact hm },
       obtain ⟨s, hs⟩ := foo hf_pm hf_na hf_alg_norm hn b this,
@@ -373,7 +379,7 @@ begin
       simp only [subtype.val_eq_coe, fintype.card_fin, finset.mem_powerset_len] at hs',
       rw [hs'.right, hpn], },
     { rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
-      exact zero_le _, }}
+      exact zero_le _, }} -/
 end
 
 end bdd_by_spectral_value
@@ -946,24 +952,47 @@ instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))
 
 -- Theorem 3.2.4/2
 
-lemma eq_of_pow_mult_faithful' {g : K → ℝ≥0} (hg : is_mul_norm g) {f₁ : L → ℝ≥0}
-  (hf₁_pm : is_pow_mult f₁) (hf₁_an : is_algebra_norm (hg.to_is_norm) f₁) {f₂ : L → ℝ≥0}
-  (hf₂_pm : is_pow_mult f₂) (hf₂_an : is_algebra_norm (hg.to_is_norm) f₂)
-  (h_eq : ∀ (y : L), ∃ (C₁ C₂ : ℝ≥0) (hC₁ : 0 < C₁) (hC₂ : 0 < C₂), ∀ (x : K⟮y⟯), 
-    f₁ x.val ≤ C₁ * (f₂ x.val) ∧ f₂ x.val ≤ C₂ * (f₁ x.val) ) : 
-  f₁ = f₂ := sorry
+--TODO : remove hna
+def norm.to_normed_field {A : Type*} [hA : field A]  {f : A → nnreal} (hf : is_mul_norm f) 
+  (hna : is_nonarchimedean f):
+  normed_field A := 
+{ norm         := λ x, (f x : ℝ),
+  dist          := λ x y, f (x - y),
+  dist_self     := λ x, by simp only [sub_self, hf.zero, nnreal.coe_zero],
+  dist_comm     := λ x y, by simp only [nnreal.coe_eq, ← neg_sub x y, hna.neg hf.zero],
+  dist_triangle := λ x y z, begin
+    have hxyz : x - z = x - y + (y - z) := by ring, 
+    rw [← nnreal.coe_add, nnreal.coe_le_coe, hxyz],
+    exact hf.add _ _,
+  end,
+  eq_of_dist_eq_zero := λ x y hxy,
+    eq_of_sub_eq_zero (hf.to_is_norm.zero_of_norm_zero ((nnreal.coe_eq_zero _).mp hxy)),
+  dist_eq := λ x y, rfl,
+  norm_mul' := λ x y, by simp only [norm, ← nnreal.coe_mul, nnreal.coe_eq, hf.mul_eq], 
+  ..hA }
 
 lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
   (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) :
   f = spectral_norm h_alg  := 
 begin
-  apply eq_of_pow_mult_faithful' (normed_field.to_is_mul_norm K) hf_pow hf_alg_norm 
-    (spectral_norm.is_pow_mult h_alg hna) 
-    (spectral_norm.is_algebra_norm h_alg hna),
+  apply eq_of_pow_mult_faithful (normed_field.to_is_mul_norm K) hf_pow hf_alg_norm 
+    (spectral_norm.is_pow_mult h_alg hna) (spectral_norm.is_algebra_norm h_alg hna),
   intro x,
-  let E : Type* := K⟮x⟯,
-  let hE : field E := infer_instance,
+  set E : Type* := id K⟮x⟯ with hEdef,
+  letI hE : field E := (by rw [hEdef, id.def] ; apply_instance),
+  letI : algebra K E := K⟮x⟯.algebra,
+
+  let id1 : K⟮x⟯ →ₗ[K] E := 
+  { to_fun := λ y, y,
+    map_add' := sorry,
+    map_smul' := sorry },
+
+  let id2 : E →ₗ[K] K⟮x⟯ := 
+  { to_fun := λ y, y,
+    map_add' := sorry,
+    map_smul' := sorry },
+
   letI n1 : normed_field K⟮x⟯ := 
   { norm             := λ y, (f((algebra_map K⟮x⟯ L) y) : ℝ),
     dist               := sorry,
@@ -976,7 +1005,7 @@ begin
     ..intermediate_field.to_field K⟮x⟯ },
 
   letI n2 : normed_field E := 
-  { norm             := λ x, spectral_norm h_alg x,
+  { norm             := λ y, (spectral_norm h_alg (id2 y : L) : ℝ),
     dist               := sorry,
     dist_self          := sorry,
     dist_comm          := sorry,
@@ -984,40 +1013,27 @@ begin
     eq_of_dist_eq_zero := sorry,
     dist_eq            := sorry,
     norm_mul'          := sorry,
-    ..hE },
+    ..hE }, 
 
-  let id1 : K⟮x⟯ →ₗ[K] E := 
-  { to_fun := λ y, y,
-    map_add' := sorry,
-    map_smul' := sorry },
-
-  let id2 : E →ₗ[K] K⟮x⟯ := 
-  { to_fun := λ y, y,
-    map_add' := sorry,
-    map_smul' := sorry },
-  
-  --need to improt analysis.normed_space.operator_norm
-  have hid1_cont : continuous id1 := sorry,-- linear_map.continuous_of_finite_dimensional id1,
+  --need to import analysis.normed_space.operator_norm
+  have hid1_cont : continuous id1 := sorry, --linear_map.continuous_of_finite_dimensional id1,
   have hid2_cont : continuous id2 := sorry,
   
-  have := (@normed_field.to_has_norm _ n1).norm,
+  --have := (@normed_field.to_has_norm _ n1).norm,
 
   have hC1 : ∃ (C1 : ℝ), 0 < C1 ∧ ∀ (y : K⟮x⟯), ∥id1 y∥ ≤ C1 * ∥y∥ := sorry,
-  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ∥(y : K⟮x⟯)∥ ≤ C2 * ∥y∥ := sorry,
+  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ∥id2 y∥ ≤ C2 * ∥y∥ := sorry,
 
   obtain ⟨C1, hC1_pos, hC1⟩ := hC1,
   obtain ⟨C2, hC2_pos, hC2⟩ := hC2,
   use [⟨C2, le_of_lt hC2_pos⟩, ⟨C1, le_of_lt hC1_pos⟩, hC2_pos, hC1_pos],
   rw forall_and_distrib,
+  simp only at hC1 hC2,
   split,
-  { intro y, rw ← nnreal.coe_le_coe, simp at hC1 hC2, /- convert hC2 y, -/ sorry}, --need intermediate_field version of eq_of_pow_mult_faithful
-  { sorry },
-
-
+  { intro y, exact hC2 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
+  { intro y, exact hC1 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
 
 end
-
-#exit
 
 lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) (x : L) :
@@ -1055,7 +1071,7 @@ lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊))
           exact c_seminorm_is_mult_of_is_mult _ _ _ _ h_mul _,
         end,
         ..(c_seminorm_is_norm _ _ _ _ _) },
-      simp only [← spectral_norm.unique' h_alg hf_pow hf_alg_norm],
+      rw [← spectral_norm.unique' h_alg hf_pow hf_alg_norm hna],
       rw [hf, c_seminorm_c_is_mult (spectral_norm.is_norm_le_one_class h_alg) hx
         (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
         (spectral_norm.is_pow_mult h_alg hna)] }

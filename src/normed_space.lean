@@ -6,15 +6,17 @@ noncomputable theory
 
 open_locale big_operators nnreal
 
+
+--TODO: check normed_group is normed_add_comm_group, nondiscrete_normed_field is nontrivilly_normed_field
 structure is_continuous_linear_map (𝕜 : Type*) [normed_field 𝕜]
-  {E : Type*} [normed_group E] [normed_space 𝕜 E]
-  {F : Type*} [normed_group F] [normed_space 𝕜 F] (f : E → F)
+  {E : Type*} [normed_add_comm_group E] [normed_space 𝕜 E]
+  {F : Type*} [normed_add_comm_group F] [normed_space 𝕜 F] (f : E → F)
   extends is_linear_map 𝕜 f : Prop :=
 (cont : continuous f . tactic.interactive.continuity')
 
-lemma is_continuous_linear_map_iff_is_bounded_linear_map {K : Type*} [nondiscrete_normed_field K]
-  {M : Type*} [normed_group M] [normed_space K M] {N : Type*} [normed_group N] [normed_space K N]
-  (f : M → N) : is_continuous_linear_map K f ↔ is_bounded_linear_map K f :=
+lemma is_continuous_linear_map_iff_is_bounded_linear_map {K : Type*} [nontrivially_normed_field K]
+  {M : Type*} [normed_add_comm_group M] [normed_space K M] {N : Type*} [normed_add_comm_group N] 
+  [normed_space K N] (f : M → N) : is_continuous_linear_map K f ↔ is_bounded_linear_map K f :=
 begin
   refine ⟨λ h_cont, _, λ h_bdd, ⟨h_bdd.to_is_linear_map, h_bdd.continuous⟩⟩,
   { set F : M →L[K] N :=
@@ -65,7 +67,7 @@ begin
 end
 
 def basis.norm {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) : L → ℝ≥0 := 
-λ x, ∥B.equiv_fun x (classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥₊
+λ x, ∥B.equiv_fun x (classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥₊
 
 lemma basis.norm_zero {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) :  B.norm 0 = 0 :=
 by simp only [basis.norm, nnnorm_eq_zero, map_zero, pi.zero_apply, norm_zero]
@@ -78,10 +80,10 @@ begin
   { by_cases hk : k = 0,
   { simp only [hk, map_zero, B.norm_zero, nnnorm_zero] },
   { simp only [basis.norm,  basis_one hBi],
-    have h_max : (classical.some (fintype.exists_max (λ j : ι, 
+    have h_max : (classical.some (finite.exists_max (λ j : ι, 
       ∥(λ (n : ι), if (n = i) then k else 0) j ∥))) = i,
     { by_contradiction h,
-      have h_max := classical.some_spec (fintype.exists_max (λ j : ι, 
+      have h_max := classical.some_spec (finite.exists_max (λ j : ι, 
         ∥(λ (n : ι), if (n = i) then k else 0) j ∥)),
       simp only [if_neg h] at h_max,
       specialize h_max i,
@@ -96,11 +98,11 @@ lemma basis.norm_is_nonarchimedean {ι : Type*} [fintype ι] [nonempty ι] [deci
 begin
   intros x y,
   simp only [basis.norm],
-  set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x - y) i∥)) with hixy_def,
+  set ixy := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun (x - y) i∥)) with hixy_def,
   have hxy : ∥B.equiv_fun (x - y) ixy∥₊ ≤ max (∥B.equiv_fun x ixy∥₊) (∥B.equiv_fun y ixy∥₊),
   { rw [linear_equiv.map_sub, pi.sub_apply], exact hna _ _ , },
-  have hix := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun x i∥)),
-  have hiy := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
+  have hix := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun x i∥)),
+  have hiy := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
   cases le_max_iff.mp hxy with hx hy,
   { apply le_max_of_le_left,
     exact le_trans hx (hix ixy), },
@@ -112,8 +114,8 @@ lemma basis.norm_is_bdd {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι
   {i : ι} (hBi : B i = (1 : L)) : 
   ∃ (c : nnreal) (hc : 0 < c), ∀ (x y : L), B.norm (x * y) ≤ c * B.norm x * B.norm y :=
 begin
-  set M := classical.some (fintype.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))) with hM_def,
-  have hM := classical.some_spec (fintype.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))),
+  set M := classical.some (finite.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))) with hM_def,
+  have hM := classical.some_spec (finite.exists_max (λ (i : ι × ι), B.norm (B i.1 * B i.2))),
   use B.norm (B M.1 * B M.2),
   split,
   { have h_pos : (0 : nnreal) < B.norm (B i * B i),
@@ -122,7 +124,7 @@ begin
       simp only [nnnorm_one, zero_lt_one] },
     exact lt_of_lt_of_le h_pos (hM (i, i)) },
   { intros x y,
-    set ixy := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun (x*y) i∥))
+    set ixy := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun (x*y) i∥))
       with hixy_def,
     conv_lhs{simp only [basis.norm],
     rw [← hixy_def, ← basis.sum_equiv_fun B x, ← basis.sum_equiv_fun B y] },
@@ -176,12 +178,12 @@ begin
   { rw [hk, map_zero, zero_mul, B.norm_zero, zero_mul],},
   { rw basis.norm_extends hBi,
     simp only [basis.norm],
-    set i := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)) with hi_def,
-    have hi := classical.some_spec (fintype.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
-    set j := classical.some (fintype.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥))
+    set i := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)) with hi_def,
+    have hi := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
+    set j := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥))
       with hj_def,
     have hj := classical.some_spec
-      (fintype.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥)),
+      (finite.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥)),
     have hij : ∥B.equiv_fun y i∥₊ = ∥B.equiv_fun y j∥₊,
     { refine le_antisymm _ (hi j),
       { specialize hj i,

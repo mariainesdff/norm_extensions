@@ -25,10 +25,10 @@ indeed `N` is only defined up to a non-unique isomorphism in general.
 
 section field_range
 
-def alg_hom.field_range {F K L : Type*} [field F] [field K] [field L] [algebra F K]
+/- def alg_hom.field_range {F K L : Type*} [field F] [field K] [field L] [algebra F K]
   [algebra F L] (φ : K →ₐ[F] L) : intermediate_field F L :=
 { ..φ.range,
-  ..φ.to_ring_hom.field_range }
+  ..φ.to_ring_hom.field_range } -/
 
 /-- Restrict the codomain of a alg_hom `f` to `f.range`.
 

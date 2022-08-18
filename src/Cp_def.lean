@@ -74,9 +74,10 @@ end
 
 example {p : ℕ} [fact p.prime] : ((p : Q_p_alg p) : ℂ_[p]) = (p : ℂ_[p]) :=
 begin
+  rw ← add_group_with_one.int_cast_of_nat p,
+  
   sorry--unfold_coes,
 end
-
 
 instance : is_rank_one (C_p.valued_field p).v := 
 { rank_le_one := sorry,
@@ -121,7 +122,7 @@ instance : comm_monoid 𝓞_ℂ_[p] := metric.closed_ball.comm_monoid
 
 --omit hp
 
-lemma metric.mem_closed_ball_zero_add {α : Type*} [semi_normed_group α] {x y : α} {ε : ℝ}
+lemma metric.mem_closed_ball_zero_add {α : Type*} [seminormed_add_comm_group α] {x y : α} {ε : ℝ}
   (hx : x ∈ metric.closed_ball (0 : α) ε) (hy : y ∈ metric.closed_ball (0 : α) ε)
   (h_na : is_nonarchimedean (λ x : α, ∥x∥₊)) :
   x + y ∈ metric.closed_ball (0 : α) ε := 
@@ -136,7 +137,7 @@ h_na x y,
 end
 
 
-lemma metric.mem_closed_ball_zero_neg {α : Type*} [semi_normed_group α] {x : α} {ε : ℝ}
+lemma metric.mem_closed_ball_zero_neg {α : Type*} [seminormed_add_comm_group α] {x : α} {ε : ℝ}
   (hx : x ∈ metric.closed_ball (0 : α) ε) : - x ∈ metric.closed_ball (0 : α) ε := 
 by { rw [mem_closed_ball_zero_iff, norm_neg, ← mem_closed_ball_zero_iff], exact hx }
 
