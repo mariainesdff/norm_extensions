@@ -29,12 +29,28 @@ lemma normed_group_hom.continuous_inv_of_bijective_bounded {V : Type*} {W : Type
   [seminormed_add_comm_group V] [seminormed_add_comm_group W] {f : normed_add_group_hom V W}
   (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) :
   continuous (function.inv_fun f) :=
-sorry
-  --refine normed_add_group_hom.continuous (normed_add_group_hom.inv)
- /-  exact normed_add_group_hom.continuous 
-  (normed_add_group_hom_)
-  (normed_add_group_hom_inv_of_bijective_bounded h_bij h_bdd) -/
-
+begin
+  set g : normed_add_group_hom W V :=
+  { to_fun := function.inv_fun f,
+    map_add' := λ x y,
+    begin
+      rw [← (classical.some_spec (((function.bijective_iff_exists_unique _).mp h_bij) x)).1,
+        ← (classical.some_spec (((function.bijective_iff_exists_unique _).mp h_bij) y)).1],
+      simp only [← function.comp_app (function.inv_fun f) f, function.inv_fun_comp h_bij.injective,
+        id.def, ← map_add],
+    end,
+    bound'   := 
+    begin
+      use classical.some h_bdd,
+      intro w,
+      rw ← (classical.some_spec (((function.bijective_iff_exists_unique _).mp h_bij) w)).1,
+      simp only [← function.comp_app (function.inv_fun f) f, function.inv_fun_comp h_bij.injective,
+        id.def],
+      exact classical.some_spec h_bdd _,
+    end } with hg,
+  change continuous g,
+  apply normed_add_group_hom.continuous,
+end
 
 def normed_group_hom.homeo_of_bijective_bounded {V : Type*} {W : Type*} [seminormed_add_comm_group V]
   [seminormed_add_comm_group W] {f : normed_add_group_hom V W} (h_bij : function.bijective f) 
