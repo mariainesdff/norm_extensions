@@ -116,20 +116,6 @@ def mult_with_top_R_to_nnreal (e : nnreal)  :
 if hx : order_dual.of_dual (to_add x : order_dual (with_top ℝ)) = ⊤ then 0
   else e^(classical.some (ne_dual_top_iff_exists.mp hx))
 
-
-/- lemma foo (e : nnreal) (r : ℝ) (hr : r ≠ 0) :
-  mult_with_top_R_to_nnreal e (r : order_dual (with_top ℝ)) = r :=
-sorry -/
-
-/- lemma foo (e : nnreal) (r : order_dual (with_top ℝ)) (hr : r ≠ ⊥) :
-  classical.some_spec (with_bot.ne_bot_iff_exists.mp hr)  :=
-begin
-  have r := classical.some (with_bot.ne_bot_iff_exists.mp hr),
-  have h := classical.some_spec (with_bot.ne_bot_iff_exists.mp hr),
-  /- rw ← with_top.coe_eq_coe,
-  exact classical.some_spec (with_bot.ne_bot_iff_exists.mp (with_bot.coe_ne_bot r)), -/
-end -/
-
 lemma mult_with_top_apply (r : ℝ) :
  classical.some (ne_dual_top_iff_exists.mp (@with_top.coe_ne_top ℝ r)) = r :=
 begin
