@@ -1,6 +1,7 @@
 import rank_one_valuation
 import normed_space
 import power_mult_seminorm
+import analysis.normed_space.operator_norm
 import data.list.min_max
 import field_theory.fixed
 import field_theory.normal
@@ -952,14 +953,37 @@ instance spectral_valued : valued L (multiplicative (order_dual (with_top  ℝ))
 
 -- Theorem 3.2.4/2
 
---TODO : remove hna
-def norm.to_normed_field {A : Type*} [hA : field A]  {f : A → nnreal} (hf : is_mul_norm f) 
-  (hna : is_nonarchimedean f):
-  normed_field A := 
-{ norm         := λ x, (f x : ℝ),
+
+section
+
+omit hL
+
+def norm_to_normed_ring {A : Type*} [hA : ring A] {f : A → nnreal} (hf : is_norm f)
+  (hf_neg : ∀ x, f (-x) = f x) :
+  normed_ring A := 
+{ norm          := λ x, f x,
   dist          := λ x y, f (x - y),
   dist_self     := λ x, by simp only [sub_self, hf.zero, nnreal.coe_zero],
-  dist_comm     := λ x y, by simp only [nnreal.coe_eq, ← neg_sub x y, hna.neg hf.zero],
+  dist_comm     := λ x y, by simp only [nnreal.coe_eq, ← neg_sub x y, hf_neg],
+  dist_triangle := λ x y z, begin
+    have hxyz : x - z = x - y + (y - z) := by abel,
+    rw [← nnreal.coe_add, nnreal.coe_le_coe, hxyz],
+    exact hf.add _ _,
+  end,
+  eq_of_dist_eq_zero := λ x y hxy,
+    eq_of_sub_eq_zero (hf.zero_of_norm_zero ((nnreal.coe_eq_zero _).mp hxy)),
+  dist_eq := λ x y, rfl,
+  norm_mul := λ x y, by simp only [norm, ← nnreal.coe_mul, nnreal.coe_le_coe, hf.mul],
+  ..hA }
+
+end
+
+def mul_norm_to_normed_field {f : L → nnreal} (hf : is_mul_norm f) (hf_neg : ∀ x, f (-x) = f x) :
+  normed_field L := 
+{ norm          := λ x, f x,
+  dist          := λ x y, f (x - y),
+  dist_self     := λ x, by simp only [sub_self, hf.zero, nnreal.coe_zero],
+  dist_comm     := λ x y, by simp only [nnreal.coe_eq, ← neg_sub x y, hf_neg],
   dist_triangle := λ x y z, begin
     have hxyz : x - z = x - y + (y - z) := by ring, 
     rw [← nnreal.coe_add, nnreal.coe_le_coe, hxyz],
@@ -969,145 +993,12 @@ def norm.to_normed_field {A : Type*} [hA : field A]  {f : A → nnreal} (hf : is
     eq_of_sub_eq_zero (hf.to_is_norm.zero_of_norm_zero ((nnreal.coe_eq_zero _).mp hxy)),
   dist_eq := λ x y, rfl,
   norm_mul' := λ x y, by simp only [norm, ← nnreal.coe_mul, nnreal.coe_eq, hf.mul_eq], 
-  ..hA }
-
-lemma spectral_norm.unique' {f : L → nnreal} (hf_pow : is_pow_mult f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) 
-  (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) :
-  f = spectral_norm h_alg  := 
-begin
-  apply eq_of_pow_mult_faithful (normed_field.to_is_mul_norm K) hf_pow hf_alg_norm 
-    (spectral_norm.is_pow_mult h_alg hna) (spectral_norm.is_algebra_norm h_alg hna),
-  intro x,
-  set E : Type* := id K⟮x⟯ with hEdef,
-  letI hE : field E := (by rw [hEdef, id.def] ; apply_instance),
-  letI : algebra K E := K⟮x⟯.algebra,
-
-  let id1 : K⟮x⟯ →ₗ[K] E := 
-  { to_fun := λ y, y,
-    map_add' := sorry,
-    map_smul' := sorry },
-
-  let id2 : E →ₗ[K] K⟮x⟯ := 
-  { to_fun := λ y, y,
-    map_add' := sorry,
-    map_smul' := sorry },
-
-  letI n1 : normed_field K⟮x⟯ := 
-  { norm             := λ y, (f((algebra_map K⟮x⟯ L) y) : ℝ),
-    dist               := sorry,
-    dist_self          := sorry,
-    dist_comm          := sorry,
-    dist_triangle      := sorry,
-    eq_of_dist_eq_zero := sorry,
-    dist_eq            := sorry,
-    norm_mul'          := sorry,
-    ..intermediate_field.to_field K⟮x⟯ },
-
-  letI n2 : normed_field E := 
-  { norm             := λ y, (spectral_norm h_alg (id2 y : L) : ℝ),
-    dist               := sorry,
-    dist_self          := sorry,
-    dist_comm          := sorry,
-    dist_triangle      := sorry,
-    eq_of_dist_eq_zero := sorry,
-    dist_eq            := sorry,
-    norm_mul'          := sorry,
-    ..hE }, 
-
-  --need to import analysis.normed_space.operator_norm
-  have hid1_cont : continuous id1 := sorry, --linear_map.continuous_of_finite_dimensional id1,
-  have hid2_cont : continuous id2 := sorry,
-  
-  --have := (@normed_field.to_has_norm _ n1).norm,
-
-  have hC1 : ∃ (C1 : ℝ), 0 < C1 ∧ ∀ (y : K⟮x⟯), ∥id1 y∥ ≤ C1 * ∥y∥ := sorry,
-  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ∥id2 y∥ ≤ C2 * ∥y∥ := sorry,
-
-  obtain ⟨C1, hC1_pos, hC1⟩ := hC1,
-  obtain ⟨C2, hC2_pos, hC2⟩ := hC2,
-  use [⟨C2, le_of_lt hC2_pos⟩, ⟨C1, le_of_lt hC1_pos⟩, hC2_pos, hC1_pos],
-  rw forall_and_distrib,
-  simp only at hC1 hC2,
-  split,
-  { intro y, exact hC2 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
-  { intro y, exact hC1 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
-
-end
-
-lemma spectral_norm.unique_field_norm_ext {f : L → nnreal} (hf_field_norm : is_mul_norm f)
-  (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) (x : L) :
-  f x = spectral_norm h_alg x := 
-begin
-  have hf_pow : is_pow_mult f := is_mul_norm.to_is_pow_mult hf_field_norm,
-  have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
-  { smul := λ k x, by rw [algebra.smul_def, hf_field_norm.mul_eq, hf_ext k],
-    ..hf_field_norm},
-  rw spectral_norm.unique' h_alg hf_pow hf_alg_norm hna,
-end
-
-lemma spectral_norm.is_mul_norm (hna : is_nonarchimedean (λ k : K, ∥k∥₊)) : 
-  is_mul_norm (spectral_norm h_alg) :=
-{ mul_eq := λ x y, begin
-    by_cases hx : 0 = spectral_norm h_alg x,
-    { rw [← hx, zero_mul],
-      rw [eq_comm, (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.zero_iff] at hx,
-      rw [hx, zero_mul, (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.zero] },
-    { set f := c_seminorm (spectral_norm.is_norm_le_one_class h_alg) hx
-        (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg hna) with hf,
-      have hf_pow : is_pow_mult f := c_seminorm_is_pow_mult (spectral_norm.is_norm_le_one_class 
-        h_alg) hx (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg hna),
-      have hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f := 
-      { smul := λ k y,
-        begin
-          rw [← spectral_norm.extends h_alg, algebra.smul_def, hf],
-          have h_mul : ∀ (y : L), spectral_norm h_alg ((algebra_map K L k) * y) = 
-            spectral_norm h_alg (algebra_map K L k) * spectral_norm h_alg y,
-          { intro y, rw [spectral_norm.extends h_alg, ← algebra.smul_def],
-            exact (spectral_norm.is_algebra_norm h_alg hna).smul _ _ },
-          rw ← c_seminorm_apply_of_is_mult _ _ _ _ h_mul,
-          exact c_seminorm_is_mult_of_is_mult _ _ _ _ h_mul _,
-        end,
-        ..(c_seminorm_is_norm _ _ _ _ _) },
-      rw [← spectral_norm.unique' h_alg hf_pow hf_alg_norm hna],
-      rw [hf, c_seminorm_c_is_mult (spectral_norm.is_norm_le_one_class h_alg) hx
-        (spectral_norm.is_algebra_norm h_alg hna).to_is_norm.to_is_seminorm
-        (spectral_norm.is_pow_mult h_alg hna)] }
-  end
-  ..spectral_norm.is_algebra_norm h_alg hna }
-
-def spectral_norm.normed_field (h : is_nonarchimedean (λ k : K, ∥k∥₊)) : normed_field L := 
-{ norm      := λ (x : L), (spectral_norm h_alg x : ℝ),
-  dist      := λ (x y : L), (spectral_norm h_alg (x - y) : ℝ),
-  dist_self := λ x, by simp only [sub_self, nnreal.coe_eq_zero, spectral_norm.zero],
-  dist_comm := λ x y, by rw [nnreal.coe_eq, ← neg_sub, spectral_norm.neg h_alg h],
-  dist_triangle := λ x y z, begin
-    simp only [dist_eq_norm],
-    rw ← sub_add_sub_cancel x y z,
-    exact add_le_of_is_nonarchimedean (spectral_norm.zero h_alg)
-      (spectral_norm.is_nonarchimedean h_alg h) _ _,
-  end,
-  eq_of_dist_eq_zero := λ x y hxy,
-  begin
-    simp only [nnreal.coe_eq_zero] at hxy,
-    rw ← sub_eq_zero,
-    rw is_norm.zero_iff (spectral_norm.is_mul_norm h_alg h).to_is_norm at hxy,
-    exact hxy,
-  end,
-  dist_eq := λ x y, by refl,
-  norm_mul' := λ x y,
-  begin
-    simp only [← nnreal.coe_mul, nnreal.coe_eq],
-    exact (spectral_norm.is_mul_norm h_alg h).mul_eq x y,
-  end,
   ..hL }
 
-/- noncomputable! instance us : uniform_space L := infer_instance
+lemma mul_norm_to_normed_field.norm  {f : L → nnreal} (hf : is_mul_norm f) 
+  (hf_neg : ∀ x, f (-x) = f x):
+  (mul_norm_to_normed_field hf hf_neg).norm = λ x, (f x : ℝ) := rfl
 
-instance spectral_norm.complete_space (h_fin : @finite_dimensional K L _ _ _) :
-  complete_space L := sorry -/
 
 end spectral_valuation
 
