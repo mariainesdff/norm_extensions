@@ -200,7 +200,7 @@ lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
 lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L)
   (hna : ∀ (a b : K), ∥a - b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) :
   ∃ f : L → nnreal, is_algebra_norm (normed_ring.to_is_norm K) f ∧ is_pow_mult f ∧
-    function_extends (λ (k : K), ∥ k ∥₊) f :=
+    function_extends (λ (k : K), ∥ k ∥₊) f ∧ is_nonarchimedean f :=
 begin
   -- Choose a basis B = {1, e2,..., en} of the K-vector space L
   classical,
@@ -255,7 +255,8 @@ begin
     simp only [h1, hF_ext (1 : K), nnnorm_one], },
   use F,
   refine ⟨⟨field.is_norm_of_is_seminorm (smoothing_seminorm_is_seminorm hf_sn hf_1 hf_na)
-      ⟨(1 : L), hF_1.symm ▸ zero_ne_one⟩, _⟩, smoothing_seminorm_is_pow_mult hf_sn hf_1, hF_ext⟩,
+      ⟨(1 : L), hF_1.symm ▸ zero_ne_one⟩, _⟩, smoothing_seminorm_is_pow_mult hf_sn hf_1, hF_ext, 
+      smoothing_seminorm_is_nonarchimedean hf_sn hf_1 hf_na⟩,
   { intros k y,
     have hk : ∀ y : L, f ((algebra_map K L k) * y) = f (algebra_map K L k) * f y,
     { exact seminorm_from_bounded_of_mul_is_mul hg_bdd (hg_mul k), },
