@@ -258,50 +258,6 @@ begin
     rw [finset.prod_insert ha, finset.prod_insert ha, hs, polynomial.C_mul], }
 end
 
-lemma polynomial.prod_X_sub_C_coeff' {n : ℕ} (hn : 0 < n) --(b : fin n → K)
-  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), 
-  (polynomial.X + polynomial.C ((mv_polynomial.X k : mv_polynomial (fin n) K))))).coeff m =
-  (finset.powerset_len (n - m) finset.univ).sum
-    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - mv_polynomial.X i)) := sorry
-
-lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
-  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
-  (finset.powerset_len (n - m) finset.univ).sum
-    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) := 
-begin
-  simp_rw [sub_eq_add_neg, ← polynomial.C_neg, ← pi.neg_apply],
-  rw [finprod_eq_prod_of_fintype],
-  --let s := (multiset.map (λ i : fin n, (b i : mv_polynomial (fin n) K)) finset.univ.val),
-  --let s := finset.univ.val.map (λ i : fin n, polynomial.C (b i)),
-  --rw mv_polynomial.prod_X_add_C_coeff K,
-  sorry
-  /- rw [finprod_eq_prod_of_fintype, mv_polynomial.prod_X_add_C_eval],
-  simp_rw [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
-  have h_coeff : ∀ (k : ℕ), ((finset.powerset_len k finset.univ).sum (λ (x : finset (fin n)), 
-    x.prod (λ (x : fin n), - polynomial.C (b x))) * polynomial.X ^ (n - k)).coeff m = 
-    if k = n - m then (finset.powerset_len (n - m) finset.univ).sum
-    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) else 0,
-  { intro k,
-    simp_rw [← polynomial.C_neg, polynomial.C_finset_prod, polynomial.C_finset_add],
-    rw polynomial.coeff_C_mul_X_pow,
-    split_ifs with h1 h2 h3,
-    { rw h2 },
-    { by_cases hk : k ≤ n,
-      { rw [h1, tsub_tsub_cancel_of_le hk, ne_self_iff_false] at h2, contradiction },
-      { rw not_le at hk,
-        have hempt : finset.powerset_len k (finset.univ : finset (fin n)) = ∅,
-        { apply finset.powerset_len_empty,
-          rw [finset.card_fin],
-          exact hk, },
-        rw [hempt, finset.sum_empty], }},
-    { rw [h3, tsub_tsub_cancel_of_le hm, ne_self_iff_false] at h1, contradiction },
-    { refl }},
-  simp_rw h_coeff,
-  rw [finset.sum_ite_eq', if_pos],
-  rw finset.mem_range,
-  linarith, -/
-end
-
 lemma prod_X_add_C_nat_degree {n : ℕ} (b : fin n → L) :
   (finset.univ.prod (λ (i : fin n), polynomial.X - polynomial.C (b i))).nat_degree = n :=
 begin
@@ -318,22 +274,6 @@ lemma foo (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
   (λ (t : finset (fin n)), t.prod (λ (i : fin n), -b i))) ≤  f (s.val.prod (λ (i : fin n), -b i)) := 
 begin
   sorry
-end
-
-lemma foo1 {K : Type*} [field K]  {n : ℕ} (hn : 0 < n) (b : fin n → K)
-  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
-  (finset.powerset_len (n - m) finset.univ).sum
-    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) :=
-begin
-  simp_rw [sub_eq_add_neg, ← polynomial.C_neg, ← pi.neg_apply],
-  rw [finprod_eq_prod_of_fintype],
-  rw finset.prod_eq_multiset_prod,
-  rw ← multiset.map_map (λ x : K, X + C x) (-b),
-  have : (finset.univ.val.map (-b)).card = n,
-  { rw multiset.card_map, exact finset.card_fin n },
-  rw multiset.prod_X_add_C_coeff,
-  { sorry },
-  { rw this, exact hm },
 end
 
 lemma finset.esymm_map_val {σ R} [comm_semiring R] (f : σ → R) (s : finset σ) (n : ℕ) :
