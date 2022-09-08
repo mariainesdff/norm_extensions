@@ -231,13 +231,6 @@ begin
   exact polynomial.monic_of_injective (algebra_map K L).injective hprod,
 end
 
-/- universe u
-theorem mv_polynomial.prod_X_add_C_eval {R : Type u} [comm_semiring R] (σ : Type u)
- [fintype σ] (r : σ → R) :
-finset.univ.prod (λ (i : σ), ⇑polynomial.C (r i) + polynomial.X) =
- (finset.range (fintype.card σ + 1)).sum (λ (i : ℕ), (finset.powerset_len i finset.univ).sum (λ (t : finset σ), t.prod (λ (i : σ), ⇑polynomial.C (r i))) * polynomial.X ^ (fintype.card σ - i))
- -/
-
 lemma polynomial.C_finset_add {α : Type*} (s : finset α) (b : α → K) :
   s.sum (λ (x : α), polynomial.C (b x)) = polynomial.C (s.sum b) := 
 begin
@@ -266,14 +259,45 @@ begin
     algebra.id.smul_eq_mul, mul_one],
 end
 
-lemma foo (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
+/-  lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
+  ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := -/
+
+lemma finset.powerset_len_nonempty' {α : Type*} {n : ℕ} {s : finset α} (h : n ≤ s.card) :
+  (finset.powerset_len n s).nonempty :=
+begin
+  classical,
+  induction s using finset.induction_on with x s hx IH generalizing n,
+  { rw [finset.card_empty, le_zero_iff] at h,
+    rw [h, finset.powerset_len_zero],
+    exact finset.singleton_nonempty _, },
+  { cases n,
+    { simp },
+    { rw [finset.card_insert_of_not_mem hx, nat.succ_le_succ_iff] at h,
+      rw finset.powerset_len_succ_insert hx,
+      refine finset.nonempty.mono _ ((IH h).image (insert x)),
+      convert (finset.subset_union_right _ _) }}
+end
+
+lemma is_nonarchimedean_finset_powerset_image_add (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
   (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) {n : ℕ} (hn : 0 < n) (b : fin n → L)
   {m : ℕ} (hm : m < n) :
 ∃ (s : (finset.powerset_len (fintype.card (fin n) - m) (@finset.univ (fin n) _))),
  f ((finset.powerset_len (fintype.card (fin n) - m) finset.univ).sum 
   (λ (t : finset (fin n)), t.prod (λ (i : fin n), -b i))) ≤  f (s.val.prod (λ (i : fin n), -b i)) := 
 begin
-  sorry
+  have hf0 : f 0 = 0 := hf_alg_norm.zero,
+  set g := (λ (t : finset (fin n)), t.prod (λ (i : fin n), -b i)) with hg,
+  obtain ⟨b, hb_in, hb⟩ := is_nonarchimedean_finset_image_add hf0 hf_na g 
+    (finset.powerset_len (fintype.card (fin n) - m) finset.univ),
+  have hb_ne : (finset.powerset_len (fintype.card (fin n) - m)
+    (finset.univ : finset(fin n))).nonempty,
+  { rw [fintype.card_fin],
+    have hmn : n - m ≤ (finset.univ : finset (fin n)).card,
+    { rw [finset.card_fin], 
+      exact nat.sub_le n m },
+    exact finset.powerset_len_nonempty' hmn, },
+  use [⟨b, hb_in hb_ne⟩, hb]
 end
 
 lemma finset.esymm_map_val {σ R} [comm_semiring R] (f : σ → R) (s : finset σ) (n : ℕ) :
@@ -332,7 +356,8 @@ begin
         rw multiset.prod_X_add_C_coeff _ hm_le',
       have : m < n,
       { rw hpn, exact hm },
-      obtain ⟨s, hs⟩ := foo hf_pm hf_na hf_alg_norm hn b this,
+      obtain ⟨s, hs⟩ := is_nonarchimedean_finset_powerset_image_add hf_pm hf_na hf_alg_norm hn b
+        this,
       rw finset.esymm_map_val,
       have h_card : multiset.card (multiset.map (-b) finset.univ.val) = fintype.card (fin n),
       { rw [multiset.card_map], refl, },
