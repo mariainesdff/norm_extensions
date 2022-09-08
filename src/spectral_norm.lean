@@ -12,6 +12,8 @@ import pow_mult_faithful
 
 noncomputable theory
 
+open polynomial
+
 open_locale polynomial nnreal
 
 variables {R : Type*} [normed_ring R]
@@ -256,6 +258,12 @@ begin
     rw [finset.prod_insert ha, finset.prod_insert ha, hs, polynomial.C_mul], }
 end
 
+lemma polynomial.prod_X_sub_C_coeff' {n : ℕ} (hn : 0 < n) --(b : fin n → K)
+  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), 
+  (polynomial.X + polynomial.C ((mv_polynomial.X k : mv_polynomial (fin n) K))))).coeff m =
+  (finset.powerset_len (n - m) finset.univ).sum
+    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - mv_polynomial.X i)) := sorry
+
 lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
   {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
   (finset.powerset_len (n - m) finset.univ).sum
@@ -263,7 +271,9 @@ lemma polynomial.prod_X_sub_C_coeff {n : ℕ} (hn : 0 < n) (b : fin n → K)
 begin
   simp_rw [sub_eq_add_neg, ← polynomial.C_neg, ← pi.neg_apply],
   rw [finprod_eq_prod_of_fintype],
-  --rw mv_polynomial.prod_X_add_C_coeff,
+  --let s := (multiset.map (λ i : fin n, (b i : mv_polynomial (fin n) K)) finset.univ.val),
+  --let s := finset.univ.val.map (λ i : fin n, polynomial.C (b i)),
+  --rw mv_polynomial.prod_X_add_C_coeff K,
   sorry
   /- rw [finprod_eq_prod_of_fintype, mv_polynomial.prod_X_add_C_eval],
   simp_rw [fintype.card_fin, pi.neg_apply, map_neg, polynomial.finset_sum_coeff],
@@ -310,6 +320,29 @@ begin
   sorry
 end
 
+lemma foo1 {K : Type*} [field K]  {n : ℕ} (hn : 0 < n) (b : fin n → K)
+  {m : ℕ} (hm : m ≤ n) : (finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k)))).coeff m =
+  (finset.powerset_len (n - m) finset.univ).sum
+    (λ (t : finset (fin n)), t.prod (λ (i : (fin n)), - b i)) :=
+begin
+  simp_rw [sub_eq_add_neg, ← polynomial.C_neg, ← pi.neg_apply],
+  rw [finprod_eq_prod_of_fintype],
+  rw finset.prod_eq_multiset_prod,
+  rw ← multiset.map_map (λ x : K, X + C x) (-b),
+  have : (finset.univ.val.map (-b)).card = n,
+  { rw multiset.card_map, exact finset.card_fin n },
+  rw multiset.prod_X_add_C_coeff,
+  { sorry },
+  { rw this, exact hm },
+end
+
+lemma finset.esymm_map_val {σ R} [comm_semiring R] (f : σ → R) (s : finset σ) (n : ℕ) :
+  (s.val.map f).esymm n = (s.powerset_len n).sum (λ t, t.prod f) :=
+begin
+  rw [multiset.esymm, multiset.powerset_len_map, ← finset.map_val_val_powerset_len],
+  simpa only [multiset.map_map],
+end
+
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
 lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
@@ -349,18 +382,21 @@ begin
       { have : ∥p.coeff m∥₊ = (λ (r : K), ∥r∥₊) (p.coeff m) := rfl,
         rw [this, ← is_algebra_norm_extends (normed_ring.to_is_norm K) hf_alg_norm hf1,
           polynomial.map_alg_eq_map, polynomial.coeff_map] },
-        have hm_le : m ≤ fintype.card (fin n),
-        { rw [fintype.card_fin, hpn],
-          exact le_of_lt hm, },
-      rw [hc, hp, finprod_eq_prod_of_fintype],
-      simp_rw sub_eq_add_neg,
-      simp_rw ← polynomial.C_neg,
-      sorry,},
-      sorry },
-      /- rw mv_polynomial.prod_X_add_C_coeff _ _ _ hm_le,
+        rw [hc, hp, finprod_eq_prod_of_fintype],
+        simp_rw [sub_eq_add_neg, ← polynomial.C_neg, finset.prod_eq_multiset_prod, ← pi.neg_apply,
+          ← multiset.map_map (λ x : L, X + C x) (-b)],
+        have hm_le' : m ≤ multiset.card (multiset.map (-b) finset.univ.val),
+        { have : multiset.card finset.univ.val = finset.card finset.univ := rfl,
+          rw [multiset.card_map, this, finset.card_fin n, hpn],
+           exact (le_of_lt hm), },
+        rw multiset.prod_X_add_C_coeff _ hm_le',
       have : m < n,
       { rw hpn, exact hm },
       obtain ⟨s, hs⟩ := foo hf_pm hf_na hf_alg_norm hn b this,
+      rw finset.esymm_map_val,
+      have h_card : multiset.card (multiset.map (-b) finset.univ.val) = fintype.card (fin n),
+      { rw [multiset.card_map], refl, },
+      rw h_card,
       apply le_trans hs,
       have  h_pr: f (s.val.prod (λ (i : fin n), -b i)) ≤ s.val.prod (λ (i : fin n), f(-b i)),
       { exact finset.le_prod_of_submultiplicative _ hf1 hf_alg_norm.mul _ _,},
@@ -378,10 +414,12 @@ begin
       { rw h_card },
       have hs' := s.property,
       simp only [subtype.val_eq_coe, fintype.card_fin, finset.mem_powerset_len] at hs',
-      rw [hs'.right, hpn], },
-    { rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
-      exact zero_le _, }} -/
+      rw [hs'.right, hpn],  },
+    rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
+    exact zero_le _, },
 end
+
+#exit
 
 end bdd_by_spectral_value
 
