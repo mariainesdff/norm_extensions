@@ -305,6 +305,20 @@ begin
   use [⟨b, hb_in hb_ne⟩, hb]
 end
 
+lemma is_nonarchimedean_multiset_powerset_image_add (hf_pm : is_pow_mult f)
+  (hf_na : is_nonarchimedean f) (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f)
+  (s : multiset L) {m : ℕ} (hm : m < s.card) :
+  ∃ t : multiset L, t.card = s.card - m ∧ (∀ x : L, x ∈ t → x ∈ s) ∧ 
+    f (multiset.map multiset.prod (multiset.powerset_len (s.card - m) s)).sum ≤ f (t.prod) := 
+begin
+  /- apply multiset.induction_on s,
+  { sorry },
+  { sorry } -/
+  sorry
+end
+
+#exit
+
 lemma finset.esymm_map_val {σ R} [comm_semiring R] (f : σ → R) (s : finset σ) (n : ℕ) :
   (s.val.map f).esymm n = (s.powerset_len n).sum (λ t, t.prod f) :=
 begin
@@ -314,17 +328,6 @@ end
 
 -- (multiset.map (λ (a : L), X - ⇑C a) s).prod
 open_locale classical
-
-lemma max_root_norm_eq_spectral_value' (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_one_class f)
-  (p : K[X]) (s : multiset L) 
-  (hp : polynomial.map_alg K L p = (multiset.map (λ (a : L), polynomial.X - polynomial.C a) s).prod)
-  (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
-  supr (λ x : L, if x ∈ s then f x else 0 ) = spectral_value (p.monic_of_prod' s hp) :=
-begin
-  
-  sorry
-end
 
 /-- Part (2): if p splits into linear factors over B, then its spectral value equals the maximum
   of the norms of its roots. -/
@@ -401,6 +404,138 @@ begin
       rw [hs'.right, hpn],  },
     rw spectral_value_terms_of_nat_degree_le _ (le_of_not_lt hm),
     exact zero_le _, },
+end
+
+lemma multiset.max {s : multiset L} (hs : s.to_finset.nonempty) :
+  ∃ y : L, y ∈ s ∧ ∀ z : L, z ∈ s → f z ≤ f y := 
+begin
+  have hsf : (multiset.map f s).to_finset.nonempty,
+  { obtain ⟨x, hx⟩ := hs.bex,
+    exact ⟨f x, multiset.mem_to_finset.mpr (multiset.mem_map.mpr
+      ⟨x, (multiset.mem_to_finset.mp hx), rfl⟩)⟩ },
+  have h := (s.map f).to_finset.max'_mem hsf,
+  rw [multiset.mem_to_finset, multiset.mem_map] at h,
+  obtain ⟨y, hys, hymax⟩ := h,
+  use [y, hys],
+  intros z hz,
+  rw hymax,
+  exact finset.le_max' _ _ (multiset.mem_to_finset.mpr (multiset.mem_map.mpr ⟨z, hz, rfl⟩)),
+end
+
+lemma multiset.card_to_finset_pos {α : Type u_1} {m : multiset α} (hm : 0 < m.card) :
+  0 < m.to_finset.card :=
+begin
+  obtain ⟨x, hx⟩ := multiset.card_pos_iff_exists_mem.mp hm,
+  exact finset.card_pos.mpr ⟨x, multiset.mem_to_finset.mpr hx⟩,
+end
+
+lemma polynomial.aeval_root (s : multiset L) {x : L} (hx : x ∈ s) {p : K[X]}
+  (hp : polynomial.map_alg K L p =
+    (multiset.map (λ (a : L), polynomial.X - polynomial.C a) s).prod) : polynomial.aeval x p = 0 :=
+begin
+  have : polynomial.aeval x (polynomial.map_alg K L p) = polynomial.aeval x p,
+  { rw [map_alg_eq_map, aeval_map] },
+  rw [← this, hp, coe_aeval_eq_eval],
+  have hy : (X - C x) ∣ (multiset.map (λ (a : L), X - C a) s).prod,
+  { apply multiset.dvd_prod,
+    simp only [multiset.mem_map, sub_right_inj, C_inj, exists_eq_right],
+    exact hx },
+  rw eval_eq_zero_of_dvd_of_eval_eq_zero hy,
+  simp only [eval_sub, eval_X, eval_C, sub_self],
+end
+
+
+lemma max_root_norm_eq_spectral_value' (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_one_class f)
+  (p : K[X]) (s : multiset L) 
+  (hp : polynomial.map_alg K L p = (multiset.map (λ (a : L), polynomial.X - polynomial.C a) s).prod)
+  (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
+  supr (λ x : L, if x ∈ s then f x else 0 ) = spectral_value (p.monic_of_prod' s hp) :=
+begin
+   apply le_antisymm,
+  { apply csupr_le,
+    rintros x,
+    by_cases hx : x ∈ s,
+    { have hx0 : polynomial.aeval x p = 0 := polynomial.aeval_root s hx hp,
+      rw if_pos hx,
+      exact root_norm_le_spectral_value hf_pm hf_na hf_alg_norm (le_of_eq hf1) _ hx0, },
+    { rw if_neg hx,
+      exact zero_le', }},
+  { apply csupr_le,
+    intros m,
+    by_cases hm : m < p.nat_degree,
+    { rw spectral_value_terms_of_lt_nat_degree _ hm,
+      have h : 0 < (p.nat_degree - m : ℝ),
+      { rw [sub_pos, nat.cast_lt], exact hm },
+      rw [← nnreal.rpow_le_rpow_iff h, ← nnreal.rpow_mul, one_div_mul_cancel (ne_of_gt h),
+        nnreal.rpow_one, ← nat.cast_sub (le_of_lt hm), nnreal.rpow_nat_cast],
+      have hps : s.card = p.nat_degree,
+      { rw [← polynomial.nat_degree_map (algebra_map K L), ← polynomial.map_alg_eq_map, hp, 
+          nat_degree_multiset_prod_X_sub_C_eq_card], },
+      have hc : ∥p.coeff m∥₊ = f (((polynomial.map_alg K L) p).coeff m),
+      { have : ∥p.coeff m∥₊ = (λ (r : K), ∥r∥₊) (p.coeff m) := rfl,
+        rw [this, ← is_algebra_norm_extends (normed_ring.to_is_norm K) hf_alg_norm hf1,
+          polynomial.map_alg_eq_map, polynomial.coeff_map] },
+        rw [hc, hp],
+        have hm_le' : m ≤ s.card,
+        { rw hps, exact le_of_lt hm, },
+        rw multiset.prod_X_sub_C_coeff s hm_le',
+       
+        have h : f ((-1) ^ (s.card - m) * s.esymm (s.card - m)) = f (s.esymm (s.card - m)),
+        { cases (neg_one_pow_eq_or L (s.card - m)) with h1 hn1,
+          { rw [h1, one_mul] },
+          { rw [hn1, neg_mul, one_mul, hf_na.neg hf_alg_norm.zero], } },
+        rw h,
+        rw [multiset.esymm],
+        --set n := s.card with hn,
+
+        have ht : ∃ t : multiset L, t.card = s.card - m ∧ (∀ x : L, x ∈ t → x ∈ s) ∧ 
+        f (multiset.map multiset.prod (multiset.powerset_len (s.card - m) s)).sum ≤ f (t.prod),
+        { have hm' : m < multiset.card s,
+          { rw hps, exact hm, },
+          exact is_nonarchimedean_multiset_powerset_image_add hf_pm hf_na hf_alg_norm s hm', },
+
+        obtain ⟨t, ht_card, hts, ht_ge⟩ := ht,
+        apply le_trans ht_ge,
+
+        have  h_pr: f (t.prod) ≤ (t.map f).prod,
+        { exact multiset.le_prod_of_submultiplicative _ hf1 hf_alg_norm.mul _ },
+        apply le_trans h_pr,
+        have hs_ne : s.to_finset.nonempty,
+        { rw [← finset.card_pos],
+          apply multiset.card_to_finset_pos,
+          rw hps,
+          exact lt_of_le_of_lt (zero_le _) hm, },
+        have hy : ∃ y : L, y ∈ s ∧ ∀ z : L, z ∈ s → f z ≤ f y := multiset.max hs_ne,
+        obtain ⟨y, hyx, hy_max⟩ := hy,
+        have : (multiset.map f t).prod ≤ (f y) ^ (p.nat_degree - m),
+        { have h_card : (p.nat_degree - m) = (t.map f).card,
+          { rw [multiset.card_map, ht_card, ← hps] },
+          have h_le : ∀ (x : ℝ≥0), x ∈ multiset.map f t → x ≤ f y,
+          { intros r hr,
+            obtain ⟨z, hzt, hzr⟩ := multiset.mem_map.mp hr,
+            rw ← hzr,
+            exact hy_max _ (hts _ hzt) },
+          rw h_card,
+          exact multiset.prod_le_pow_card (t.map f) _ h_le, },
+
+        have h_bdd : bdd_above (set.range (λ (x : L), ite (x ∈ s) (f x) 0)),
+        { use f y,
+          rw mem_upper_bounds,
+          intros r hr,
+          obtain ⟨z, hz⟩ := set.mem_range.mpr hr,
+          simp only at hz,
+          rw ← hz,
+          split_ifs with h,
+          { exact hy_max _ h },
+          { exact zero_le' }},
+        apply le_trans this,
+        apply pow_le_pow_of_le,
+        apply le_trans _ (le_csupr h_bdd y),
+        rw if_pos hyx },
+      { simp only [spectral_value_terms],
+        rw if_neg hm,
+        exact zero_le' }},
 end
 
 end bdd_by_spectral_value
@@ -760,48 +895,6 @@ lemma seminorm_of_galois.extends (hna : is_nonarchimedean (nnnorm : K → ℝ≥
 
 section normal
 
-lemma spectral_norm.eq_seminorm_of_galois (h_fin : finite_dimensional K L) (hn : normal K L) 
-  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
-  spectral_norm h_alg = seminorm_of_galois h_fin hna := sorry
-
-lemma spectral_norm.is_pow_mult_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
-  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) : is_pow_mult (spectral_norm h_alg) :=
-begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
-  exact seminorm_of_galois.is_pow_mult h_fin hna,
-end
-
-lemma spectral_norm.is_algebra_norm_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
-  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
-  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
-begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
-  exact seminorm_of_galois.is_algebra_norm h_fin hna,
-end
-
-lemma spectral_norm.is_nonarchimedean_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
-  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0))  :
-  is_nonarchimedean (spectral_norm h_alg) :=
-begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
-  exact seminorm_of_galois.is_nonarchimedean h_fin hna,
-end
-
-lemma spectral_norm.extends_norm_of_fd (h_fin : finite_dimensional K L) (hn : normal K L) 
-  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
-  function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
-begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
-  exact seminorm_of_galois.extends h_fin hna,
-end
-
-/- lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
-  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_one_class f)
-  (p : K[X]) {n : ℕ} (hn : 0 < n) (b : fin n → L)
-  (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
-  (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
-  supr (f ∘ b) = spectral_value (p.monic_of_prod b hp) := -/
-
 lemma extends_is_norm_le_one_class {f : L → nnreal}
   (hf_ext : function_extends (λ x : K, ∥x∥₊) f) : is_norm_le_one_class f := 
 begin
@@ -841,17 +934,7 @@ begin
   intros y,
   split_ifs,
   { have hy : ∃ σ : L ≃ₐ[K] L, σ x = y,
-    { apply minpoly.conj_of_root' h_alg hn, 
-      have h_aeval : (aeval y) (map (algebra_map K L) (minpoly K x)) = (aeval y) (minpoly K x),
-      { rw aeval_map, },
-      rw [← h_aeval, hs],
-      simp only [coe_aeval_eq_eval],
-      have hy : (X - C y) ∣ (multiset.map (λ (a : L), X - C a) s).prod,
-      { apply multiset.dvd_prod,
-        simp only [multiset.mem_map, sub_right_inj, C_inj, exists_eq_right],
-        exact h },
-      rw eval_eq_zero_of_dvd_of_eval_eq_zero hy,
-      simp only [eval_sub, eval_X, eval_C, sub_self],},
+    { exact minpoly.conj_of_root' h_alg hn (polynomial.aeval_root s h hs), },
     obtain ⟨σ, hσ⟩ := hy,
     rw ← hσ,
     have h_bdd : bdd_above (set.range (λ (σ : L ≃ₐ[K] L), f (σ x))),
@@ -859,6 +942,62 @@ begin
     exact le_csupr h_bdd σ, },
   { exact zero_le' }},
 end
+
+lemma spectral_norm.eq_seminorm_of_galois (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  spectral_norm h_alg = seminorm_of_galois h_fin hna := 
+begin
+  ext x,
+  set f := classical.some (finite_extension_pow_mul_seminorm h_fin hna) with hf,
+  have hf_alg_norm : is_algebra_norm _ f :=
+  (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).1,
+  have hf_pow : is_pow_mult f :=
+  (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.1,
+  have hf_ext : function_extends _ f :=
+  (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.2.1,
+  have hf_na : is_nonarchimedean f :=
+  (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.2.2,
+  rw spectral_norm.max_of_fd_normal h_alg h_fin hn hna hf_pow hf_na hf_alg_norm hf_ext,
+  refl,
+end
+
+lemma spectral_norm.is_pow_mult_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) : is_pow_mult (spectral_norm h_alg) :=
+begin
+  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  exact seminorm_of_galois.is_pow_mult h_fin hna,
+end
+
+lemma spectral_norm.is_algebra_norm_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  is_algebra_norm (normed_ring.to_is_norm K) (spectral_norm h_alg) :=
+begin
+  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  exact seminorm_of_galois.is_algebra_norm h_fin hna,
+end
+
+lemma spectral_norm.is_nonarchimedean_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0))  :
+  is_nonarchimedean (spectral_norm h_alg) :=
+begin
+  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  exact seminorm_of_galois.is_nonarchimedean h_fin hna,
+end
+
+lemma spectral_norm.extends_norm_of_fd (h_fin : finite_dimensional K L) (hn : normal K L) 
+  (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) :
+  function_extends (λ x : K, ∥x∥₊) (spectral_norm h_alg) :=
+begin
+  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  exact seminorm_of_galois.extends h_fin hna,
+end
+
+/- lemma max_root_norm_eq_spectral_value (hf_pm : is_pow_mult f) (hf_na : is_nonarchimedean f)
+  (hf_alg_norm : is_algebra_norm (normed_ring.to_is_norm K) f) (hf1 : is_norm_one_class f)
+  (p : K[X]) {n : ℕ} (hn : 0 < n) (b : fin n → L)
+  (hp : polynomial.map_alg K L p = finprod (λ (k : fin n), polynomial.X - (polynomial.C (b k))))
+  (h_isom : ∀ x y : K, f ((algebra_map K L y) - algebra_map K L x) = nndist x y) :
+  supr (f ∘ b) = spectral_value (p.monic_of_prod b hp) := -/
 
 lemma spectral_norm.unique_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L)
   (hna : is_nonarchimedean (nnnorm : K → ℝ≥0)) 
