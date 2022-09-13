@@ -311,13 +311,17 @@ lemma is_nonarchimedean_multiset_powerset_image_add (hf_pm : is_pow_mult f)
   ∃ t : multiset L, t.card = s.card - m ∧ (∀ x : L, x ∈ t → x ∈ s) ∧ 
     f (multiset.map multiset.prod (multiset.powerset_len (s.card - m) s)).sum ≤ f (t.prod) := 
 begin
-  /- apply multiset.induction_on s,
-  { sorry },
-  { sorry } -/
-  sorry
+  have hf0 : f 0 = 0 := hf_alg_norm.zero,
+  set g := (λ (t : multiset L), t.prod) with hg,
+  obtain ⟨b, hb_in, hb_le⟩ := is_nonarchimedean_multiset_image_add hf0 hf_na g
+    (multiset.powerset_len (s.card - m) s),
+  have hb : b ≤ s ∧ b.card = s.card - m,
+  { rw [← multiset.mem_powerset_len],
+    apply hb_in,
+    rw [multiset.card_powerset_len],
+    exact nat.choose_pos ((s.card).sub_le m), },
+  refine ⟨b, hb.2, (λ x hx, multiset.mem_of_le hb.left hx), hb_le⟩,
 end
-
-#exit
 
 lemma finset.esymm_map_val {σ R} [comm_semiring R] (f : σ → R) (s : finset σ) (n : ℕ) :
   (s.val.map f).esymm n = (s.powerset_len n).sum (λ t, t.prod f) :=

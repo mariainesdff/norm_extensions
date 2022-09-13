@@ -207,10 +207,10 @@ end
 
 
 lemma is_nonarchimedean_finset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
-  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : finset β) :
-  ∃ (b : β) (hb : s.nonempty → b ∈ s), f (s.sum g) ≤ f (g b) := 
+  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (t : finset β) :
+  ∃ (b : β) (hb : t.nonempty → b ∈ t), f (t.sum g) ≤ f (g b) := 
 begin
-  apply finset.induction_on s,
+  apply finset.induction_on t,
   { rw [finset.sum_empty],
     refine ⟨hβ.some, by simp only [finset.not_nonempty_empty, is_empty.forall_iff], _⟩,
     rw hf0, exact zero_le _, },
@@ -237,6 +237,39 @@ begin
           apply le_trans (is_nonarchimedean.add_le hf0 hna _ _),
           rw h0,
           exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩, }}} 
+end
+
+lemma is_nonarchimedean_multiset_image_add {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
+  (hna : is_nonarchimedean f) {β : Type*} [hβ : nonempty β] (g : β → α) (s : multiset β) :
+  ∃ (b : β) (hb : 0 < s.card → b ∈ s), f ((multiset.map g s).sum) ≤ f (g b) := 
+begin
+  apply multiset.induction_on s,
+  { rw [multiset.map_zero, multiset.sum_zero, multiset.card_zero, hf0],
+    exact ⟨hβ.some, by simp only [not_lt_zero', is_empty.forall_iff], zero_le'⟩ },
+  { rintros a t ⟨M, hMs, hM⟩,
+    by_cases hMa : f (g M) ≤ f (g a),
+    { refine ⟨a, _, _⟩,
+      { simp only [multiset.card_cons, nat.succ_pos', multiset.mem_cons_self, forall_true_left] },
+      { rw [multiset.map_cons, multiset.sum_cons],
+        exact le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+          (max_le_iff.mpr (⟨le_refl _,le_trans hM hMa⟩)), }},
+    { rw not_le at hMa,
+      by_cases ht : 0 < t.card,
+      { refine ⟨M, _, _⟩,
+        { simp only [multiset.card_cons, nat.succ_pos', multiset.mem_cons, forall_true_left],
+          exact or.intro_right _ (hMs ht) },
+          rw [multiset.map_cons, multiset.sum_cons],
+          exact le_trans (is_nonarchimedean.add_le hf0 hna _ _)
+            (max_le_iff.mpr ⟨le_of_lt hMa, hM⟩) },
+      { refine ⟨a, _, _⟩,
+        { simp only [multiset.card_cons, nat.succ_pos', multiset.mem_cons_self, forall_true_left] },
+        { have h0 : f (multiset.map g t).sum = 0,
+          { simp only [not_lt, le_zero_iff, multiset.card_eq_zero] at ht,
+            rw [ht, multiset.map_zero, multiset.sum_zero, hf0] },
+          rw [multiset.map_cons, multiset.sum_cons],
+          apply le_trans (is_nonarchimedean.add_le hf0 hna _ _),
+          rw h0,
+          exact max_le_iff.mpr ⟨le_refl _, zero_le _⟩ }}}}
 end
 
 lemma is_nonarchimedean_finset_range_add_le {α : Type*} [ring α] {f : α → nnreal} (hf0 : f 0 = 0)
