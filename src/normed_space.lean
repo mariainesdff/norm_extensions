@@ -26,14 +26,15 @@ end
 
 -- Lemma 3.2.1./3
 
-section
+/- section
 
 variables {K : Type*} [field K] {L : Type*} [field L] [algebra K L] {g : K → ℝ≥0} (hg : is_norm g)
+
 lemma finite_extension_pow_mul_seminorm' (hfd : finite_dimensional K L)
   (hna : ∀ (a b : K), g(a - b) ≤ max (g a) (g b)) :
   ∃ f : L → nnreal, is_algebra_norm hg f ∧ is_pow_mult f ∧ function_extends g f :=
 sorry 
-end
+end -/
 
 variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 
@@ -194,8 +195,8 @@ begin
     rw [basis.repr_smul, nnnorm_mul, ← hi_def, ← hj_def, hij] },
 end
 
-lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
-  (hB1 : ∃ i : ι, B i = (1 : L)) : Prop := false
+/- lemma basis.norm_is_module_norm {ι : Type*} [fintype ι] (B : basis ι K L)
+  (hB1 : ∃ i : ι, B i = (1 : L)) : Prop := false -/
 
 lemma finite_extension_pow_mul_seminorm (hfd : finite_dimensional K L)
   (hna : ∀ (a b : K), ∥a - b∥₊ ≤ max (∥a∥₊) (∥b∥₊)) :

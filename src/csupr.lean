@@ -1,6 +1,5 @@
 import order.conditionally_complete_lattice
 import algebra.order.with_zero
-import data.real.ennreal
 import topology.instances.nnreal
 
 noncomputable theory

@@ -3,7 +3,7 @@ import field_theory.is_alg_closed.algebraic_closure
 import number_theory.padics.padic_numbers
 import topology.metric_space.cau_seq_filter
 import topology.algebra.valued_field
-import spectral_norm
+import spectral_norm_unique
 import normed_valued
 
 noncomputable theory

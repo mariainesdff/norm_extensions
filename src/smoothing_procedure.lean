@@ -1,4 +1,4 @@
-import filter
+--import filter
 import seminormed_rings
 import analysis.special_functions.pow
 import csupr
@@ -680,6 +680,7 @@ begin
   exact (nnreal.rpow_le_rpow_iff hn1).mpr hf1,
 end
 
+
 lemma smoothing_seminorm_le : smoothing_seminorm hf1 x ≤ f x :=
 begin
   apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hsn hf1 x),
@@ -750,30 +751,37 @@ begin
     rw nat.cast_sub,
     exact hmu_n_le _ },
 
-    have hx : filter.limsup filter.at_top (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ))) ≤
-      (smoothing_seminorm hf1 x)^a,
-    { sorry },
-    have hy : filter.limsup filter.at_top (λ (n : ℕ), (f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
-      (smoothing_seminorm hf1 y)^b,
-    { sorry },
+  have hx : filter.limsup filter.at_top (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ))) ≤
+    (smoothing_seminorm hf1 x)^a,
+  { sorry },
+  have hy : filter.limsup filter.at_top (λ (n : ℕ), (f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
+    (smoothing_seminorm hf1 y)^b,
+  { sorry },
 
-    have hxy : filter.limsup filter.at_top
-      (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
-      (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b,
+  have hxy : filter.limsup filter.at_top
+    (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
+    (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b,
+  { have : filter.limsup filter.at_top
+    (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) ≤
+    (filter.limsup filter.at_top (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ)))) *
+    ( filter.limsup filter.at_top (λ (n : ℕ), (f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ)))),
     { sorry },
+    apply le_trans this,
+    exact mul_le_mul' hx hy },
 
-    conv_lhs { simp only [smoothing_seminorm, smoothing_seminorm_seq_lim], },
-    rw ← nnreal.coe_le_coe,
-    apply le_of_forall_sub_le,
-    intros ε hε,
-    have hε_nnr : ε = ((⟨ε, le_of_lt hε⟩ : nnreal) : ℝ) := rfl,
-    rw sub_le_iff_le_add, rw hε_nnr, rw ← nnreal.coe_add, rw nnreal.coe_le_coe,
+  conv_lhs { simp only [smoothing_seminorm, smoothing_seminorm_seq_lim], },
+  rw ← nnreal.coe_le_coe,
+  apply le_of_forall_sub_le,
+  intros ε hε,
+  have hε_nnr : ε = ((⟨ε, le_of_lt hε⟩ : nnreal) : ℝ) := rfl,
+  rw sub_le_iff_le_add, rw hε_nnr, rw ← nnreal.coe_add, rw nnreal.coe_le_coe,
 
-    have hxy' : filter.limsup filter.at_top
-      (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) <
-      (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b + ⟨ε, le_of_lt hε⟩,
-    { sorry },
-  sorry,
+  have hxy' : filter.limsup filter.at_top
+    (λ (n : ℕ), (f (x ^ (mu_n (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu_n (φ n))))^(1/(φ n : ℝ))) <
+    (smoothing_seminorm hf1 x)^a * (smoothing_seminorm hf1 y)^b + ⟨ε, le_of_lt hε⟩,
+  { sorry },
+  sorry
+  --sorry,
    /-  have h := filter.eventually_lt_of_limsup_lt hxy' _,
 
     { sorry },

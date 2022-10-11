@@ -1200,7 +1200,6 @@ include hL
 
 include hK
 
-
 --@[priority 10]
 instance valued_field.to_normed_field : normed_field K := 
 { norm               := sorry,
