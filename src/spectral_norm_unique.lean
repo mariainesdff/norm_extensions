@@ -54,7 +54,7 @@ begin
   { norm_smul_le := λ k y,
     begin
       change (spectral_alg_norm h_alg hna (id2 (k • y) : L) : ℝ) ≤ 
-        ∥ k ∥ * spectral_alg_norm h_alg hna (id2 y : L),
+        ‖ k ‖ * spectral_alg_norm h_alg hna (id2 y : L),
       simp only [linear_map.coe_mk, id.def, intermediate_field.coe_smul, map_smul_eq_mul],
     end,
     ..K⟮x⟯.algebra },
@@ -76,7 +76,7 @@ begin
   letI N2 : normed_space K K⟮x⟯ :=
   { norm_smul_le :=  λ k y,
     begin
-      change (f ((algebra_map K⟮x⟯ L) (k • y)) : ℝ) ≤ ∥ k ∥ * f (algebra_map K⟮x⟯ L y),
+      change (f ((algebra_map K⟮x⟯ L) (k • y)) : ℝ) ≤ ‖ k ‖ * f (algebra_map K⟮x⟯ L y),
       have : (algebra_map ↥K⟮x⟯ L) (k • y) = k • (algebra_map ↥K⟮x⟯ L y),
       { rw [← is_scalar_tower.algebra_map_smul K⟮x⟯ k y, smul_eq_mul, map_mul, 
           ← is_scalar_tower.algebra_map_apply K ↥K⟮x⟯ L, algebra.smul_def] }, 
@@ -91,8 +91,10 @@ begin
   set Id1 : K⟮x⟯ →L[K] E := ⟨id1, id1.continuous_of_finite_dimensional⟩ with hId1,
   set Id2 : E →L[K] K⟮x⟯ := ⟨id2, id2.continuous_of_finite_dimensional⟩ with hId2,
  
-  have hC1 : ∃ (C1 : ℝ), 0 < C1 ∧ ∀ (y : K⟮x⟯), ∥id1 y∥ ≤ C1 * ∥y∥ := Id1.is_bounded_linear_map.bound,
-  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ∥id2 y∥ ≤ C2 * ∥y∥ := Id2.is_bounded_linear_map.bound,
+  have hC1 : ∃ (C1 : ℝ), 0 < C1 ∧ ∀ (y : K⟮x⟯), ‖ id1 y ‖ ≤ C1 * ‖ y ‖ := 
+  Id1.is_bounded_linear_map.bound,
+  have hC2 : ∃ (C2 : ℝ), 0 < C2 ∧ ∀ (y : E), ‖ id2 y ‖ ≤ C2 * ‖ y ‖ := 
+  Id2.is_bounded_linear_map.bound,
 
   obtain ⟨C1, hC1_pos, hC1⟩ := hC1,
   obtain ⟨C2, hC2_pos, hC2⟩ := hC2,
@@ -211,7 +213,7 @@ noncomputable! def spectral_norm_to_normed_space (h_alg : algebra.is_algebraic K
   @normed_space K L _ (spectral_norm_to_seminormed_add_comm_group h_alg h) := 
 { norm_smul_le := λ r x,
   begin
-    change spectral_alg_norm h_alg h (r • x) ≤ ∥r∥*(spectral_alg_norm h_alg h x),
+    change spectral_alg_norm h_alg h (r • x) ≤ ‖ r ‖*(spectral_alg_norm h_alg h x),
     exact le_of_eq (map_smul_eq_mul _ _ _),
   end,
   ..(infer_instance : module K L) }

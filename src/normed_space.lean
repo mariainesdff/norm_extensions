@@ -57,11 +57,11 @@ begin
 end
 
 def basis.norm {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) : L → ℝ := 
-λ x, ∥B.equiv_fun x (classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun x i∥ )))∥
+λ x, ‖B.equiv_fun x (classical.some (finite.exists_max (λ i : ι, ‖B.equiv_fun x i‖ )))‖
 
 lemma basis.le_norm {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) (x : L) (i : ι) :
-  ∥B.equiv_fun x i∥ ≤ B.norm x := 
-classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun x i∥)) i
+  ‖B.equiv_fun x i‖ ≤ B.norm x := 
+classical.some_spec (finite.exists_max (λ i : ι, ‖B.equiv_fun x i‖)) i
 
 lemma basis.norm_zero {ι : Type*} [fintype ι] [nonempty ι] (B : basis ι K L) :  B.norm 0 = 0 :=
 by simp only [basis.norm, map_zero, pi.zero_apply, norm_zero]
@@ -76,17 +76,17 @@ end
 
 lemma basis.norm_extends {ι : Type*} [fintype ι] [nonempty ι] [decidable_eq ι] {B : basis ι K L}
   {i : ι} (hBi : B i = (1 : L)) :
-  function_extends (λ x : K, ∥x∥) B.norm :=
+  function_extends (λ x : K, ‖x‖) B.norm :=
 begin
   intro k,
   { by_cases hk : k = 0,
   { simp only [hk, map_zero, B.norm_zero, norm_zero] },
   { simp only [basis.norm,  basis_one hBi],
     have h_max : (classical.some (finite.exists_max (λ j : ι, 
-      ∥(λ (n : ι), if (n = i) then k else 0) j ∥))) = i,
+      ‖(λ (n : ι), if (n = i) then k else 0) j ‖))) = i,
     { by_contradiction h,
       have h_max := classical.some_spec (finite.exists_max (λ j : ι, 
-        ∥(λ (n : ι), if (n = i) then k else 0) j ∥)),
+        ‖(λ (n : ι), if (n = i) then k else 0) j ‖)),
       simp only [if_neg h] at h_max,
       specialize h_max i,
       rw [if_pos rfl, norm_zero, norm_le_zero_iff] at h_max,
@@ -100,11 +100,11 @@ lemma basis.norm_is_nonarchimedean {ι : Type*} [fintype ι] [nonempty ι] [deci
 begin
   intros x y,
   simp only [basis.norm],
-  set ixy := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun (x + y) i∥)) with hixy_def,
-  have hxy : ∥B.equiv_fun (x + y) ixy∥ ≤ max (∥B.equiv_fun x ixy∥) (∥B.equiv_fun y ixy∥),
+  set ixy := classical.some (finite.exists_max (λ i : ι, ‖B.equiv_fun (x + y) i‖)) with hixy_def,
+  have hxy : ‖B.equiv_fun (x + y) ixy‖ ≤ max (‖B.equiv_fun x ixy‖) (‖B.equiv_fun y ixy‖),
   { rw [linear_equiv.map_add, pi.add_apply], exact hna _ _ },
-  have hix := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun x i∥)),
-  have hiy := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
+  have hix := classical.some_spec (finite.exists_max (λ i : ι, ‖B.equiv_fun x i‖)),
+  have hiy := classical.some_spec (finite.exists_max (λ i : ι, ‖B.equiv_fun y i‖)),
   cases le_max_iff.mp hxy with hx hy,
   { apply le_max_of_le_left,
     exact le_trans hx (hix ixy), },
@@ -150,7 +150,7 @@ begin
       simp only [norm_one, zero_lt_one] },
     exact lt_of_lt_of_le h_pos (hM (i, i)) },
   { intros x y,
-    set ixy := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun (x*y) i∥)) with hixy_def,
+    set ixy := classical.some (finite.exists_max (λ i : ι, ‖B.equiv_fun (x*y) i‖)) with hixy_def,
     conv_lhs{ simp only [basis.norm],
       rw [← hixy_def, ← basis.sum_equiv_fun B x, ← basis.sum_equiv_fun B y] },
     rw finset.sum_mul,
@@ -162,9 +162,9 @@ begin
       linear_equiv.map_finset_sum, mul_smul_comm, linear_equiv.map_smul],
 
     have hk : ∃ (k : ι) (hk : finset.univ.nonempty → k ∈ finset.univ),
-     ∥∑ (i : ι), 
-       (B.equiv_fun x i • ∑ (i_1 : ι), B.equiv_fun y i_1 • B.equiv_fun (B i * B i_1)) ixy∥ ≤ 
-     ∥ (B.equiv_fun x k • ∑ (j : ι),  B.equiv_fun y j • B.equiv_fun (B k * B j)) ixy∥ :=
+     ‖∑ (i : ι), 
+       (B.equiv_fun x i • ∑ (i_1 : ι), B.equiv_fun y i_1 • B.equiv_fun (B i * B i_1)) ixy‖ ≤ 
+     ‖ (B.equiv_fun x k • ∑ (j : ι),  B.equiv_fun y j • B.equiv_fun (B k * B j)) ixy‖ :=
     is_nonarchimedean_finset_image_add hna'
         (λ i, (B.equiv_fun x i • ∑ (i_1 : ι), B.equiv_fun y i_1 • B.equiv_fun (B i * B i_1)) ixy) 
         (finset.univ : finset ι),
@@ -173,8 +173,8 @@ begin
     apply le_trans hk,
 
     have hk' :  ∃ (k' : ι) (hk' : finset.univ.nonempty → k' ∈ finset.univ), 
-      ∥∑ (j : ι), B.equiv_fun y j • B.equiv_fun (B k * B j) ixy∥ ≤ 
-      ∥ B.equiv_fun y k' • B.equiv_fun (B k * B k') ixy∥ := 
+      ‖∑ (j : ι), B.equiv_fun y j • B.equiv_fun (B k * B j) ixy‖ ≤ 
+      ‖B.equiv_fun y k' • B.equiv_fun (B k * B k') ixy‖ := 
     is_nonarchimedean_finset_image_add hna'
       (λ i, B.equiv_fun y i • B.equiv_fun (B k * B i) ixy) (finset.univ : finset ι),
 
@@ -202,13 +202,13 @@ begin
   { rw [hk, map_zero, zero_mul, B.norm_zero, zero_mul],},
   { rw basis.norm_extends hBi,
     simp only [basis.norm],
-    set i := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)) with hi_def,
-    have hi := classical.some_spec (finite.exists_max (λ i : ι, ∥B.equiv_fun y i∥)),
-    set j := classical.some (finite.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥))
+    set i := classical.some (finite.exists_max (λ i : ι, ‖B.equiv_fun y i‖)) with hi_def,
+    have hi := classical.some_spec (finite.exists_max (λ i : ι, ‖B.equiv_fun y i‖)),
+    set j := classical.some (finite.exists_max (λ i : ι, ‖B.equiv_fun ((algebra_map K L) k * y) i‖))
       with hj_def,
     have hj := classical.some_spec
-      (finite.exists_max (λ i : ι, ∥B.equiv_fun ((algebra_map K L) k * y) i∥)),
-    have hij : ∥B.equiv_fun y i∥ = ∥B.equiv_fun y j∥,
+      (finite.exists_max (λ i : ι, ‖B.equiv_fun ((algebra_map K L) k * y) i‖)),
+    have hij : ‖B.equiv_fun y i‖ = ‖B.equiv_fun y j‖,
     { refine le_antisymm _ (hi j),
       { specialize hj i,
         rw ← hj_def at hj,
@@ -239,7 +239,7 @@ begin
   -- For every k ∈ K, k = k • 1 + 0 • e2 + ... + 0 • en
   have h_k : ∀ (k : K), B.equiv_fun ((algebra_map K L) k) = λ (i : ι), 
     if (i = ⟨(1 : L), h1L⟩) then k else 0 := basis_one hB1,
-  -- Define a function g : L → ℝ by setting g (∑ki • ei) = maxᵢ ∥ ki ∥  
+  -- Define a function g : L → ℝ by setting g (∑ki • ei) = maxᵢ ‖ ki ‖  
   set g : L → ℝ := B.norm with hg,
   -- g 0 = 0
   have hg0 : g 0 = 0 := B.norm_zero,
@@ -274,7 +274,7 @@ begin
   -- extending the norm on K.
   
   set F' := smoothing_seminorm hf_1 hf_na with hF',
-  have hF'_ext : ∀ k : K,  F' ((algebra_map K L) k) = ∥k∥,
+  have hF'_ext : ∀ k : K,  F' ((algebra_map K L) k) = ‖k‖,
   { intro k,
     rw ← hf_ext _,
     exact smoothing_seminorm_apply_of_is_mult hf_1 
@@ -290,17 +290,15 @@ begin
       simp only [ring_norm.to_fun_eq_coe],
       have hk : ∀ y : L, f ((algebra_map K L k) * y) = f (algebra_map K L k) * f y,
       { exact seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k), },
-      have hfk : ∥ k ∥  = 
-        (smoothing_seminorm hf_1 hf_na)((algebra_map K L) k),
-      { rw [← hf_ext k, eq_comm,
-          smoothing_seminorm_apply_of_is_mult hf_1 hk] },
+      have hfk : ‖k‖  = (smoothing_seminorm hf_1 hf_na)((algebra_map K L) k),
+      { rw [← hf_ext k, eq_comm, smoothing_seminorm_apply_of_is_mult hf_1 hk] },
       simp only [hfk, hF'],
       erw [← smoothing_seminorm_of_mult hf_1 hk hf_na y, algebra.smul_def],
       refl,
     end,
     ..(ring_seminorm.to_ring_norm F' hF'_0) },
 
-    have hF_ext : ∀ k : K,  F ((algebra_map K L) k) = ∥k∥,
+    have hF_ext : ∀ k : K,  F ((algebra_map K L) k) = ‖k‖,
     { intro k,
       rw ← hf_ext _,
       exact smoothing_seminorm_apply_of_is_mult hf_1 

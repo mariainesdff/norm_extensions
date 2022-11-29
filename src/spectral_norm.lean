@@ -29,10 +29,10 @@ begin
 end
 
 def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
-λ (n : ℕ), if n < p.nat_degree then ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ)) else 0
+λ (n : ℕ), if n < p.nat_degree then ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) else 0
 
 lemma spectral_value_terms_of_lt_nat_degree {p : R[X]} (hp : p.monic) {n : ℕ}
-  (hn : n < p.nat_degree) : spectral_value_terms hp n = ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ)) := 
+  (hn : n < p.nat_degree) : spectral_value_terms hp n = ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) := 
 by simp only [spectral_value_terms, if_pos hn]
 
 lemma spectral_value_terms_of_nat_degree_le {p : R[X]} (hp : p.monic) {n : ℕ}
@@ -45,22 +45,22 @@ lemma spectral_value_terms_bdd_above {p : R[X]} (hp : p.monic) :
   bdd_above (set.range (spectral_value_terms hp)) := 
 begin
   use list.foldr max 0
-  (list.map (λ n, ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)),
+  (list.map (λ n, ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ))) (list.range p.nat_degree)),
   { rw mem_upper_bounds,
     intros r hr,
     obtain ⟨n, hn⟩ := set.mem_range.mpr hr,
     simp only [spectral_value_terms] at hn,
     split_ifs at hn with hd hd,
-    { have h : ∥p.coeff n∥ ^ (1 / (p.nat_degree - n : ℝ)) ∈ list.map 
-        (λ (n : ℕ), ∥p.coeff n∥ ^ (1 / (p.nat_degree - n : ℝ))) (list.range p.nat_degree),
+    { have h : ‖ p.coeff n ‖ ^ (1 / (p.nat_degree - n : ℝ)) ∈ list.map 
+        (λ (n : ℕ), ‖ p.coeff n ‖ ^ (1 / (p.nat_degree - n : ℝ))) (list.range p.nat_degree),
       { simp only [list.mem_map, list.mem_range],
         exact ⟨n, hd, rfl⟩, },
     exact list.le_max_of_exists_le 0 h (ge_of_eq hn), },
     { rw ← hn,
       by_cases hd0 : p.nat_degree = 0,
       { rw [hd0, list.range_zero, list.map_nil, list.foldr_nil], },
-      { have h : ∥p.coeff 0∥ ^ (1 / (p.nat_degree - 0 : ℝ)) ∈ list.map 
-          (λ (n : ℕ), ∥p.coeff n∥ ^ (1 / (p.nat_degree - n : ℝ))) (list.range p.nat_degree),
+      { have h : ‖ p.coeff 0 ‖ ^ (1 / (p.nat_degree - 0 : ℝ)) ∈ list.map 
+          (λ (n : ℕ), ‖ p.coeff n ‖ ^ (1 / (p.nat_degree - n : ℝ))) (list.range p.nat_degree),
         { simp only [list.mem_map, list.mem_range],
           exact ⟨0, nat.pos_of_ne_zero hd0, by rw nat.cast_zero⟩,},
       refine list.le_max_of_exists_le 0 h _,
@@ -71,7 +71,7 @@ lemma spectral_value_terms_finite_range {p : R[X]} (hp : p.monic) :
   (set.range (spectral_value_terms hp)).finite :=
 begin
   have h_ss : set.range (spectral_value_terms hp) ⊆ set.range (λ (n : fin p.nat_degree), 
-    ∥ p.coeff n ∥^(1/(p.nat_degree - n : ℝ))) ∪ {(0 : ℝ)},
+    ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ))) ∪ {(0 : ℝ)},
   { intros x hx,
     obtain ⟨m, hm⟩ := set.mem_range.mpr hx,
     by_cases hm_lt : m < p.nat_degree,
@@ -154,12 +154,12 @@ begin
 end
 
 lemma spectral_value_X_sub_C (r : R) :
-  spectral_value (@polynomial.monic_X_sub_C _ _ r) = ∥r∥ := 
+  spectral_value (@polynomial.monic_X_sub_C _ _ r) = ‖ r ‖ := 
 begin
   rw spectral_value, rw spectral_value_terms,
   simp only [polynomial.nat_degree_X_sub_C, nat.lt_one_iff, polynomial.coeff_sub,
     nat.cast_one, one_div],
-  suffices : (⨆ (n : ℕ), ite (n = 0) ∥r∥ 0) = ∥r∥,
+  suffices : (⨆ (n : ℕ), ite (n = 0) ‖ r ‖  0) = ‖ r ‖,
   { rw ← this,
     apply congr_arg,
     ext n,
@@ -196,23 +196,24 @@ begin
   by_cases hx0 : f x = 0,
   { rw hx0, exact spectral_value_nonneg hp, },
   { by_contra' h_ge,
-    have hn_lt : ∀ (n : ℕ) (hn : n < p.nat_degree), ∥ p.coeff n ∥ < (f x)^ (p.nat_degree - n),
+    have hn_lt : ∀ (n : ℕ) (hn : n < p.nat_degree), ‖ p.coeff n ‖ < (f x)^ (p.nat_degree - n),
     { intros n hn,
-      have hexp : (∥p.coeff n∥^(1/(p.nat_degree - n : ℝ)))^(p.nat_degree - n) = ∥p.coeff n∥,
+      have hexp : (‖p.coeff n ‖^(1/(p.nat_degree - n : ℝ)))^(p.nat_degree - n) = ‖ p.coeff n ‖,
       { rw [← real.rpow_nat_cast, ← real.rpow_mul (norm_nonneg _), mul_comm, 
           real.rpow_mul (norm_nonneg _), real.rpow_nat_cast, ← nat.cast_sub (le_of_lt hn), one_div,
           real.pow_nat_rpow_nat_inv (norm_nonneg _) (ne_of_gt (tsub_pos_of_lt hn))], },
-      have h_base : ∥p.coeff n∥^(1/(p.nat_degree - n : ℝ)) < f x,
+      have h_base : ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) < f x,
       { rw [spectral_value, supr, set.finite.cSup_lt_iff (spectral_value_terms_finite_range hp)
           (set.range_nonempty (spectral_value_terms hp))] at h_ge,
-        have h_rg: ∥p.coeff n∥^ (1 / (p.nat_degree - n : ℝ)) ∈ set.range (spectral_value_terms hp),
+        have h_rg : ‖ p.coeff n ‖^ (1 / (p.nat_degree - n : ℝ)) ∈
+          set.range (spectral_value_terms hp),
         { use n, simp only [spectral_value_terms, if_pos hn] },
-        exact h_ge (∥p.coeff n∥₊ ^ (1 / (↑(p.nat_degree) - ↑n))) h_rg },
+        exact h_ge (‖ p.coeff n ‖₊ ^ (1 / (↑(p.nat_degree) - ↑n))) h_rg },
       rw [← hexp, ← real.rpow_nat_cast, ← real.rpow_nat_cast],
       exact real.rpow_lt_rpow (real.rpow_nonneg_of_nonneg (norm_nonneg _) _) h_base 
         (nat.cast_pos.mpr (tsub_pos_of_lt hn)) },
     have h_deg : 0 < p.nat_degree := polynomial.nat_degree_pos_of_monic_of_root hp hx,
-    have : ∥(1 : K)∥ = 1 := norm_one,
+    have : ‖ (1 : K) ‖ = 1 := norm_one,
     have h_lt : f ((finset.range (p.nat_degree)).sum (λ (i : ℕ), p.coeff i • x ^ i)) < 
       f (x^(p.nat_degree)),
     { have hn' : ∀ (n : ℕ) (hn : n < p.nat_degree), f (p.coeff n • x ^ n) < f (x^(p.nat_degree)),
@@ -424,7 +425,7 @@ begin
       have hpn : n = p.nat_degree,
       { rw [← polynomial.nat_degree_map (algebra_map K L), ← polynomial.map_alg_eq_map, hp,
           finprod_eq_prod_of_fintype, prod_X_add_C_nat_degree] },
-      have hc : ∥p.coeff m∥ = f (((polynomial.map_alg K L) p).coeff m),
+      have hc : ‖ p.coeff m ‖ = f (((polynomial.map_alg K L) p).coeff m),
       { rw [← algebra_norm.extends_norm hf1, polynomial.map_alg_eq_map, polynomial.coeff_map] },
         rw [hc, hp, finprod_eq_prod_of_fintype],
         simp_rw [sub_eq_add_neg, ← polynomial.C_neg, finset.prod_eq_multiset_prod, ← pi.neg_apply,
@@ -568,7 +569,7 @@ begin
       have hps : s.card = p.nat_degree,
       { rw [← polynomial.nat_degree_map (algebra_map K L), ← polynomial.map_alg_eq_map, hp, 
           nat_degree_multiset_prod_X_sub_C_eq_card], },
-      have hc : ∥p.coeff m∥ = f (((polynomial.map_alg K L) p).coeff m),
+      have hc : ‖ p.coeff m ‖ = f (((polynomial.map_alg K L) p).coeff m),
       { rw [← algebra_norm.extends_norm hf1, polynomial.map_alg_eq_map, polynomial.coeff_map] },
       rw [hc, hp],
       have hm_le' : m ≤ s.card,
@@ -791,7 +792,7 @@ by rw [← (algebra_map K L).map_one, hf_ext, norm_one]
 
 lemma spectral_norm.max_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ)) {f : algebra_norm K L} (hf_pm : is_pow_mul f)
-  (hf_na : is_nonarchimedean f) (hf_ext : function_extends (λ x : K, ∥x∥₊) f) (x : L) :
+  (hf_na : is_nonarchimedean f) (hf_ext : function_extends (λ x : K, ‖ x ‖₊) f) (x : L) :
   spectral_norm h_alg x = supr (λ (σ : L ≃ₐ[K] L), f (σ x)) :=
 begin
   refine le_antisymm _ (csupr_le (λ σ, root_norm_le_spectral_value hf_pm hf_na
@@ -887,7 +888,7 @@ end
 lemma spectral_norm.unique_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L)
   (hna : is_nonarchimedean (norm : K → ℝ)) {f : algebra_norm K L} 
   (hf_pm : is_pow_mul f) (hf_na : is_nonarchimedean f) 
-  (hf_ext : function_extends (λ x : K, ∥x∥₊) f)
+  (hf_ext : function_extends (λ x : K, ‖ x ‖₊) f)
   (hf_iso : ∀ (σ : L ≃ₐ[K] L) (x : L), f x = f (σ x))
   (x : L) : f x = spectral_norm h_alg x :=
 begin
@@ -933,7 +934,7 @@ begin
 end
 
 lemma spectral_norm_smul (hna : is_nonarchimedean (norm : K → ℝ)) (k : K) (y : L) :
-  spectral_norm h_alg (k • y) = ∥ k ∥₊ * spectral_norm h_alg y :=
+  spectral_norm h_alg (k • y) = ‖ k ‖₊ * spectral_norm h_alg y :=
 begin
   set E := K⟮y⟯ with hE,
   haveI : normal K (algebraic_closure ↥E) := 
@@ -1041,7 +1042,7 @@ begin
   exact map_mul_le_mul _ _ _
 end
 
-lemma spectral_norm.extends (k : K) : spectral_norm h_alg (algebra_map K L k) = ∥ k ∥ :=
+lemma spectral_norm.extends (k : K) : spectral_norm h_alg (algebra_map K L k) = ‖ k ‖ :=
 begin
   simp_rw [spectral_norm, minpoly.eq_X_sub_C_of_algebra_map_inj _ (algebra_map K L).injective],
   exact spectral_value_X_sub_C k,
@@ -1080,14 +1081,14 @@ lemma spectral_alg_norm_def (hna : is_nonarchimedean (norm : K → ℝ)) (x : L)
   spectral_alg_norm h_alg hna x = spectral_norm h_alg x := 
 rfl
 
-lemma spectral_norm_extends (k : K) : spectral_norm h_alg (algebra_map K L k) = ∥ k ∥ :=
+lemma spectral_norm_extends (k : K) : spectral_norm h_alg (algebra_map K L k) = ‖ k ‖ :=
 begin
   simp_rw [spectral_norm, minpoly.eq_X_sub_C_of_algebra_map_inj _ (algebra_map K L).injective],
   exact spectral_value_X_sub_C k,
 end
 
 lemma spectral_alg_norm_extends (k : K) (hna : is_nonarchimedean (norm : K → ℝ)) :
-  spectral_alg_norm h_alg hna (algebra_map K L k) = ∥ k ∥ :=
+  spectral_alg_norm h_alg hna (algebra_map K L k) = ‖ k ‖ :=
 spectral_norm_extends h_alg k
 
 lemma spectral_norm_is_norm_le_one_class : spectral_norm h_alg 1 ≤ 1 :=

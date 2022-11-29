@@ -10,8 +10,7 @@ noncomputable theory
 
 open_locale nnreal
 
-variables (p : ℕ) [fact p.prime]
---include hp
+variables (p : ℕ) [fact (nat.prime p)]
 
 @[reducible] def Q_p_alg : Type* := algebraic_closure ℚ_[p]
 
@@ -25,28 +24,27 @@ protected lemma coe_eq : (coe : ℚ_[p] → (Q_p_alg p)) = algebra_map ℚ_[p] (
 lemma padic.is_nonarchimedean : is_nonarchimedean (norm : ℚ_[p] → ℝ) :=
 padic_norm_e.nonarchimedean
 
-instance Q_p_alg.normed_field : normed_field (Q_p_alg p) := 
-spectral_norm.normed_field (Q_p_alg.is_algebraic p) (padic.is_nonarchimedean p)
+namespace Q_p_alg
 
-/- instance Q_p_alg.abv : is_absolute_value (Q_p_alg.normed_field p).norm :=
-normed_field.is_absolute_value
+noncomputable! instance normed_field : normed_field (Q_p_alg p) := 
+@spectral_norm_to_normed_field ℚ_[p] _ padic.complete_space _ _ _ (Q_p_alg.is_algebraic p) 
+  (padic.is_nonarchimedean p)
+-- The old proof now times out
+--spectral_norm_to_normed_field (Q_p_alg.is_algebraic p) (padic.is_nonarchimedean p)
 
-def C_p :=  @cau_seq.completion.Cauchy _ _ (Q_p_alg p) _ _ (normed_field.is_absolute_value) -/
+lemma is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
+spectral_norm_is_nonarchimedean (Q_p_alg.is_algebraic p) (padic_norm_e.nonarchimedean)
 
-/- lemma Q_p_alg.is_nonarchimedean : is_nonarchimedean (spectral_norm (Q_p_alg.is_algebraic p)) :=
-spectral_norm.is_nonarchimedean (Q_p_alg.is_algebraic p) (padic.is_nonarchimedean p) -/
-
-lemma Q_p_alg.is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
-spectral_norm.is_nonarchimedean (Q_p_alg.is_algebraic p) (padic_norm_e.nonarchimedean)
-
-instance Q_p_alg.valued_field : valued (Q_p_alg p) ℝ≥0 :=
+instance valued_field : valued (Q_p_alg p) ℝ≥0 :=
 normed_field.to_valued (Q_p_alg.is_nonarchimedean p)
 
-lemma Q_p_alg.v_def (x : Q_p_alg p) : valued.v x = ∥ x ∥₊ :=
+lemma v_def (x : Q_p_alg p) : valued.v x = ‖ x ‖₊ :=
 by { ext, refl }
 
-lemma Q_p_alg.v_def_coe (x : Q_p_alg p) : 
+lemma v_def_coe (x : Q_p_alg p) : 
   ((valued.v x : ℝ≥0) : ℝ) = spectral_norm (Q_p_alg.is_algebraic p) x := rfl
+
+end Q_p_alg
 
 --lemma Q_p_alg.v_ext (x : ℚ_[p]) : valued.v (x : Q_p_alg p) = ∥ (x : Q_p_alg p)  ∥₊ := rfl
 
@@ -107,7 +105,7 @@ instance : normed_field ℂ_[p] := valued_field.to_normed_field
 
 lemma C_p.norm_def : (norm : ℂ_[p] → ℝ) = norm_def := rfl
 
-lemma C_p.norm_extends (x : Q_p_alg p) : ∥ (x : ℂ_[p]) ∥ = ∥ x ∥ := 
+lemma C_p.norm_extends (x : Q_p_alg p) : ‖ (x : ℂ_[p]) ‖ = ‖ x ‖ := 
 begin
   by_cases hx : x = 0,
   { rw [hx, C_p.coe_zero, norm_zero, norm_zero] },
@@ -115,7 +113,7 @@ begin
     refl }
 end
 
-lemma C_p.nnnorm_extends (x : Q_p_alg p) : ∥ (x : ℂ_[p]) ∥₊ = ∥ x ∥₊ := 
+lemma C_p.nnnorm_extends (x : Q_p_alg p) : ‖ (x : ℂ_[p]) ‖₊ = ‖ x ‖₊ := 
 by { ext, exact C_p.norm_extends p x }
 
 lemma C_p.is_nonarchimedean : is_nonarchimedean (norm : ℂ_[p] → ℝ) :=
@@ -154,7 +152,7 @@ lemma metric.mem_closed_ball_zero_neg {α : Type*} [seminormed_add_comm_group α
 by { rw [mem_closed_ball_zero_iff, norm_neg, ← mem_closed_ball_zero_iff], exact hx }
 
 def subring.unit_closed_ball (𝕜 : Type*) [semi_normed_ring 𝕜] [norm_one_class 𝕜] 
-  (h_na : is_nonarchimedean (λ x : 𝕜, ∥x∥₊)) : subring 𝕜 := 
+  (h_na : is_nonarchimedean (norm : 𝕜 → ℝ)) : subring 𝕜 := 
 { carrier   := metric.closed_ball (0 : 𝕜) 1,
   add_mem'  := λ x y hx hy, metric.mem_closed_ball_zero_add hx hy h_na,
   zero_mem' := metric.mem_closed_ball_self zero_le_one,

@@ -8,7 +8,7 @@ open_locale topological_space nnreal
 
 def normed_group_hom.normed_group_hom_inv_of_bijective_bounded {V : Type*} {W : Type*}
   [seminormed_add_comm_group V] [seminormed_add_comm_group W] (f : normed_add_group_hom V W)
-  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) :
+  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ‖v‖ ≤ C * ‖f v‖) :
   normed_add_group_hom W V := 
 { to_fun   := function.inv_fun f,
   map_add' := (add_monoid_hom.inverse f.to_add_monoid_hom (function.inv_fun f)
@@ -26,7 +26,7 @@ def normed_group_hom.normed_group_hom_inv_of_bijective_bounded {V : Type*} {W : 
 -- TODO : find new name
 lemma normed_group_hom.continuous_inv_of_bijective_bounded {V : Type*} {W : Type*}
   [seminormed_add_comm_group V] [seminormed_add_comm_group W] {f : normed_add_group_hom V W}
-  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) :
+  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ‖v‖ ≤ C * ‖f v‖) :
   continuous (function.inv_fun f) :=
 begin
   set g : normed_add_group_hom W V :=
@@ -53,7 +53,7 @@ end
 
 def normed_group_hom.homeo_of_bijective_bounded {V : Type*} {W : Type*} 
   [seminormed_add_comm_group V] [seminormed_add_comm_group W] {f : normed_add_group_hom V W} 
-  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ∥v∥ ≤ C * ∥f v∥) : homeomorph V W :=
+  (h_bij : function.bijective f) (h_bdd : ∃ (C : ℝ), ∀ v, ‖v‖ ≤ C * ‖f v‖) : homeomorph V W :=
 { to_fun             := f.to_fun,
   inv_fun            := function.inv_fun f.to_fun,
   left_inv           := function.left_inverse_inv_fun h_bij.injective,
