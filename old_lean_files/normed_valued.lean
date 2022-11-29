@@ -9,7 +9,8 @@ noncomputable theory
 
 open_locale nnreal
 
-variables (K : Type*) [normed_field K]
+variables {K : Type*} [hK : normed_field K]
+include hK
 
 /- class is_nonarchimedean' {α : Type*} [add_group α] (f : α → ℝ≥0) : Prop := 
 (add_le : ∀ a b, f (a + b) ≤ max (f a) (f b)) -/
@@ -21,8 +22,30 @@ def valuation_from_norm (h : is_nonarchimedean nnnorm) : valuation K ℝ≥0 :=
   map_mul'  := nnnorm_mul,
   map_add_le_max' := λ x y, h.add_le nnnorm_zero x y, }
 
-def normed_field.to_valued (h : is_nonarchimedean nnnorm) : valued K ℝ≥0 :=
-valued.mk' (valuation_from_norm K h)
+lemma valuation_from_norm_apply (h : is_nonarchimedean nnnorm) (x : K):
+  valuation_from_norm h x = ∥ x ∥₊ := rfl
+
+instance foo : normed_add_comm_group K := non_unital_normed_ring.to_normed_add_comm_group
+
+def normed_field.to_valued (h : is_nonarchimedean (nnnorm : K → ℝ≥0)) : valued K ℝ≥0 :=
+{ v := valuation_from_norm h,
+  is_topological_valuation := λ U,
+  begin
+    rw metric.mem_nhds_iff,
+    refine ⟨λ h, _, λ h, _⟩, 
+    { obtain ⟨ε, hε, h⟩ := h,
+      use units.mk0 ⟨ε, le_of_lt hε⟩ (ne_of_gt hε),
+      intros x hx,
+      exact h (mem_ball_zero_iff.mpr hx) },
+    { obtain ⟨ε, hε⟩ := h,
+      use [(ε : ℝ), nnreal.coe_pos.mpr (units.zero_lt _)],
+      intros x hx,
+      exact hε  (mem_ball_zero_iff.mp hx) },
+  end,
+  ..hK.to_uniform_space,
+  ..non_unital_normed_ring.to_normed_add_comm_group }
+
+omit hK
 
 variables {L : Type*} [hL : field L] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
   [val : valued L Γ₀] [hv : is_rank_one val.v]
@@ -81,4 +104,6 @@ def valued_field.to_normed_field {e : ℝ} (he0 : 0 < e) (he1 : e < 1) : normed_
   eq_of_dist_eq_zero := λ x y hxy, eq_of_sub_eq_zero (norm_def_eq_zero he0 hxy),
   dist_eq            := λ x y, rfl,
   norm_mul'          := λ x y, by simp only [norm_def, map_mul],
+  to_uniform_space := valued.to_uniform_space,
+  uniformity_dist := sorry,
   ..hL, }

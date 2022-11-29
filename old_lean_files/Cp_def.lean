@@ -58,10 +58,14 @@ begin
 end
 
 noncomputable! instance Q_p_alg.valued_field : valued (Q_p_alg p) ℝ≥0 :=
-normed_field.to_valued (Q_p_alg p) (Q_p_alg.is_nonarchimedean p)
+normed_field.to_valued (Q_p_alg.is_nonarchimedean p)
 
 lemma Q_p_alg.v_def (x : Q_p_alg p) : 
   valued.v x = spectral_norm (Q_p_alg.is_algebraic p) x :=
+by { ext, refl }
+
+lemma Q_p_alg.v_def' (x : Q_p_alg p) : 
+  valued.v x = ∥ x ∥₊ :=
 by { ext, refl }
 
 --lemma Q_p_alg.v_ext (x : ℚ_[p]) : valued.v (x : Q_p_alg p) = ∥ (x : Q_p_alg p)  ∥₊ := rfl
@@ -138,16 +142,16 @@ begin
     { sorry }}
 end
 
-#exit
 
-lemma C_p.is_nonarchimedean : is_nonarchimedean (λ (x : ℂ_[p]), ∥x∥₊) :=
+
+lemma C_p.is_nonarchimedean : is_nonarchimedean (nnnorm : ℂ_[p] → ℝ≥0) :=
 begin
   intros x y,
   apply uniform_space.completion.induction_on₂ x y,
   { apply is_closed_le,
-    { apply continuous.comp _ continuous_sub,
-      --exact @continuous_nnnorm ℂ_[p] _, TODO: fix diamond
-      sorry, },
+    { refine continuous.comp _ continuous_sub,
+      exact continuous_nnnorm,
+       },
     { apply continuous.max,
       apply continuous.comp _ (continuous.fst continuous_id),
       { sorry },
@@ -157,6 +161,8 @@ begin
     simp only [← uniform_space.completion.coe_sub, C_p.nnnorm_extends],
     exact Q_p_alg.is_nonarchimedean p a b, },
 end
+
+#exit
 
 def C_p_integers := metric.closed_ball (0 : ℂ_[p]) 1 --{x : ℂ_[p] // ∥x∥ ≤ 1}
 
