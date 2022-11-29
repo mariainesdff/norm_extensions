@@ -5,14 +5,8 @@ import algebra.order.pointwise
 import analysis.special_functions.pow
 
 import order.filter.countable_Inter
---import csupr
 
 noncomputable theory
-
-/- lemma mul_le_mul_iff_nonneg_left {α : Type*} {a b c : α} [has_mul α] [has_zero α] [preorder α]
-  [pos_mul_mono α] (h : b ≤ c) (a0 : 0 ≤ a):
-a * b ≤ a * c ↔ b ≤ c := sorry -/
-
 
 namespace filter
 
@@ -21,104 +15,10 @@ lemma limsup_nonneg_of_nonneg {α β : Type*} [has_zero α]
   (hf : is_bounded_under has_le.le f u) (h :  ∀ (n : β), 0 ≤ u n ) :
   0 ≤ limsup u f := 
 le_limsup_of_frequently_le (frequently_of_forall h) hf
-/- 
-lemma eventually_le_of_limsup_le {α γ : Type*} [conditionally_complete_lattice α]
-  
---[linear_order α] [order_closed_topology α] 
-  {f : filter γ} {u : γ → α} [semilattice_sup γ] [hγ : nonempty γ] {y : α} --(hv : y < x)
-  (h : filter.limsup u at_top ≤ y) :
-  ∀ᶠ (a : γ) in at_top, u a ≤ y := 
-begin
-  simp only [limsup, Limsup, eventually_map] at h,
-  rw cInf_le_iff at h,
-  { 
-    /- simp only [eventually_at_top, ge_iff_le, mem_lower_bounds, set.mem_set_of_eq, 
-      forall_exists_index] at h, -/
-    /- by_contra' h',
-    obtain ⟨b, hb_ge, hbu⟩ := h' hγ.some,
-    specialize h (u b),
-    have : u b ≤ y,
-    { apply h,
-      intros x n hxn,},
-
-    exact hbu this, -/
-
-sorry
-
-    --apply hbu,
-    --apply h,
-    --intros x n hxn,
-     },
-  { sorry },
-  { sorry },
-end
-
-
-
-lemma real.eventually_le_limsup {α : Type*}  [semilattice_sup α] [hα : nonempty α] --[countable_Inter_filter f]
-  (u : α → ℝ) :
-  ∀ᶠ (y : α) in filter.at_top, u y ≤ filter.limsup u filter.at_top := 
-begin
-
-  
-  rw filter.eventually_at_top,
-  by_contra' h,
-
-  set a : α := hα.some with ha,
-
-  obtain ⟨b, hba, hb⟩ := h a,
-
-  
-  
-  --simp_rw [filter.limsup, filter.Limsup],
-  --simp only [real.Inf_def, ge_iff_le, eventually_map, eventually_at_top],
-  --simp_rw le_neg_
-  /- by_contra' h,
-  simp_rw real.Inf_def at h,
-  squeeze_simp at h, -/
-  --rw real.le_Inf_iff,
-  /- simp only [ge_iff_le, eventually_map, eventually_at_top],
-  by_contra' h, -/
-  
-  /- by_contra' h,
-  simp only [not_eventually, not_le] at h, -/
-  sorry
-end -/
-
-/- lemma real.limsup_mul_le {α : Type*} {f : filter α} [f.ne_bot] --[countable_Inter_filter f]
-  (u v : α → ℝ) 
-  (hu : ∀ x, 0 ≤ u x) (hv : ∀ x, 0 ≤ v x)
-  --(h_bdd : bdd_below {a : ℝ | ∀ᶠ (n : ℝ) in map (u * v) f, n ≤ a})
-  :
-  filter.limsup (u * v) f ≤ filter.limsup u f * filter.limsup v f := 
-begin
-  calc f.limsup (u * v) ≤ f.limsup (λ x, (f.limsup u) * v x) :
-  begin
-    refine cInf_le_cInf _ _ _,
-    { use 0,
-      simp only [mem_lower_bounds, eventually_map, pi.mul_apply, set.mem_set_of_eq],
-      intros x hx,
-      obtain ⟨y, hy⟩ := hx.exists,
-      exact le_trans (mul_nonneg (hu y) (hv y)) hy },
-    { --simp only [eventually_map],
-      use (limsup u f) * (limsup v f),
-      simp only [eventually_map, set.mem_set_of_eq],
-      have hf : ∀ᶠ (y : α) in f, v y ≤ filter.limsup v f := real.eventually_le_limsup f v,
-      --obtain ⟨y, hy⟩ := hf.exists,
-      --simp only [filter.eventually] at hf ⊢,
-     /-  have h : {x : α | v x ≤ limsup v f} = {x : α | limsup u f * v x ≤ limsup u f * limsup v f},
-      { ext x, simp only [set.mem_set_of_eq],
-        rw mul_le_mul_iff_nonneg_left, },
-      rw ← h,
-      exact hf, -/ },
-    { sorry }
-  end
-... = f.limsup u * f.limsup v : by sorry
-end
- -/
 
 end filter
 
+open filter
 open_locale topological_space nnreal
 
 variables {R : Type*} [comm_ring R] (f : ring_seminorm R)  
@@ -213,7 +113,7 @@ begin
 end
 include hf1
 
-private lemma smoothing_seminorm_seq_bdd (x : R) : 
+lemma smoothing_seminorm_seq_bdd (x : R) : 
   bdd_below (set.range (λ (n : ℕ+), f (x ^(n : ℕ)) ^ (1 / (n : ℝ)))) := 
 begin
   use 0,
@@ -430,64 +330,47 @@ begin
     exact (real.rpow_le_rpow_iff (map_nonneg f _) zero_le_one hn1).mpr hf1,
 end
 
+lemma smoothing_seminorm_le_term (x : R) (n : pnat) : 
+  smoothing_seminorm_def hf1 x  ≤ f (x^(n : ℕ))^(1/n : ℝ):=
+cinfi_le (smoothing_seminorm_seq_bdd hf1 x) _
+
 lemma smoothing_seminorm_le (x : R) : smoothing_seminorm_def hf1 x ≤ f x :=
 begin
-  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit hf1 x),
-  simp only [filter.eventually_at_top, ge_iff_le],
-  use 1,
-  rintros n hn,
-  have hn1 : (n : ℝ) * (1/n) = 1,
-  { apply mul_one_div_cancel,
-    exact (nat.cast_ne_zero.mpr (nat.one_le_iff_ne_zero.mp hn)) },
-  have hn' : 0 < (1/n : ℝ),
-  { have h01 : (0 : ℝ) < 1 := zero_lt_one,
-    apply div_pos h01,
-    rw [← nat.cast_zero, nat.cast_lt],
-    exact (nat.succ_le_iff.mp hn) },
-  simp only [smoothing_seminorm_seq],
-  rw [← real.rpow_one (f x)],
-  conv_rhs { rw ← hn1 },
-  rw [real.rpow_mul (map_nonneg f _), real.rpow_le_rpow_iff (map_nonneg f _)
-    (real.rpow_nonneg_of_nonneg (map_nonneg f _) _) hn', real.rpow_nat_cast],
-  exact map_pow_le_pow f x (nat.one_le_iff_ne_zero.mp hn),
+  convert smoothing_seminorm_le_term hf1 x 1,
+  simp only [positive.coe_one, algebra_map.coe_one, coe_coe, div_one, pow_one, real.rpow_one],
 end
 
 section is_nonarchimedean
 
-lemma exists_index_le (hna : is_nonarchimedean f) (x y : R) (n : pnat) : 
+lemma exists_index_le (hna : is_nonarchimedean f) (x y : R) (n : ℕ) : 
   ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-    smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)) :=
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)) :=
 begin
   obtain ⟨m, hm_lt, hm⟩ := is_nonarchimedean_add_pow hna n x y,
-  use [m, hm_lt],
-  have hn_le : smoothing_seminorm_def hf1 (x + y) ≤ f ((x + y)^(n : ℕ))^(1/n : ℝ),
-  { apply cinfi_le,
-    use 0, 
-    rw mem_lower_bounds, 
-    rintros z hz, 
-    obtain ⟨m, hm⟩ := set.mem_range.mp hz,
-    rw ← hm,
-    exact real.rpow_nonneg_of_nonneg (map_nonneg _ _) _,},
-  exact le_trans hn_le (real.rpow_le_rpow (map_nonneg f _) hm (nat.one_div_cast_nonneg (n : ℕ))), 
+  exact ⟨m, hm_lt, real.rpow_le_rpow (map_nonneg f _) hm (nat.one_div_cast_nonneg (n : ℕ))⟩,
 end
 
-def mu {x y : R} (hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-    smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) :
-    ℕ → ℕ := 
-λ n, if h : n = 0 then 0 else (classical.some (hn (⟨n, nat.pos_of_ne_zero h⟩ : pnat)))
+def mu {x y : R} (hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) :
+  ℕ → ℕ := 
+λ n, classical.some (hn n)
 
-lemma mu_le {x y : R} (hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-  smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (n : ℕ) :
+lemma mu_property {x y : R} (hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (n : ℕ) :
+  f ((x + y)^(n : ℕ)) ^(1/(n : ℝ)) ≤ 
+    (f (x ^ (mu hf1 hn n)) * f (y ^ (n - (mu hf1 hn n) : ℕ)))^(1/(n : ℝ)) := 
+classical.some_spec (classical.some_spec (hn n))
+
+lemma mu_le {x y : R} (hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (n : ℕ) :
   mu hf1 hn n ≤ n :=
 begin
-  by_cases hn0 : n = 0,
-  { simp only [mu, dif_pos hn0], exact eq.ge hn0 },
-  { simp only [mu, dif_neg hn0, ← nat.lt_succ_iff, ← finset.mem_range],
-    exact classical.some (classical.some_spec (hn (⟨n, nat.pos_of_ne_zero hn0⟩ : pnat))), }
+  simp only [mu, ← nat.lt_succ_iff, ← finset.mem_range],
+  exact classical.some (classical.some_spec (hn n)),   
 end
 
-lemma mu_bdd {x y : R} (hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-  smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (n : ℕ) : 
+lemma mu_bdd {x y : R} (hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (n : ℕ) : 
   (mu hf1 hn n : ℝ)/n ∈ set.Icc (0 : ℝ) 1 :=
 begin
   refine set.mem_Icc.mpr ⟨_, _⟩,
@@ -499,8 +382,8 @@ begin
       exact mu_le _ _ _, }}
 end
 
-private lemma f_bdd_below (s : ℕ → ℕ) {x y : R}  (hn : ∀ (n : pnat), ∃ (m : ℕ)
-    (hm : m ∈ finset.range (n + 1)), smoothing_seminorm_def hf1 (x + y) ≤ 
+private lemma f_bdd_below (s : ℕ → ℕ) {x y : R} (hn : ∀ (n : ℕ), ∃ (m : ℕ) 
+    (hm : m ∈ finset.range (n + 1)), (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ 
     (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (a : ℝ) (φ: ℕ → ℕ) :
   bdd_below {a : ℝ | ∀ᶠ (n : ℝ) in filter.map 
     (λ (n : ℕ), f x ^ (↑(s (φ n)) * (1 / (φ n : ℝ)))) filter.at_top, n ≤ a} := 
@@ -512,9 +395,9 @@ begin
   exact le_trans (real.rpow_nonneg_of_nonneg (map_nonneg f _) _) (hm m (le_refl _)),
 end
 
-private lemma f_nonempty {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R} 
-  (hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), smoothing_seminorm_def hf1 (x + y) 
-    ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (φ : ℕ → ℕ) :
+private lemma f_nonempty {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R} (hn : ∀ (n : ℕ), 
+    ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ 
+    (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) (φ : ℕ → ℕ) :
   {a : ℝ | ∀ᶠ (n : ℝ) in filter.map
     (λ (n : ℕ), f x ^ (↑(s (φ n)) * (1 / (φ n : ℝ)))) filter.at_top, n ≤ a}.nonempty :=
 begin
@@ -535,8 +418,8 @@ begin
     exact div_le_one_of_le (nat.cast_le.mpr (hs_le (φ b))) (nat.cast_nonneg _) }
 end
 
-private lemma f_limsup_le_one {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R} (hn : ∀ (n : pnat), 
-  ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), smoothing_seminorm_def hf1 (x + y) ≤ 
+private lemma f_limsup_le_one {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R} (hn : ∀ (n : ℕ),
+    ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ 
     (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) {φ: ℕ → ℕ}
   (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / (n : ℝ)) ∘ φ) filter.at_top (𝓝 0)) :
   filter.limsup (λ (n : ℕ), f x ^ ((s (φ n) : ℝ) * (1 / (φ n : ℝ)))) filter.at_top ≤ 1 :=
@@ -569,43 +452,8 @@ begin
   { exact f_nonempty hf1 hs_le hn φ  }
 end
 
-private lemma f_limsup_le_one' {x y : R} (hn : ∀ (n : pnat),
-  ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)),  smoothing_seminorm_def hf1 (x + y) ≤ 
-    (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) {φ: ℕ → ℕ}
-  (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(mu hf1 hn n) / (n : ℝ)) ∘ φ) filter.at_top (𝓝 0)) :
-  filter.limsup (λ (n : ℕ), f x ^ ((mu hf1 hn (φ n) : ℝ) * (1 / (φ n : ℝ)))) filter.at_top ≤ 1 :=
-begin
-  simp only [filter.limsup, filter.Limsup],
-  rw cInf_le_iff,
-  { intros c hc_bd,
-    simp only [mem_lower_bounds, filter.eventually_map, filter.eventually_at_top, ge_iff_le, 
-      set.mem_set_of_eq, forall_exists_index] at hc_bd,
-    by_cases hfx : f x < 1,
-    { apply hc_bd (1 : ℝ) 0,
-      rintros b -,
-      exact real.rpow_le_one (map_nonneg _ _) (le_of_lt hfx) 
-        (mul_nonneg (nat.cast_nonneg _)  (one_div_nonneg.mpr (nat.cast_nonneg _))), },
-    { have hf_lim : filter.tendsto (λ (n : ℕ), f x ^ (↑(mu hf1 hn (φ n)) * (1 / (φ n : ℝ)))) 
-          filter.at_top (𝓝 1), 
-        { nth_rewrite 0 ← real.rpow_zero (f x),
-          refine filter.tendsto.rpow tendsto_const_nhds _ 
-            (or.inl (ne_of_gt (lt_of_lt_of_le zero_lt_one (not_lt.mp hfx)))),
-          { convert hφ_lim, -- TODO: rewrite hypothesis?
-            simp only [function.comp_app, mul_one_div] }},
-        rw tendsto_at_top_nhds at hf_lim,
-      apply le_of_forall_pos_le_add,
-      intros ε hε,
-      have h1 : (1 : ℝ) ∈ set.Ioo 0 (1 + ε),
-      { simp only [set.mem_Ioo, zero_lt_one, lt_add_iff_pos_right, true_and, hε], },
-      obtain ⟨k, hk⟩ := hf_lim (set.Ioo (0 : ℝ) (1 + ε)) h1 is_open_Ioo,
-      exact hc_bd (1 + ε) k (λ b hb, le_of_lt (set.mem_Ioo.mp (hk b hb)).2), }},
-  { exact f_bdd_below hf1 (mu hf1 hn) hn (0 : ℝ) φ },
-  { exact f_nonempty hf1 (mu_le hf1 hn) hn φ  }
-end
 
-/- def smoothing_seminorm_seq (x : R) : ℕ → ℝ :=
-λ n, (f (x ^ n))^(1/n : ℝ)-/
-
+-- I think this isn't needed
 lemma smoothing_seminorm_seq_lim_is_limit_comp {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) 
  {a : ℝ} (a_in: a ∈ set.Ioc (0 : ℝ) 1) {φ : ℕ → ℕ} (hφ_mono: strict_mono φ) 
   (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
@@ -618,9 +466,50 @@ begin
   exact (smoothing_seminorm_seq_lim_is_limit hf1 x).comp hφ_lim',
 end
 
-lemma limsup_mu_le {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R}
+omit hf1
+lemma filter.tendsto.num {s u : ℕ → ℕ} (hu : filter.tendsto u filter.at_top filter.at_top)
+  {a : ℝ} (ha : 0 < a) 
+  (hlim : filter.tendsto (λ (n : ℕ), (s n : ℝ) / (u n : ℝ)) filter.at_top (𝓝 a)) :
+  filter.tendsto s filter.at_top filter.at_top :=
+begin
+  have hs : tendsto (λ n, (s n : ℝ)) at_top at_top,
+  { have heq : (λ n, ((s n : ℝ) / (u n : ℝ)) * (u n : ℝ)) =ᶠ[at_top]  (λ n, (s n : ℝ)),
+    { simp only [eventually_eq, eventually_at_top, ge_iff_le],
+      simp only [tendsto_at_top, eventually_at_top, ge_iff_le] at hu,
+      obtain ⟨n, hn⟩ := hu 1,
+      use n,
+      intros m hm,
+      rw div_mul_cancel (s m : ℝ) (nat.cast_ne_zero.mpr (nat.one_le_iff_ne_zero.mp (hn m hm))), },  
+    exact tendsto.congr' heq (tendsto.mul_at_top ha hlim (tendsto_coe_nat_at_top_iff.mpr hu))},
+  exact tendsto_coe_nat_at_top_iff.mp hs,
+end
+
+include hf1
+
+lemma smoothing_seminorm_seq_lim_is_limit_mu {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) {a : ℝ} 
+  (a_in: a ∈ set.Ioc (0 : ℝ) 1) {φ : ℕ → ℕ} (hφ_mono: strict_mono φ) 
+  (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
+  filter.tendsto (λ (n : ℕ), (f (x ^(s (φ n))))^(1/(s (φ n)) : ℝ)) filter.at_top
+    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) :=
+(smoothing_seminorm_seq_lim_is_limit hf1 x).comp
+  (filter.tendsto.num hφ_mono.tendsto_at_top a_in.1 hφ_lim)
+
+/- lemma smoothing_seminorm_seq_lim_is_limit_mu {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R} 
   (hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-  smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) {a : ℝ} 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) {a : ℝ} 
+  (a__in: a ∈ set.Ioc (0 : ℝ) 1) {φ : ℕ → ℕ} (hφ_mono: strict_mono φ) 
+  (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
+  filter.tendsto (λ (n : ℕ), (f (x ^(mu hf1 hn (φ n))))^(1/(mu hf1 hn (φ n)) : ℝ)) filter.at_top
+    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) :=
+begin
+  have hlim : filter.tendsto ((mu hf1 hn) ∘ φ) filter.at_top filter.at_top,
+  { sorry/- exact strict_mono.tendsto_at_top hφ_mono  -/},
+  exact (smoothing_seminorm_seq_lim_is_limit hf1 x).comp hlim,
+end-/
+
+lemma limsup_mu_le {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R}
+  (hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ))) {a : ℝ} 
   (a_in: a ∈ set.Icc (0 : ℝ) 1) {φ: ℕ → ℕ} (hφ_mono: strict_mono φ)
   (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
   filter.limsup (λ (n : ℕ), (f (x ^ (s (φ n))))^(1/(φ n : ℝ))) filter.at_top ≤
@@ -655,6 +544,7 @@ begin
     sorry }
   --simp only [smoothing_seminorm_def,smoothing_seminorm_seq_lim],
 end
+
 
 omit hf1
 lemma sub_mem_closure {a b : ℝ} (h : a ∈ set.Icc (0 : ℝ) b) :
@@ -691,8 +581,8 @@ lemma smoothing_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (smoothing_seminorm_def hf1) :=
 begin
   intros x y,
-  have hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-    smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)) :=
+  have hn : ∀ (n : ℕ), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
+    (f ((x + y)^(n : ℕ))) ^(1/(n : ℝ)) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)) :=
   λ n, exists_index_le hf1 hna x y n, 
   set mu : ℕ → ℕ := λ n, mu hf1 hn n with hmu,
   set nu : ℕ → ℕ := λ n, n - (mu n) with hnu,
@@ -705,15 +595,14 @@ begin
   set b := 1 - a with hb,
   have hb_lim : filter.tendsto ((λ (n : ℕ), ↑(nu n) / ↑n) ∘ φ) filter.at_top (𝓝 b),
   { apply filter.tendsto.congr' _ (filter.tendsto.const_sub 1 hφ_lim),
-    simp only [filter.eventually_eq,function.comp_app, filter.eventually_at_top, ge_iff_le],
+    simp only [filter.eventually_eq, function.comp_app, filter.eventually_at_top, ge_iff_le],
     use 1,
     intros m hm,
     have h0 : (φ m : ℝ ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (lt_of_le_of_lt (zero_le _) 
       (hφ_mono (nat.pos_of_ne_zero (nat.one_le_iff_ne_zero.mp hm))))),
     rw [← div_self h0, ← sub_div],
     simp only [hnu],
-    rw nat.cast_sub,
-    exact hmu_le _ },
+    rw nat.cast_sub (hmu_le _) },
 
   have b_in : b ∈ set.Icc (0 : ℝ) 1 := sub_mem_closure a_in,
   have hnu_le : ∀ n : ℕ, nu n ≤ n := λ n, by simp only [hnu, tsub_le_self],
@@ -732,8 +621,7 @@ begin
     (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top ≤
     (filter.limsup (λ (n : ℕ), (f (x ^ (mu (φ n))))^(1/(φ n : ℝ)))) filter.at_top *
     (filter.limsup (λ (n : ℕ), (f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))) filter.at_top,
-    { --rw cInf_mul,
-      
+    { 
       sorry },
     apply le_trans this,
     apply mul_le_mul hx hy _ (real.rpow_nonneg_of_nonneg (smoothing_seminorm_nonneg hf1 x) _),
@@ -741,19 +629,14 @@ begin
     have h_bdd : filter.is_bounded_under 
           has_le.le filter.at_top (λ (n : ℕ), f (y ^ nu (φ n)) ^ (1 / (φ n : ℝ))),
     { exact filter_is_bdd_under hf1 hnu_le φ },
-    exact filter.limsup_nonneg_of_nonneg h_bdd (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _),
-    /- exact filter.le_limsup_of_frequently_le 
-      (filter.frequently_of_forall (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _)) h_bdd, -/ },
+    exact filter.limsup_nonneg_of_nonneg h_bdd (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _)},
 
   conv_lhs { simp only [smoothing_seminorm_def, smoothing_seminorm_seq_lim], },
-  --rw ← nnreal.coe_le_coe,
   apply le_of_forall_sub_le,
   intros ε hε,
-  --have hε_nnr : ε = ((⟨ε, le_of_lt hε⟩ : nnreal) : ℝ) := rfl,
-  rw sub_le_iff_le_add, --rw hε_nnr, --rw ← nnreal.coe_add, rw nnreal.coe_le_coe,
-
+  rw sub_le_iff_le_add, 
   have hxy' : filter.limsup (λ (n : ℕ), 
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top <
+    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top ≤
     (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε,
   { sorry },
 
@@ -777,132 +660,19 @@ begin
   apply le_trans _ h_mul,
 
   have hex : ∃ n : pnat,
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)) <
+    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ)) * f (y ^ (nu (φ n)))^(1/(φ n : ℝ)) ≤
     (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε,
   { sorry },
 
   obtain ⟨N, hN⟩ := hex,
-
-  have hf : bdd_below (set.range (λ n : pnat, f ((x + y) ^ (n : ℕ)) ^ (1 / (n : ℝ)))),
-  { sorry },
-  --simp only [smoothing_seminorm_def, smoothing_seminorm_seq_lim],
-  apply le_trans (cinfi_le hf N),
-  
-  sorry
-  --sorry,
-   /-  have h := filter.eventually_lt_of_limsup_lt hxy' _,
-
-    { sorry },
-
-    { simp only [auto_param_eq],
-      
-      --refine filter.is_bounded_under_of _,
-      sorry }, -/
-
-    --rw ← filter.limsup_const ((smoothing_seminorm hf1 x)^a) at hx,
-    --apply cinfi_le_of_le,
-
+  apply le_trans (cinfi_le (smoothing_seminorm_seq_bdd hf1 _) 
+    ⟨φ N, lt_of_le_of_lt (zero_le (φ 0)) (hφ_mono.lt_iff_lt.mpr N.pos)⟩),
+  apply le_trans _ hN,
+  simp only [pnat.mk_coe, coe_coe, hnu, ← real.mul_rpow (map_nonneg f _) (map_nonneg f _)],
+  exact mu_property hf1 hn (φ N),
 end
 
 end is_nonarchimedean
-
-/- 
-lemma smoothing_seminorm_is_nonarchimedean (hna : is_nonarchimedean f) :
-  is_nonarchimedean (smoothing_seminorm_def hf1) :=
-begin
-  intros x y,
-  have hn : ∀ (n : pnat), ∃ (m : ℕ) (hm : m ∈ finset.range (n + 1)), 
-    smoothing_seminorm_def hf1 (x + y) ≤ (f (x ^ m) * f (y ^ (n - m : ℕ)))^(1/(n : ℝ)) :=
-  λ n, exists_index_le hf1 hna x y n, 
-  set mu : ℕ → ℕ := λ n, if h : n = 0 then 0 else
-    (classical.some (hn (⟨n, nat.pos_of_ne_zero h⟩ : pnat))) with hmu,
-  set nu : ℕ → ℕ := λ n, n - (mu n) with hnu,
-  have hmu_le : ∀ n : ℕ, mu n ≤ n,
-  { intro n,
-    by_cases hn0 : n = 0,
-    { simp only [hmu, dif_pos hn0], exact eq.ge hn0 },
-    { simp only [hmu, dif_neg hn0, ← nat.lt_succ_iff, ← finset.mem_range],
-      exact classical.some (classical.some_spec (hn (⟨n, nat.pos_of_ne_zero hn0⟩ : pnat))), }},
-  have hmu_bdd : ∀ n : ℕ, (mu n : ℝ)/n ∈ set.Icc (0 : ℝ) 1,
-  { intro n,
-    refine set.mem_Icc.mpr ⟨_, _⟩,
-    { simp only [min_eq_left, zero_le_one],
-      exact div_nonneg (nat.cast_nonneg (mu n)) (nat.cast_nonneg n), },
-    { simp only [zero_le_one, max_eq_right],
-      by_cases hn0 : n = 0,
-      { rw [hn0, nat.cast_zero, div_zero], exact zero_le_one, },
-      { have hn' : 0 < (n : ℝ) := nat.cast_pos.mpr (nat.pos_of_ne_zero hn0),
-        rw [div_le_one hn', nat.cast_le],
-        exact hmu_le _, }}},
-  have hs : metric.bounded (set.Icc (0 : ℝ) 1),
-  { exact metric.bounded_Icc (min 0 1) (max 0 1)},
-  obtain ⟨a, a_in, φ, hφ_mono, hφ_lim⟩ := tendsto_subseq_of_bounded hs hmu_bdd,
-  set b := 1 - a with hb,
-  have hb_lim : filter.tendsto ((λ (n : ℕ), ↑(nu n) / ↑n) ∘ φ) filter.at_top (𝓝 b),
-  { apply filter.tendsto.congr' _ (filter.tendsto.const_sub 1 hφ_lim),
-    simp only [filter.eventually_eq,function.comp_app, filter.eventually_at_top, ge_iff_le],
-    use 1,
-    intros m hm,
-    have h0 : (φ m : ℝ ) ≠ 0 := nat.cast_ne_zero.mpr (ne_of_gt (lt_of_le_of_lt (zero_le _) 
-      (hφ_mono (nat.pos_of_ne_zero (nat.one_le_iff_ne_zero.mp hm))))),
-    rw [← div_self h0, ← sub_div],
-    simp only [hnu],
-    rw nat.cast_sub,
-    exact hmu_le _ },
-
-  have hx : filter.limsup (λ (n : ℕ), (f (x ^ (mu (φ n))))^(1/(φ n : ℝ))) filter.at_top ≤
-    (smoothing_seminorm_def hf1 x)^a,
-  { sorry },
-  have hy : filter.limsup (λ (n : ℕ), (f (y ^ (nu (φ n))))^(1/(φ n : ℝ))) filter.at_top ≤
-    (smoothing_seminorm_def hf1 y)^b,
-  { sorry },
-
-  have hxy : filter.limsup (λ (n : ℕ), 
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ))) filter.at_top ≤
-    (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b ,
-  { have : filter.limsup (λ (n : ℕ),
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top ≤
-    (filter.limsup (λ (n : ℕ), (f (x ^ (mu (φ n))))^(1/(φ n : ℝ)))) filter.at_top *
-    ( filter.limsup (λ (n : ℕ), (f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))) filter.at_top,
-    { sorry },
-    apply le_trans this,
-    apply mul_le_mul hx hy _ (real.rpow_nonneg_of_nonneg (smoothing_seminorm_nonneg hf1 x) _),
-
-    have h_bdd : filter.is_bounded_under 
-          has_le.le filter.at_top (λ (n : ℕ), f (y ^ nu (φ n)) ^ (1 / (φ n : ℝ))),
-    { apply filter.is_bounded_under_of,
-      sorry
-    },
-    exact filter.limsup_nonneg_of_nonneg h_bdd (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _),
-    /- exact filter.le_limsup_of_frequently_le 
-      (filter.frequently_of_forall (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _)) h_bdd, -/ },
-
-  conv_lhs { simp only [smoothing_seminorm_def, smoothing_seminorm_seq_lim], },
-  --rw ← nnreal.coe_le_coe,
-  apply le_of_forall_sub_le,
-  intros ε hε,
-  --have hε_nnr : ε = ((⟨ε, le_of_lt hε⟩ : nnreal) : ℝ) := rfl,
-  rw sub_le_iff_le_add, --rw hε_nnr, --rw ← nnreal.coe_add, rw nnreal.coe_le_coe,
-
-  have hxy' : filter.limsup (λ (n : ℕ), 
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top <
-    (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε,
-  { sorry },
-  sorry
-  --sorry,
-   /-  have h := filter.eventually_lt_of_limsup_lt hxy' _,
-
-    { sorry },
-
-    { simp only [auto_param_eq],
-      
-      --refine filter.is_bounded_under_of _,
-      sorry }, -/
-
-    --rw ← filter.limsup_const ((smoothing_seminorm hf1 x)^a) at hx,
-    --apply cinfi_le_of_le,
-
-end -/
 
 def smoothing_seminorm (hna : is_nonarchimedean f) : ring_seminorm R :=
 { to_fun    := smoothing_seminorm_def hf1,
