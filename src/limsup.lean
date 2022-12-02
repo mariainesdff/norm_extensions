@@ -19,96 +19,30 @@ namespace filter
 
 lemma limsup_nonneg_of_nonneg {α β : Type*} [has_zero α]
   [conditionally_complete_linear_order α] {f : filter β} [hf_ne_bot : f.ne_bot] {u : β → α}
-  (hf : is_bounded_under has_le.le f u) (h :  ∀ (n : β), 0 ≤ u n ) :
+  (hf : is_bounded_under has_le.le f u) (h : 0 ≤ u) :
   0 ≤ limsup u f := 
 le_limsup_of_frequently_le (frequently_of_forall h) hf
 
+lemma eventually_lt_add_pos_of_limsup_le {α : Type*} [preorder α] {x : ℝ} {u : α → ℝ} 
+  (hu_bdd : is_bounded_under has_le.le at_top u) (hu : filter.limsup u at_top ≤ x) 
+  {ε : ℝ} (hε : 0 < ε) : ∀ᶠ (a : α ) in at_top, u a < x + ε :=
+eventually_lt_of_limsup_lt (lt_of_le_of_lt hu (lt_add_of_pos_right x hε)) hu_bdd
+
+lemma exists_lt_of_limsup_le {x : ℝ} {u : ℕ → ℝ} (hu_bdd : is_bounded_under has_le.le at_top u)
+  (hu : filter.limsup u at_top ≤ x) {ε : ℝ} (hε : 0 < ε) :
+  ∃ n : pnat, u n < x + ε :=
+begin
+  have h : ∀ᶠ (a : ℕ) in at_top, u a < x + ε := eventually_lt_add_pos_of_limsup_le hu_bdd hu hε,
+  simp only [eventually_at_top, ge_iff_le] at h,
+  obtain ⟨n, hn⟩ := h,
+  exact ⟨⟨n + 1, nat.succ_pos _⟩,hn (n + 1) (nat.le_succ _)⟩,
+end
 
 end filter
 
 
 open filter
-open_locale topological_space nnreal
-
-/- lemma eventually_le_limsup [countable_Inter_filter f] (u : α → ℝ≥0∞) :
-  ∀ᶠ y in f, u y ≤ f.limsup u :=
-begin
-  by_cases hx_top : f.limsup u = ⊤,
-  { simp_rw hx_top,
-    exact eventually_of_forall (λ a, le_top), },
-  have h_forall_le : ∀ᶠ y in f, ∀ n : ℕ, u y < f.limsup u + (1:ℝ≥0∞)/n,
-  { rw eventually_countable_forall,
-    refine λ n, eventually_lt_of_limsup_lt _,
-    nth_rewrite 0 ←add_zero (f.limsup u),
-    exact (ennreal.add_lt_add_iff_left hx_top).mpr (by simp), },
-  refine h_forall_le.mono (λ y hy, le_of_forall_pos_le_add (λ r hr_pos hx_top, _)),
-  have hr_ne_zero : (r : ℝ≥0∞) ≠ 0,
-  { rw [ne.def, coe_eq_zero],
-    exact (ne_of_lt hr_pos).symm, },
-  cases (exists_inv_nat_lt hr_ne_zero) with i hi,
-  rw inv_eq_one_div at hi,
-  exact (hy i).le.trans (add_le_add_left hi.le (f.limsup u)),
-end-/
-
-/- lemma real.exists_inv_nat_lt {a : ℝ} (h : a ≠ 0) :
-  ∃n:ℕ, (n:ℝ)⁻¹ < a := sorry -/
-/- inv_inv a ▸ by simp only [inv_lt_inv, ennreal.exists_nat_gt (inv_ne_top.2 h)]
- -/
-
--- This is false
-/- instance : countable_Inter_filter (at_top : filter ℕ) :=
-{ countable_sInter_mem' := λ S hS_count hS_at_top,
-  begin
-    simp only [mem_at_top_sets, ge_iff_le, set.mem_sInter],
-    simp only [mem_at_top_sets, ge_iff_le] at hS_at_top,
-    sorry
-  end}
-
-lemma real.eventually_le_limsup {u : ℕ → ℝ} (hu : bdd_above (set.range u)) :
-  ∀ᶠ (n : ℕ) in at_top, u n ≤ filter.limsup u at_top :=
-begin
-  rw filter.limsup_eq,
-  simp,
-  use 0,intros n hn,
-  apply le_cInf,
-  { obtain ⟨B, hB⟩ := hu,
-    use B,sorry },
-  { intros x hx,
-    simp only [set.mem_set_of_eq] at hx,
-  sorry }
-end
-
-lemma real.eventually_le_limsup' {u : ℕ → ℝ} (hu : bdd_above (set.range u)) :
-  ∀ᶠ (n : ℕ) in at_top, u n ≤ filter.limsup u at_top := 
-begin
-  have h_forall_le : ∀ᶠ y in at_top, ∀ n : ℕ, u y < limsup u at_top + (1 : ℝ)/(n + 1),
-  {  --apply filter.forall_eventually_of_eventually_forall,
-    --squeeze_simp,
-    rw eventually_countable_forall,
-    intros n,
-    refine eventually_lt_of_limsup_lt _ _,
-    simp only [one_div, lt_add_iff_pos_right, inv_pos, nat.cast_pos],
-    { exact nat.cast_add_one_pos n},
-    { simp only [auto_param_eq],
-      rw is_bounded_under,
-      rw is_bounded,
-      obtain ⟨b, hb⟩ := hu,
-      use b,
-      --apply eventually_of_forall,
-      simp only [mem_upper_bounds, set.mem_range, forall_exists_index,
-       forall_apply_eq_imp_iff'] at hb,
-
-      simp only [eventually_map],
-      exact eventually_of_forall hb, }},
-  refine h_forall_le.mono (λ y hy, le_of_forall_pos_le_add (λ r hr_pos, _)),
-  cases (real.exists_inv_nat_lt (ne_of_gt hr_pos)) with i hi,
-  rw inv_eq_one_div at hi,
-  have hi' : 1 / (i + 1 : ℝ) < r := sorry,
-  exact (hy i).le.trans (add_le_add_left hi'.le (limsup u at_top)),
-end
-
-
- -/
+open_locale topological_space nnreal ennreal
 
 
 lemma bdd_above.is_bounded_under {α : Type*} [preorder α] {u : α → ℝ} 
@@ -122,167 +56,190 @@ begin
 end
 
 
-lemma exists_le_of_lt_cSup {α : Type*} [conditionally_complete_linear_order α] {s : set α} 
-  {b : α} (hs : s.nonempty) (hb : b < has_Sup.Sup s) : ∃ a ∈ s, b ≤ a :=
-by { contrapose! hb, apply cSup_le hs (λ x hx, (hb x hx).le) }
+namespace nnreal
 
-lemma filter.eventually_le_of_lt_liminf  {α β : Type*} {f : filter α} 
-  [conditionally_complete_linear_order β] {u : α → β} {b : β} 
-  (h : b < liminf u f) (hu : f.is_bounded_under (≥) u . is_bounded_default) :
-  ∀ᶠ a in f, b ≤ u a :=
+lemma coe_limsup {u : ℕ → ℝ} (h : is_bounded_under has_le.le at_top u) (hu : 0 ≤ u) :
+  limsup u at_top = (((limsup (λ n, (⟨u n, hu n⟩ : ℝ≥0)) at_top) : ℝ≥0) : ℝ) :=
 begin
-  obtain ⟨c, hc, hbc⟩ : ∃ (c : β) (hc : c ∈ {c : β | ∀ᶠ (n : α) in f, c ≤ u n}), b ≤ c :=
-    exists_le_of_lt_cSup hu h,
-  exact hc.mono (λ x hx, le_trans hbc hx)
+  simp only [limsup_eq],
+  norm_cast,
+  apply congr_arg,
+  ext x,
+  simp only [set.mem_set_of_eq, set.mem_image],
+  refine ⟨λ hx, _, λ hx, _⟩,
+  { have hx' := hx,
+    simp only [eventually_at_top, ge_iff_le] at hx',
+    obtain ⟨N, hN⟩ := hx',
+    have hx0 : 0 ≤ x := le_trans (hu N) (hN N (le_refl _)),
+    exact ⟨⟨x, hx0⟩, hx, rfl⟩, },
+  { obtain ⟨y, hy, hyx⟩ := hx,
+    simp_rw [← nnreal.coe_le_coe, nnreal.coe_mk, hyx] at hy,
+    exact hy }
 end
 
-lemma filter.eventually_le_of_limsup_le {α β : Type*} {f : filter α} 
-  [conditionally_complete_linear_order β] {u : α → β} {b : β} 
-  (h : filter.limsup u f < b) 
-  (hu : f.is_bounded_under (≤) u . is_bounded_default) :
-  ∀ᶠ (a : α) in f, u a ≤ b := 
-@filter.eventually_le_of_lt_liminf _ βᵒᵈ _ _ _ _ h hu
-
-
-lemma real.eventually_le_limsup' {u : ℕ → ℝ} (hu : bdd_above (set.range u)) :
-  ∀ᶠ (n : ℕ) in at_top, u n ≤ filter.limsup u at_top := 
-sorry
-
-lemma real.eventually_le_limsup {u : ℕ → ℝ} (hu : bdd_above (set.range u)) :
-  ∀ᶠ (n : ℕ) in at_top, u n ≤ filter.limsup u at_top :=
+lemma bdd_above {u : ℕ → ℝ} (hu0 : 0 ≤ u) (hu_bdd: bdd_above (set.range u)) :
+  bdd_above (set.range (λ (n : ℕ), (⟨u n, hu0 n⟩ : ℝ≥0))) :=
 begin
-  have h_glb : is_glb {a : ℝ | ∀ᶠ (n : ℕ) in at_top, u n ≤ a}
-    (Inf {a : ℝ | ∀ᶠ (n : ℕ) in at_top, u n ≤ a}),
-  { apply  real.is_glb_Inf, 
-    sorry,
-    sorry, },
-  rw is_glb_iff_le_iff at h_glb,
-  --simp only [is_glb, is_greatest] at h_glb,
-  rw limsup_eq,
-
-  simp_rw [h_glb _, mem_lower_bounds],
-  simp only [eventually_at_top, ge_iff_le, set.mem_set_of_eq, forall_exists_index],
-  /- rw real.Inf_def,
-  rw real.Sup_def,
-  rw dif_pos, -/
-  { sorry },
-
-
-  /- have : ∀ (ε : ℝ) (hε : 0 < ε), ∀ᶠ (n : ℕ) in at_top, u n < limsup u at_top + ε,
-  { intros ε hε,
-    exact eventually_lt_of_limsup_lt (lt_add_of_pos_right _ hε) hu.is_bounded_under },
-
-  have h : ∀ᶠ (n : ℕ) in at_top, ∀ (ε : ℝ) (hε : 0 < ε), u n < limsup u at_top + ε,
-  { sorry
-  }, -/
-  
-
-  --simp only [eventually_at_top, ge_iff_le],
-
-  --simp_rw le_iff_forall_pos_lt_add,
-  --apply filter.forall_eventually_of_eventually_forall ,
-  --apply eventually_lt_of_limsup_lt,
-  /- rw limsup_eq,
-  simp only [eventually_at_top, ge_iff_le],
-  by_contra' h, -/
-  
-  /- by_contra' h,
-  simp only [eventually_at_top, ge_iff_le, not_exists, not_forall, not_le, 
-    exists_prop] at h, -/
+  obtain ⟨B, hB⟩ := hu_bdd,
+  simp only [mem_upper_bounds, set.mem_range, forall_exists_index, forall_apply_eq_imp_iff'] at hB,
+  have hB0 : 0 ≤ B := le_trans (hu0 0) (hB 0),
+  use (⟨B, hB0⟩ : ℝ≥0),
+  simp only [mem_upper_bounds, set.mem_range, forall_exists_index, subtype.forall, 
+    subtype.mk_le_mk],
+  rintros x - n hn,
+  rw ← hn,
+  exact hB n,
 end
 
-lemma real.limsup_mul_le {u v : ℕ → ℝ} (hu_bdd : bdd_above (set.range u)) (hu0 : 0 ≤ u) 
-  (hv_bdd : bdd_above (set.range v)) (hv0 : 0 ≤ u) :
+end nnreal
+
+namespace ennreal
+
+lemma le_infi_mul_infi {ι : Sort*} [hι : nonempty ι] {a : ennreal} {f g : ι → ennreal} 
+  (hf : ∀ x, f x ≠ ⊤) (hg : ∀ x, g x ≠ ⊤) (H : ∀ (i j : ι), a ≤ f i * g j) :
+  a ≤ infi f * infi g :=
+begin
+  have hg' : infi g ≠ ⊤,
+  { rw [ne.def, infi_eq_top, not_forall], exact ⟨hι.some, hg hι.some⟩ },
+  rw infi_mul hg',
+  refine le_infi _,
+  intros i,
+  rw mul_infi (hf i),
+  exact le_infi (H i),
+  { apply_instance },
+  { apply_instance },
+end
+
+lemma infi_mul_le_mul_infi {u v : ℕ → ennreal} (hu_top : ∀ x, u x ≠ ⊤) (hu : antitone u) 
+  (hv_top : ∀ x, v x ≠ ⊤) (hv : antitone v) : infi (u * v) ≤ infi u * infi v :=
+begin
+  rw infi_le_iff,
+  intros b hb,
+  apply le_infi_mul_infi hu_top hv_top,
+  intros m n,
+  exact le_trans (hb (max m n)) (mul_le_mul (hu (le_max_left _ _)) (hv (le_max_right _ _))),
+end
+
+lemma supr_tail_seq (u : ℕ → ennreal) (n : ℕ) : 
+  (⨆ (k : ℕ) (x : n ≤ k), u k) = ⨆ (k : { k : ℕ // n ≤ k}), u k :=
+by rw supr_subtype; refl
+
+lemma le_supr_prop (u : ℕ → ennreal) {n k : ℕ} (hnk : n ≤ k) :
+  u k ≤ ⨆ (k : ℕ) (x : n ≤ k), u k :=
+begin
+  refine le_supr_of_le k _,
+  rw csupr_pos hnk,
+  exact le_refl _,
+end
+
+lemma antitone.supr {u : ℕ → ennreal} :
+  antitone (λ (n : ℕ), ⨆ (k : ℕ) (x : n ≤ k), u k) :=
+begin
+  apply antitone_nat_of_succ_le _,
+  intros n,
+  rw [supr₂_le_iff],
+  intros k hk,
+  exact le_supr_prop u (le_trans (nat.le_succ n) hk),
+end
+
+lemma supr_le_top_of_bdd_above {u : ℕ → ennreal} {B : nnreal} (hu : ∀ x, u x ≤ B) (n : ℕ):
+  (⨆ (k : ℕ) (x : n ≤ k), u k) ≠ ⊤ :=
+begin
+  have h_le : (⨆ (k : ℕ) (x : n ≤ k), u k) ≤ B,
+  { rw supr_tail_seq,
+    exact supr_le (λ m, hu m), },
+  exact ne_top_of_le_ne_top coe_ne_top h_le
+end
+
+lemma limsup_mul_le {u v : ℕ → ennreal} {Bu : nnreal} (hu : ∀ x, u x ≤ Bu)
+  {Bv : nnreal} (hv : ∀ x, v x ≤ Bv) :
   filter.limsup (u * v) at_top ≤ filter.limsup u at_top * filter.limsup v at_top :=
 begin
-  simp only [filter.limsup_eq, pi.mul_apply, eventually_at_top, ge_iff_le],
-
-  rw le_iff_forall_pos_lt_add,
-  intros ε hε,
-  --apply cInf_lt_of_lt,
-  
-  
-  /- apply limsup_le_of_le,
-
-  { simp only [auto_param_eq],
-    rw is_cobounded_under, rw is_cobounded,
-    use 0,
-    intros z hz,
-    simp only [eventually_map, pi.mul_apply, eventually_at_top, ge_iff_le] at hz,
-    obtain ⟨n, hn⟩ := hz,
-
-    sorry },
-  { simp only [pi.mul_apply, eventually_at_top, ge_iff_le],
-    sorry } -/
+  have h_le : (⨅ (n : ℕ), ⨆ (i : ℕ) (x : n ≤ i), u i * v i) ≤ 
+    (⨅ (n : ℕ), (⨆ (i : ℕ) (x : n ≤ i), u i) *(⨆ (j : ℕ) (x : n ≤ j), v j)),
+  { refine infi_mono _,
+    intros n,
+    apply supr_le _,
+    intros k,
+    apply supr_le _,
+    intros hk, 
+    exact mul_le_mul (le_supr_prop u hk) (le_supr_prop v hk), },
+  simp only [filter.limsup_eq_infi_supr_of_nat, ge_iff_le, pi.mul_apply],
+  exact le_trans h_le (infi_mul_le_mul_infi (supr_le_top_of_bdd_above hu) antitone.supr
+    (supr_le_top_of_bdd_above hv) antitone.supr),
 end
 
-lemma nnreal.limsup_mul_le /- {α : Type*} [preorder α] -/ (u v : ℕ → ℝ≥0) :
+lemma coe_limsup {u : ℕ → ℝ≥0} (hu : bdd_above (set.range u)) :
+  (((limsup u at_top) : ℝ≥0) : ennreal) = limsup (λ n, (u n : ennreal)) at_top :=
+begin
+  simp only [limsup_eq],
+  rw coe_Inf, rw Inf_eq_infi,
+  simp only [eventually_at_top, ge_iff_le, set.mem_set_of_eq, infi_exists],
+  { apply le_antisymm,
+    { apply le_infi₂ _,
+      intros x n,
+      apply le_infi _,
+      intro h,
+      cases x,
+      { simp only [none_eq_top, le_top], },
+      { simp only [some_eq_coe, coe_le_coe] at h,
+        exact infi₂_le_of_le x n (infi_le_of_le h (le_refl _)) }},
+    { apply le_infi₂ _,
+      intros x n,
+      apply le_infi _,
+      intro h,
+      refine infi₂_le_of_le x n _,
+      simp_rw coe_le_coe,
+      exact infi_le_of_le h (le_refl _) }},
+
+  { obtain ⟨B, hB⟩ := hu,
+    simp only [mem_upper_bounds, set.mem_range, forall_exists_index, forall_apply_eq_imp_iff'] 
+      at hB,
+    exact ⟨B, eventually_of_forall hB⟩, } --TODO: extract to lemma
+end
+
+end ennreal
+
+
+namespace real
+
+lemma limsup_mul_le {u v : ℕ → ℝ} (hu_bdd : bdd_above (set.range u)) (hu0 : 0 ≤ u) 
+  (hv_bdd : bdd_above (set.range v)) (hv0 : 0 ≤ v) :
   filter.limsup (u * v) at_top ≤ filter.limsup u at_top * filter.limsup v at_top :=
 begin
-  haveI : nonempty ↥{a : ℝ≥0 | ∀ᶠ (n : ℕ) in at_top, u n ≤ a} := sorry,
-  have hs : {a : ℝ≥0 | ∀ᶠ (n : ℕ) in at_top, u n ≤ a}.nonempty := sorry,
-  
-  
-  --rw ← cInf_mul hs,
-  sorry
-end
+  have h_bdd : bdd_above (set.range (u * v)),
+  { exact set.range.bdd_above.mul hu_bdd hu0 hv_bdd hv0 },
+  have hcoe : ∀ n : ℕ, (⟨u n * v n, (mul_nonneg (hu0 n) (hv0 n))⟩ : ℝ≥0) = ⟨u n, hu0 n⟩*⟨v n, hv0 n⟩,
+  { intro n,
+    simp only [nonneg.mk_mul_mk], },
 
-/- lemma real.limsup_mul_le /- {α : Type*} [preorder α] -/ (u v : ℕ → ℝ) :
-  filter.limsup (u * v) at_top ≤ filter.limsup u at_top  * filter.limsup v at_top := 
-begin
-  simp only [filter.limsup, filter.Limsup, eventually_map, pi.mul_apply, eventually_at_top, 
-    ge_iff_le],
-  rw cInf_le_iff,
-  intros c hc,
-  simp only [mem_lower_bounds, set.mem_set_of_eq, forall_exists_index] at hc,
+  rw [nnreal.coe_limsup h_bdd.is_bounded_under (mul_nonneg hu0 hv0)],
+  rw [nnreal.coe_limsup hu_bdd.is_bounded_under hu0],
+  rw [nnreal.coe_limsup hv_bdd.is_bounded_under hv0],
+  rw ← nnreal.coe_mul,
+  rw nnreal.coe_le_coe,
+  rw ← ennreal.coe_le_coe,
+  rw ennreal.coe_mul,
+  rw ennreal.coe_limsup (nnreal.bdd_above _ h_bdd),
+  rw ennreal.coe_limsup (nnreal.bdd_above hu0 hu_bdd),
+  rw ennreal.coe_limsup (nnreal.bdd_above hv0 hv_bdd),
 
-  apply hc,
-  /- simp only [Inf],
-  simp only [conditionally_complete_lattice.Inf], -/
-  
-  sorry,
-  { sorry },
-  { use filter.limsup (u * v) at_top,
-    --simp only [set.mem_set_of_eq],
-    --refine eventually_at_top.mp _,
-    
-    sorry }, sorry,
-end
- -/
-/- lemma exists_le_of_limsup_le {x : ℝ} {u : ℕ → ℝ} (hu_nonneg : 0 ≤ u)
-  (hu : filter.limsup u at_top ≤ x) {ε : ℝ} (hε : 0 < ε) : ∃ n : pnat, u n ≤ x + ε :=
-begin
-  rw [filter.limsup, filter.Limsup, real.Inf_le_iff] at hu,
-  { obtain ⟨y, hy, hyx⟩ := hu ε hε,
-    simp only [eventually_map, eventually_at_top, ge_iff_le, set.mem_set_of_eq] at hy,
-    obtain ⟨n, hn⟩ := hy,
-    exact ⟨⟨n + 1, nat.succ_pos _⟩, le_trans (hn (n + 1) (nat.le_succ _)) (le_of_lt hyx)⟩ },
-  { use 0,
-    rw mem_lower_bounds,
-    intros y hy,
-    simp only [eventually_map, eventually_at_top, ge_iff_le, set.mem_set_of_eq] at hy,
-    obtain ⟨n, hn⟩ := hy,
-    apply le_trans (hu_nonneg n) (hn n (le_refl n)) },
-  { sorry/- use filter.limsup u at_top,
-    exact real.eventually_le_limsup _, -/ }
-end -/
+  simp only [pi.mul_apply, hcoe, ennreal.coe_mul],
+  obtain ⟨Bu, hBu⟩ := hu_bdd,
+  obtain ⟨Bv, hBv⟩ := hv_bdd,
+  simp only [mem_upper_bounds, set.mem_range, forall_exists_index, forall_apply_eq_imp_iff'] 
+    at hBu hBv,
+  have hBu_0 : 0 ≤ Bu := le_trans (hu0 0) (hBu 0),
+  have hBu' : ∀ (n : ℕ), (⟨u n, hu0 n⟩ : ℝ≥0)  ≤ (⟨Bu, hBu_0⟩ : ℝ≥0),
+  { simp only [← nnreal.coe_le_coe, nnreal.coe_mk], exact hBu },
+  have hBv_0 : 0 ≤ Bv := le_trans (hv0 0) (hBv 0),
+  have hBv' : ∀ (n : ℕ), (⟨v n, hv0 n⟩ : ℝ≥0) ≤ (⟨Bv, hBv_0⟩ : ℝ≥0),
+  { simp only [← nnreal.coe_le_coe, nnreal.coe_mk], exact hBv },
 
-
-
-lemma eventually_lt_of_limsup_le {α : Type*} [preorder α] {x : ℝ} {u : α → ℝ} 
-  (hu_bdd : is_bounded_under has_le.le at_top u) (hu : filter.limsup u at_top ≤ x) 
-  {ε : ℝ} (hε : 0 < ε) : ∀ᶠ (a : α ) in at_top, u a < x + ε :=
-filter.eventually_lt_of_limsup_lt (lt_of_le_of_lt hu (lt_add_of_pos_right x hε)) hu_bdd
-
-lemma exists_lt_of_limsup_le {x : ℝ} {u : ℕ → ℝ} (hu_bdd : is_bounded_under has_le.le at_top u)
-  (hu : filter.limsup u at_top ≤ x) {ε : ℝ} (hε : 0 < ε) :
-  ∃ n : pnat, u n < x + ε :=
-begin
-  have h : ∀ᶠ (a : ℕ) in at_top, u a < x + ε := eventually_lt_of_limsup_le hu_bdd hu hε,
-  simp only [eventually_at_top, ge_iff_le] at h,
-  obtain ⟨n, hn⟩ := h,
-  exact ⟨⟨n + 1, nat.succ_pos _⟩,hn (n + 1) (nat.le_succ _)⟩,
+  simp_rw ← ennreal.coe_le_coe at hBu' hBv',
+  exact ennreal.limsup_mul_le hBu' hBv',
 end
 
 
-/- filter.eventually_lt_of_limsup_lt -/
+
+end real
