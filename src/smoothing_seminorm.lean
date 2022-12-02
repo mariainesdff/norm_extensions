@@ -638,12 +638,9 @@ begin
     ((f (x ^ (mu (φ n))))^(1/(φ n : ℝ)) * (f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))) filter.at_top ≤ 
       (filter.limsup (λ (n : ℕ), (f (x ^ (mu (φ n))))^(1/(φ n : ℝ))) filter.at_top) *
       (filter.limsup (λ (n : ℕ), (f (y ^ (nu (φ n))))^(1/(φ n : ℝ))) filter.at_top),
-    { sorry },
-    /- have : filter.limsup (λ (n : ℕ),
-    ((f (x ^ (mu (φ n))))^(1/(φ n : ℝ)) * (f (y ^ (nu (φ n))))^(1/(φ n : ℝ))))  filter.at_top ≤
-    (filter.limsup (λ (n : ℕ), (f (x ^ (mu (φ n))))^(1/(φ n : ℝ)))) filter.at_top *
-    (filter.limsup (λ (n : ℕ), (f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))) filter.at_top,
-    { exact real.limsup_mul_le _ _, }, -/
+    { exact real.limsup_mul_le (f_bdd_above hf1 hmu_le x φ)
+        (λ n, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _) (f_bdd_above hf1 hnu_le y φ)
+        (λ n, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _) },
     have h_bdd : filter.is_bounded_under has_le.le filter.at_top 
       (λ (n : ℕ), f (y ^ nu (φ n)) ^ (1 / (φ n : ℝ))),
     { exact filter_is_bdd_under hf1 hnu_le φ },
@@ -655,11 +652,6 @@ begin
   apply le_of_forall_sub_le,
   intros ε hε,
   rw sub_le_iff_le_add, 
-  /- have hxy' : filter.limsup (λ (n : ℕ), 
-    (f (x ^ (mu (φ n))))^(1/(φ n : ℝ) * f (y ^ (nu (φ n))))^(1/(φ n : ℝ)))  filter.at_top ≤
-    (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε,
-  { sorry }, -/
-
   have h_mul : (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε ≤
     max (smoothing_seminorm_def hf1 x) (smoothing_seminorm_def hf1 y) + ε,
   { rw max_def,
