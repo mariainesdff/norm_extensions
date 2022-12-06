@@ -68,57 +68,7 @@ def B_dR := fraction_ring (B_dR_plus p)
 
 def B_dR_plus := adic_completion (theta p).ker (B_inf_plus p)
 
-instance : has_one (B_dR_plus p) := 
-⟨⟨1, begin
-  simp only [B_dR_plus, adic_completion, submodule.mem_mk, set.mem_set_of_eq,
-    pi.one_apply],
-  intros m n hmn,
-  refl,
-end ⟩⟩
-
-noncomputable! instance : has_mul (B_dR_plus p) := 
-⟨λ x y, begin 
-  use x*y,
-
-  
-
-  simp only [B_dR_plus, adic_completion, submodule.mem_mk, set.mem_set_of_eq,
-    pi.mul_apply, ← subtype.val_eq_coe],
-  intros m n hmn,
-
-  have hx := x.property hmn,
-  have hy := y.property hmn,
-
-  rw ← hx, 
-  rw ← hy,
-  
-  simp only [submodule.liftq],
-
-  --simp only [submodule.mkq_apply],
-
-  simp only [linear_map.coe_mk],
-  simp only [quotient_add_group.lift],
-
-  
-  sorry
-end⟩
-
-#exit
-
-noncomputable! instance : comm_ring (B_dR_plus p) := 
-{ add := (+),
-  zero := 0,
-  neg := has_neg.neg,
-  sub := has_sub.sub,
-  one := 1,
-  mul := sorry,
-  mul_assoc := sorry,
-  one_mul := sorry,
-  mul_one := sorry,
-  left_distrib := sorry,
-  right_distrib := sorry,
-  mul_comm := sorry,
-  ..(infer_instance : add_comm_group (B_dR_plus p)) }
+noncomputable! instance : comm_ring (B_dR_plus p) := sorry
 
 def B_dR := fraction_ring (B_dR_plus p)
 
