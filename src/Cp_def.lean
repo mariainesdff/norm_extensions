@@ -1,5 +1,6 @@
 import analysis.normed.field.unit_ball
 import field_theory.is_alg_closed.algebraic_closure
+import ring_theory.valuation.integers
 import number_theory.padics.padic_numbers
 import topology.metric_space.cau_seq_filter
 import topology.algebra.valued_field
@@ -84,6 +85,15 @@ begin
     nonneg.coe_inv, nnreal.coe_nat_cast],
 end
 
+lemma C_p.valuation_p (p : ℕ) [fact p.prime] : valued.v (p : ℂ_[p]) = 1/(p : ℝ≥0) :=
+begin
+  have : ((p : Q_p_alg p) : ℂ_[p]) = (p : ℂ_[p]),
+  { rw [C_p.coe_eq, map_nat_cast] },
+  rw ← this,
+  rw C_p.valuation_extends,
+  exact Q_p_alg.valuation_p p,
+end
+
 instance : is_rank_one (C_p.valued_field p).v := 
 { hom := monoid_with_zero_hom.id ℝ≥0,
   strict_mono := strict_mono_id,
@@ -91,13 +101,8 @@ instance : is_rank_one (C_p.valued_field p).v :=
   begin
     use p,
     haveI hp : nat.prime p := _inst_1.elim,
-    have hpv : valued.v (p : ℂ_[p]) = 1/(p : ℝ≥0),
-    { have : ((p : Q_p_alg p) : ℂ_[p]) = (p : ℂ_[p]),
-      { rw [C_p.coe_eq, map_nat_cast] },
-      rw ← this,
-      rw C_p.valuation_extends,
-      exact Q_p_alg.valuation_p p, },
-    simp only [hpv,one_div, ne.def, inv_eq_zero, nat.cast_eq_zero, inv_eq_one, nat.cast_eq_one],
+    simp only [C_p.valuation_p, one_div, ne.def, inv_eq_zero, nat.cast_eq_zero, 
+      inv_eq_one, nat.cast_eq_one],
     exact ⟨hp.ne_zero, hp.ne_one⟩,
   end }
 
@@ -128,7 +133,20 @@ begin
     exact Q_p_alg.is_nonarchimedean p a b }
 end
 
+def C_p_integers : subring ℂ_[p] := (C_p.valued_field p).v.integer
 
+notation `𝓞_ℂ_[`p`]` := C_p_integers p
+
+instance : comm_monoid 𝓞_ℂ_[p] := infer_instance
+
+instance : comm_ring 𝓞_ℂ_[p] := infer_instance
+
+noncomputable! instance asdf : algebra 𝓞_ℂ_[p] ℂ_[p] := infer_instance
+
+#exit
+
+-- First definition of 𝓞_ℂ_[p]. Now that ℂ_[p] has a valuation, it is more convenient
+-- to directly define it as the ring of integers.
 
 def C_p_integers := metric.closed_ball (0 : ℂ_[p]) 1 --{x : ℂ_[p] // ∥x∥ ≤ 1}
 
@@ -162,3 +180,5 @@ def subring.unit_closed_ball (𝕜 : Type*) [semi_normed_ring 𝕜] [norm_one_cl
 --include hp
 instance : comm_ring 𝓞_ℂ_[p] :=
 subring_class.to_comm_ring (subring.unit_closed_ball ℂ_[p] (C_p.is_nonarchimedean p))
+
+noncomputable! instance adsf : algebra 𝓞_ℂ_[p] ℂ_[p] := sorry
