@@ -198,6 +198,12 @@ begin
     exact ⟨B, eventually_of_forall hB⟩, } --TODO: extract to lemma
 end
 
+lemma coe_limsup' {u : ℕ → ℝ} (hu : bdd_above (set.range u)) (hu0 : 0 ≤ u) :
+  (limsup (λ n, ((coe : ℝ≥0 → ℝ≥0∞) (⟨u n, hu0 n⟩ : ℝ≥0))) at_top) =
+  (coe : ℝ≥0 → ℝ≥0∞) (⟨limsup u at_top, limsup_nonneg_of_nonneg hu.is_bounded_under hu0⟩ : ℝ≥0) :=
+by rw [← ennreal.coe_limsup (nnreal.bdd_above hu0 hu), ennreal.coe_eq_coe, ← nnreal.coe_eq,
+  subtype.coe_mk, nnreal.coe_limsup hu.is_bounded_under]
+
 end ennreal
 
 
@@ -209,22 +215,44 @@ lemma limsup_mul_le {u v : ℕ → ℝ} (hu_bdd : bdd_above (set.range u)) (hu0 
 begin
   have h_bdd : bdd_above (set.range (u * v)),
   { exact set.range.bdd_above.mul hu_bdd hu0 hv_bdd hv0 },
-  have hcoe : ∀ n : ℕ, (⟨u n * v n, (mul_nonneg (hu0 n) (hv0 n))⟩ : ℝ≥0) = ⟨u n, hu0 n⟩*⟨v n, hv0 n⟩,
-  { intro n,
-    simp only [nonneg.mk_mul_mk], },
+  have hc : ∀ n : ℕ, (⟨u n * v n, (mul_nonneg (hu0 n) (hv0 n))⟩ : ℝ≥0) = ⟨u n, hu0 n⟩*⟨v n, hv0 n⟩,
+  { intro n, simp only [nonneg.mk_mul_mk], },
+  rw [← nnreal.coe_mk _ (limsup_nonneg_of_nonneg h_bdd.is_bounded_under (mul_nonneg hu0 hv0)),
+    ← nnreal.coe_mk _ (limsup_nonneg_of_nonneg hu_bdd.is_bounded_under hu0),
+    ← nnreal.coe_mk _ (limsup_nonneg_of_nonneg hv_bdd.is_bounded_under hv0),
+    ← nnreal.coe_mul, nnreal.coe_le_coe, ← ennreal.coe_le_coe, ennreal.coe_mul],
+  simp only [← ennreal.coe_limsup', pi.mul_apply, hc, ennreal.coe_mul],
+  obtain ⟨Bu, hBu⟩ := hu_bdd,
+  obtain ⟨Bv, hBv⟩ := hv_bdd,
+  simp only [mem_upper_bounds, set.mem_range, forall_exists_index, forall_apply_eq_imp_iff'] 
+    at hBu hBv,
+  have hBu_0 : 0 ≤ Bu := le_trans (hu0 0) (hBu 0),
+  have hBu' : ∀ (n : ℕ), (⟨u n, hu0 n⟩ : ℝ≥0)  ≤ (⟨Bu, hBu_0⟩ : ℝ≥0),
+  { simp only [← nnreal.coe_le_coe, nnreal.coe_mk], exact hBu },
+  have hBv_0 : 0 ≤ Bv := le_trans (hv0 0) (hBv 0),
+  have hBv' : ∀ (n : ℕ), (⟨v n, hv0 n⟩ : ℝ≥0) ≤ (⟨Bv, hBv_0⟩ : ℝ≥0),
+  { simp only [← nnreal.coe_le_coe, nnreal.coe_mk], exact hBv },
+  simp_rw ← ennreal.coe_le_coe at hBu' hBv',
+  exact ennreal.limsup_mul_le hBu' hBv',
 
-  rw [nnreal.coe_limsup h_bdd.is_bounded_under (mul_nonneg hu0 hv0)],
-  rw [nnreal.coe_limsup hu_bdd.is_bounded_under hu0],
-  rw [nnreal.coe_limsup hv_bdd.is_bounded_under hv0],
-  rw ← nnreal.coe_mul,
-  rw nnreal.coe_le_coe,
-  rw ← ennreal.coe_le_coe,
-  rw ennreal.coe_mul,
-  rw ennreal.coe_limsup (nnreal.bdd_above _ h_bdd),
-  rw ennreal.coe_limsup (nnreal.bdd_above hu0 hu_bdd),
-  rw ennreal.coe_limsup (nnreal.bdd_above hv0 hv_bdd),
+end
 
-  simp only [pi.mul_apply, hcoe, ennreal.coe_mul],
+-- Alternative proof of limsup_mul_le
+lemma limsup_mul_le' {u v : ℕ → ℝ} (hu_bdd : bdd_above (set.range u)) (hu0 : 0 ≤ u) 
+  (hv_bdd : bdd_above (set.range v)) (hv0 : 0 ≤ v) :
+  filter.limsup (u * v) at_top ≤ filter.limsup u at_top * filter.limsup v at_top :=
+begin
+  have h_bdd : bdd_above (set.range (u * v)),
+  { exact set.range.bdd_above.mul hu_bdd hu0 hv_bdd hv0 },
+  have hc : ∀ n : ℕ, (⟨u n * v n, (mul_nonneg (hu0 n) (hv0 n))⟩ : ℝ≥0) = ⟨u n, hu0 n⟩*⟨v n, hv0 n⟩,
+  { intro n, simp only [nonneg.mk_mul_mk], },
+  rw [nnreal.coe_limsup h_bdd.is_bounded_under (mul_nonneg hu0 hv0),
+    nnreal.coe_limsup hu_bdd.is_bounded_under hu0, nnreal.coe_limsup hv_bdd.is_bounded_under hv0,
+    ← nnreal.coe_mul, nnreal.coe_le_coe, ← ennreal.coe_le_coe, ennreal.coe_mul,
+    ennreal.coe_limsup (nnreal.bdd_above _ h_bdd), ennreal.coe_limsup (nnreal.bdd_above hu0 hu_bdd),
+    ennreal.coe_limsup (nnreal.bdd_above hv0 hv_bdd)],
+
+  simp only [pi.mul_apply, hc, ennreal.coe_mul],
   obtain ⟨Bu, hBu⟩ := hu_bdd,
   obtain ⟨Bv, hBv⟩ := hv_bdd,
   simp only [mem_upper_bounds, set.mem_range, forall_exists_index, forall_apply_eq_imp_iff'] 
@@ -239,7 +267,6 @@ begin
   simp_rw ← ennreal.coe_le_coe at hBu' hBv',
   exact ennreal.limsup_mul_le hBu' hBv',
 end
-
 
 
 end real
