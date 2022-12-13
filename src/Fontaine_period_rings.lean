@@ -16,24 +16,7 @@ open mv_polynomial
 @[derive comm_ring]
 def Cp_x_y := mv_polynomial (fin 2) ℂ_[p]
 
-def B_HT := laurent_polynomial (Cp_x_y p) 
-
-instance O_C_p_mod_p.char_p : char_p (𝓞_ℂ_[p] ⧸ (ideal.span{p} : ideal 𝓞_ℂ_[p])) p := 
-begin
-  rw char_p_iff,
-  intro n,
-  --rw dvd_iff_exists_eq_mul_left,
-  rw [← map_nat_cast (ideal.quotient.mk (ideal.span{p} : ideal 𝓞_ℂ_[p])),
-    ideal.quotient.eq_zero_iff_mem, ideal.mem_span_singleton],
-  --rw dvd_iff_exists_eq_mul_left,
-  refine ⟨λ hn, _, λ  hn, nat.coe_nat_dvd hn⟩,
-  { simp only at hn,
-    sorry },
-
-end
-
-/- def E := ring.perfection (𝓞_ℂ_[p] ⧸ (ideal.span{p} : ideal 𝓞_ℂ_[p])) p
-instance : comm_ring (E p) := perfection.comm_ring _ _ -/
+def B_HT := laurent_polynomial (Cp_x_y p)
 
 instance : fact ((C_p.valued_field p).v ↑p ≠ 1) := 
 ⟨by simp only [C_p.valuation_p, one_div, ne.def, inv_eq_one, nat.cast_eq_one,
@@ -63,16 +46,3 @@ def B_dR_plus := uniform_space.completion (B_inf_plus p)
 instance : comm_ring (B_dR_plus p) := uniform_space.completion.comm_ring (B_inf_plus p)
 
 def B_dR := fraction_ring (B_dR_plus p)
-
-#exit
-
-def B_dR_plus := adic_completion (theta p).ker (B_inf_plus p)
-
-noncomputable! instance : comm_ring (B_dR_plus p) := sorry
-
-def B_dR := fraction_ring (B_dR_plus p)
-
-
-
-
-
