@@ -36,6 +36,9 @@ noncomputable! instance normed_field : normed_field (Q_p_alg p) :=
 lemma is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
 spectral_norm_is_nonarchimedean (Q_p_alg.is_algebraic p) (padic_norm_e.nonarchimedean)
 
+lemma norm_def (x : Q_p_alg p) : ‖ x ‖ = spectral_norm (Q_p_alg.is_algebraic p) x := rfl
+
+
 instance valued_field : valued (Q_p_alg p) ℝ≥0 :=
 normed_field.to_valued (Q_p_alg.is_nonarchimedean p)
 
