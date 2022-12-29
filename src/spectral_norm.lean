@@ -1,10 +1,14 @@
+/-
+Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: María Inés de Frutos-Fernández
+-/
 import data.list.min_max
 import analysis.special_functions.pow
 import ring_theory.mv_polynomial.symmetric
 import ring_theory.polynomial.vieta
 import minpoly
 import normal_closure
---import normed_space
 import seminorm_of_galois
 
 noncomputable theory

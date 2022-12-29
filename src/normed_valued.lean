@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: María Inés de Frutos-Fernández
+-/
 import rank_one_valuation
 import ring_seminorm
 import analysis.special_functions.pow

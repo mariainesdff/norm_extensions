@@ -1,4 +1,8 @@
---import data.real.nnreal
+/-
+Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: María Inés de Frutos-Fernández
+-/
 import ring_theory.valuation.basic
 import number_theory.padics.padic_numbers
 import analysis.special_functions.pow
