@@ -17,9 +17,16 @@ open polynomial
 
 open_locale polynomial
 
-variables {R : Type*} [normed_ring R]
+section list
 
-def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat_degree)
+lemma list.max_repeat {α : Type*} {n : ℕ} (a : α) [linear_order α] :
+  list.foldr max a (list.repeat a n) = a :=
+begin
+  induction n with n hn,
+  { simp only [list.repeat, list.foldr_nil] },
+  { simp only [list.foldr, list.repeat, list.repeat_succ, list.foldr_cons, max_eq_left_iff],
+    exact le_of_eq hn, }
+end
 
 lemma list.le_max_of_exists_le {α : Type*} [linear_order α] {l : list α} {a x : α} (b : α)
   (hx : x ∈ l) (h : a ≤ x) : a ≤ l.foldr max b :=
@@ -32,16 +39,26 @@ begin
     { exact le_max_of_le_right (IH hl) }}
 end
 
-def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
-λ (n : ℕ), if n < p.nat_degree then ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) else 0
+end list
 
-lemma spectral_value_terms_of_lt_nat_degree {p : R[X]} (hp : p.monic) {n : ℕ}
-  (hn : n < p.nat_degree) : spectral_value_terms hp n = ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) := 
+variables {R : Type*}
+
+section seminormed
+
+variables [semi_normed_ring R]
+
+--def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat_degree)
+
+def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
+λ (n : ℕ), if n < p.nat_degree then ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) else 0 
+
+lemma spectral_value_terms_of_lt_nat_degree {p : R[X]} (hp : p.monic) {n : ℕ} 
+  (hn : n < p.nat_degree ) : spectral_value_terms hp n = ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) := 
 by simp only [spectral_value_terms, if_pos hn]
 
 lemma spectral_value_terms_of_nat_degree_le {p : R[X]} (hp : p.monic) {n : ℕ}
   (hn : p.nat_degree ≤ n) : spectral_value_terms hp n = 0 := 
-by simp only [spectral_value_terms, if_neg (not_lt.mpr hn)]
+by simp only [spectral_value_terms, if_neg (not_lt.mpr hn)] 
 
 def spectral_value {p : R[X]} (hp : p.monic) : ℝ := supr (spectral_value_terms hp)
 
@@ -103,13 +120,27 @@ real.supr_nonneg (spectral_value_terms_nonneg hp)
 
 variable [nontrivial R]
 
-lemma list.max_repeat {α : Type*} {n : ℕ} (a : α) [linear_order α] :
-  list.foldr max a (list.repeat a n) = a :=
+lemma spectral_value_X_sub_C (r : R) :
+  spectral_value (@polynomial.monic_X_sub_C _ _ r) = ‖ r ‖ := 
 begin
-  induction n with n hn,
-  { simp only [list.repeat, list.foldr_nil] },
-  { simp only [list.foldr, list.repeat, list.repeat_succ, list.foldr_cons, max_eq_left_iff],
-    exact le_of_eq hn, }
+  rw spectral_value, rw spectral_value_terms,
+  simp only [polynomial.nat_degree_X_sub_C, nat.lt_one_iff, polynomial.coeff_sub,
+    nat.cast_one, one_div],
+  suffices : (⨆ (n : ℕ), ite (n = 0) ‖ r ‖  0) = ‖ r ‖,
+  { rw ← this,
+    apply congr_arg,
+    ext n,
+    by_cases hn : n = 0,
+    { rw [if_pos hn, if_pos hn, hn, nat.cast_zero, sub_zero, polynomial.coeff_X_zero,
+        polynomial.coeff_C_zero, zero_sub, norm_neg, inv_one, real.rpow_one] },
+    { rw [if_neg hn, if_neg hn], }},
+  { apply csupr_eq_of_forall_le_of_forall_lt_exists_gt,
+    { intro n,
+      split_ifs,
+      exact le_refl _, 
+      exact norm_nonneg _ },
+    { intros x hx, use 0,
+      simp only [eq_self_iff_true, if_true, hx], }}
 end
 
 lemma spectral_value_X_pow (n : ℕ) :
@@ -125,8 +156,14 @@ begin
       nat.sub_eq_zero_iff_le],
     exact ⟨eq.refl _, not_le_of_lt hmn⟩ },
   { rw if_neg hmn },
-  apply_instance,
+  apply_instance, 
 end
+
+end seminormed
+
+section normed
+
+variables [normed_ring R] 
 
 lemma spectral_value_eq_zero_iff [nontrivial R] {p : R[X]} (hp : p.monic) :
   spectral_value hp = 0 ↔ p = polynomial.X^p.nat_degree := 
@@ -150,35 +187,14 @@ begin
           specialize h_le (spectral_value_terms hp n) ⟨n, rfl⟩,
           simp only [spectral_value_terms, if_pos hn'] at h_le,
           rw [h0, real.rpow_le_rpow_iff (norm_nonneg _) (le_refl _) h_exp] at h_le,
-          exact norm_eq_zero.mp (le_antisymm h_le (norm_nonneg _)), },
+          exact norm_eq_zero.mp (le_antisymm h_le (norm_nonneg _)) },
         { exact polynomial.coeff_eq_zero_of_nat_degree_lt 
             (lt_of_le_of_ne (le_of_not_lt hn') (ne_comm.mpr hn)) }}}},
   { convert spectral_value_X_pow p.nat_degree,
     apply_instance }
 end
 
-lemma spectral_value_X_sub_C (r : R) :
-  spectral_value (@polynomial.monic_X_sub_C _ _ r) = ‖ r ‖ := 
-begin
-  rw spectral_value, rw spectral_value_terms,
-  simp only [polynomial.nat_degree_X_sub_C, nat.lt_one_iff, polynomial.coeff_sub,
-    nat.cast_one, one_div],
-  suffices : (⨆ (n : ℕ), ite (n = 0) ‖ r ‖  0) = ‖ r ‖,
-  { rw ← this,
-    apply congr_arg,
-    ext n,
-    by_cases hn : n = 0,
-    { rw [if_pos hn, if_pos hn, hn, nat.cast_zero, sub_zero, polynomial.coeff_X_zero,
-        polynomial.coeff_C_zero, zero_sub, norm_neg, inv_one, real.rpow_one] },
-    { rw [if_neg hn, if_neg hn], }},
-  { apply csupr_eq_of_forall_le_of_forall_lt_exists_gt,
-    { intro n,
-      split_ifs,
-      exact le_refl _, 
-      exact norm_nonneg _ },
-    { intros x hx, use 0,
-      simp only [eq_self_iff_true, if_true, hx], }}
-end
+end normed
 
 lemma polynomial.nat_degree_pos_of_monic_of_root  {K : Type*} [normed_field K] {L : Type*} [field L]
   [algebra K L] {p : K[X]} (hp : p.monic) {x : L} (hx : polynomial.aeval x p = 0) : 
@@ -566,7 +582,6 @@ begin
     { rw spectral_value_terms_of_lt_nat_degree _ hm,
       have h : 0 < (p.nat_degree - m : ℝ),
       { rw [sub_pos, nat.cast_lt], exact hm },
-      
       rw [← real.rpow_le_rpow_iff (real.rpow_nonneg_of_nonneg (norm_nonneg _) _) h_le h,
         ← real.rpow_mul (norm_nonneg _), one_div_mul_cancel (ne_of_gt h),
         real.rpow_one, ← nat.cast_sub (le_of_lt hm), real.rpow_nat_cast],
@@ -579,7 +594,6 @@ begin
       have hm_le' : m ≤ s.card,
       { rw hps, exact le_of_lt hm, },
       rw multiset.prod_X_sub_C_coeff s hm_le',
-      
       have h : f ((-1) ^ (s.card - m) * s.esymm (s.card - m)) = f (s.esymm (s.card - m)),
       { cases (neg_one_pow_eq_or L (s.card - m)) with h1 hn1,
         { rw [h1, one_mul] },
@@ -1186,6 +1200,7 @@ def mul_norm_to_normed_field (f : mul_ring_norm L) :
 
 lemma mul_norm_to_normed_field.norm (f : mul_ring_norm L) /- (hf_neg : ∀ x, f (-x) = f x) -/:
   (mul_norm_to_normed_field f).norm = λ x, (f x : ℝ) := rfl
+
 
 
 end spectral_valuation
