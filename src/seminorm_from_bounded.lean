@@ -68,7 +68,7 @@ def normed_group_hom.homeo_of_bijective_bounded {V : Type*} {W : Type*}
 
 variables {α : Type*} [comm_ring α] (f : α → ℝ)
 
--- 
+-- In this file, we prove Proposition 1.2.1/2 from BGR.
 section seminorm_from_bounded
 
 variable (f)
