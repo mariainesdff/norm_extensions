@@ -9,7 +9,7 @@ import ring_theory.mv_polynomial.symmetric
 import ring_theory.polynomial.vieta
 import minpoly
 import normal_closure
-import seminorm_of_galois
+import alg_norm_of_galois
 
 noncomputable theory
 
@@ -48,6 +48,7 @@ section seminormed
 variables [semi_normed_ring R]
 
 --def polynomial.coeffs (p : R[X])  : list R := list.map p.coeff (list.range p.nat_degree)
+
 
 def spectral_value_terms {p : R[X]} (hp : p.monic) : ℕ → ℝ := 
 λ (n : ℕ), if n < p.nat_degree then ‖ p.coeff n ‖^(1/(p.nat_degree - n : ℝ)) else 0 
