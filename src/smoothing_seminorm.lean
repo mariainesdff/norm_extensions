@@ -117,11 +117,11 @@ begin
   exact real.rpow_nonneg_of_nonneg (map_nonneg f _) _, 
 end
 
-def smoothing_seminorm_seq_lim (x : R) : ℝ := infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ)))
+def smoothing_seminorm_def (x : R) : ℝ := infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ)))
 
-private lemma smoothing_seminorm_seq_lim_is_limit_zero {x : R} (hx : f x = 0) :
+private lemma smoothing_seminorm_def_is_limit_zero {x : R} (hx : f x = 0) :
   filter.tendsto ((smoothing_seminorm_seq f x)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) := 
+    (𝓝 (smoothing_seminorm_def hf1 x)) := 
 begin
   have h0 : ∀ (n : ℕ) (hn : 1 ≤ n), (f (x ^ n))^(1/(n : ℝ)) = 0,
   { intros n hn,
@@ -133,15 +133,15 @@ begin
   have hL0 : infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ))) = 0 :=
   le_antisymm (cinfi_le_of_le (smoothing_seminorm_seq_bdd hf1 x) (1 : pnat)
     (le_of_eq (h0 1 (le_refl _)))) (le_cinfi (λ n, real.rpow_nonneg_of_nonneg (map_nonneg f _) _)),
-  simp only [hL0, smoothing_seminorm_seq, smoothing_seminorm_seq_lim],
+  simp only [hL0, smoothing_seminorm_seq, smoothing_seminorm_def],
   exact tendsto_at_top_of_eventually_const h0,
 end
 
-private lemma smoothing_seminorm_seq_lim_is_limit_ne_zero {x : R} (hx : f x ≠ 0) :
+private lemma smoothing_seminorm_def_is_limit_ne_zero {x : R} (hx : f x ≠ 0) :
   filter.tendsto ((smoothing_seminorm_seq f x)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) := 
+    (𝓝 (smoothing_seminorm_def hf1 x)) := 
 begin
-  simp only [smoothing_seminorm_seq_lim],
+  simp only [smoothing_seminorm_def],
   set L := infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ))) with hL,
   have hL0 : 0 ≤ L := le_cinfi (λ x, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _),
   rw metric.tendsto_at_top,
@@ -250,20 +250,18 @@ begin
       ... ≤  L + ε : h3  }}
 end
 
-lemma smoothing_seminorm_seq_lim_is_limit (x : R) :
+lemma smoothing_seminorm_def_is_limit (x : R) :
   filter.tendsto ((smoothing_seminorm_seq f x)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) :=
+    (𝓝 (smoothing_seminorm_def hf1 x)) :=
 begin
   by_cases hx : f x = 0,
-  { exact smoothing_seminorm_seq_lim_is_limit_zero hf1 hx },
-  { exact smoothing_seminorm_seq_lim_is_limit_ne_zero hf1 hx }
+  { exact smoothing_seminorm_def_is_limit_zero hf1 hx },
+  { exact smoothing_seminorm_def_is_limit_ne_zero hf1 hx }
 end
-
-def smoothing_seminorm_def : R → ℝ := smoothing_seminorm_seq_lim hf1  
 
 lemma smoothing_seminorm_nonneg (x : R) : 0 ≤ smoothing_seminorm_def hf1 x :=
 begin
-  apply ge_of_tendsto (smoothing_seminorm_seq_lim_is_limit hf1 x),
+  apply ge_of_tendsto (smoothing_seminorm_def_is_limit hf1 x),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -273,7 +271,7 @@ end
 
 lemma smoothing_seminorm_zero : smoothing_seminorm_def hf1 0 = 0 :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hf1 0)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_def_is_limit hf1 0)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -287,7 +285,7 @@ end
 lemma smoothing_seminorm_neg (f_neg : ∀ x : R, f (-x) = f x) (x : R) : 
   smoothing_seminorm_def hf1 (-x) = smoothing_seminorm_def hf1 x :=
 begin
-  simp only [smoothing_seminorm_def, smoothing_seminorm_seq_lim],
+  simp only [smoothing_seminorm_def, smoothing_seminorm_def],
   congr, ext n,
   rw neg_pow,
   cases neg_one_pow_eq_or R n with hpos hneg,
@@ -298,9 +296,9 @@ end
 lemma smoothing_seminorm_mul (x y : R) : smoothing_seminorm_def hf1 (x * y) ≤
   smoothing_seminorm_def hf1 x * smoothing_seminorm_def hf1 y :=
 begin
-  apply le_of_tendsto_of_tendsto' (smoothing_seminorm_seq_lim_is_limit hf1 (x *y))
-    (filter.tendsto.mul (smoothing_seminorm_seq_lim_is_limit hf1 x)
-      (smoothing_seminorm_seq_lim_is_limit hf1 y)),
+  apply le_of_tendsto_of_tendsto' (smoothing_seminorm_def_is_limit hf1 (x *y))
+    (filter.tendsto.mul (smoothing_seminorm_def_is_limit hf1 x)
+      (smoothing_seminorm_def_is_limit hf1 y)),
   intro n,
   have hn : 0 ≤ 1 / (n : ℝ),
   { simp only [one_div, inv_nonneg, nat.cast_nonneg] },
@@ -311,7 +309,7 @@ end
 
 lemma smoothing_seminorm_one : smoothing_seminorm_def hf1 1 ≤ 1 := 
 begin
-  apply le_of_tendsto (smoothing_seminorm_seq_lim_is_limit  hf1 (1 : R) ),
+  apply le_of_tendsto (smoothing_seminorm_def_is_limit  hf1 (1 : R) ),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -478,16 +476,16 @@ end
 
 
 -- I think this isn't needed
-lemma smoothing_seminorm_seq_lim_is_limit_comp {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) 
+lemma smoothing_seminorm_def_is_limit_comp {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) 
  {a : ℝ} (a_in: a ∈ set.Ioc (0 : ℝ) 1) {φ : ℕ → ℕ} (hφ_mono: strict_mono φ) 
   (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
   filter.tendsto (λ (n : ℕ), (f (x ^ (φ n)))^(1/(φ n) : ℝ)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) :=
+    (𝓝 (smoothing_seminorm_def hf1 x)) :=
 begin
   have hφ_lim' : filter.tendsto φ filter.at_top filter.at_top,
   { exact strict_mono.tendsto_at_top hφ_mono },
 
-  exact (smoothing_seminorm_seq_lim_is_limit hf1 x).comp hφ_lim',
+  exact (smoothing_seminorm_def_is_limit hf1 x).comp hφ_lim',
 end
 
 omit hf1
@@ -513,12 +511,12 @@ tendsto_coe_nat_at_top_iff.mp (tendsto.congr' (filter.div_mul_eventually_cancel 
 include hf1
 
 -- Not worth it?
-/- lemma smoothing_seminorm_seq_lim_is_limit_mu {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) {a : ℝ} 
+/- lemma smoothing_seminorm_def_is_limit_mu {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) (x : R) {a : ℝ} 
   (ha : 0 < a) {φ : ℕ → ℕ} (hφ_mono: strict_mono φ) 
   (hφ_lim: filter.tendsto ((λ (n : ℕ), ↑(s n) / ↑n) ∘ φ) filter.at_top (𝓝 a)) :
   filter.tendsto (λ (n : ℕ), (f (x ^(s (φ n))))^(1/(s (φ n)) : ℝ)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x)) :=
-(smoothing_seminorm_seq_lim_is_limit hf1 x).comp
+    (𝓝 (smoothing_seminorm_def hf1 x)) :=
+(smoothing_seminorm_def_is_limit hf1 x).comp
   (filter.tendsto.num hφ_mono.tendsto_at_top ha hφ_lim) -/
 
 lemma limsup_mu_le {s : ℕ → ℕ} (hs_le : ∀ n : ℕ, s n ≤ n) {x y : R}
@@ -564,7 +562,7 @@ begin
       simp_rw [← real.rpow_mul (map_nonneg f _), mul_div],
       exact (eventually_eq.comp₂ eventually_eq.rfl pow (h.div eventually_eq.rfl)) },
     exact le_of_eq (filter.tendsto.limsup_eq (filter.tendsto.congr' h_eq
-      (filter.tendsto.rpow ((smoothing_seminorm_seq_lim_is_limit hf1 x).comp
+      (filter.tendsto.rpow ((smoothing_seminorm_def_is_limit hf1 x).comp
       (filter.tendsto.num hφ_mono.tendsto_at_top ha_pos hφ_lim)) hφ_lim (or.inr ha_pos)))) }
 end
 
@@ -653,7 +651,7 @@ begin
       (filter.limsup_nonneg_of_nonneg h_bdd (λ m, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _)) 
       (real.rpow_nonneg_of_nonneg (smoothing_seminorm_nonneg hf1 x) _)) },
 
-  conv_lhs { simp only [smoothing_seminorm_def, smoothing_seminorm_seq_lim], },
+  conv_lhs { simp only [smoothing_seminorm_def], },
   apply le_of_forall_sub_le,
   intros ε hε,
   rw sub_le_iff_le_add, 
@@ -708,8 +706,8 @@ begin
   intros x m hm,
   simp only [smoothing_seminorm_def],
   have hlim : filter.tendsto (λ n, smoothing_seminorm_seq  f x (m*n)) filter.at_top
-    (𝓝 (smoothing_seminorm_seq_lim hf1 x )),
-  { refine filter.tendsto.comp (smoothing_seminorm_seq_lim_is_limit hf1 x) _,
+    (𝓝 (smoothing_seminorm_def hf1 x )),
+  { refine filter.tendsto.comp (smoothing_seminorm_def_is_limit hf1 x) _,
     apply filter.tendsto_at_top_at_top_of_monotone,
     { intros n k hnk, exact mul_le_mul_left' hnk m, },
     { rintro n, use n, exact le_mul_of_one_le_left' hm, }},
@@ -722,13 +720,13 @@ begin
     rw [pow_mul, ← real.rpow_nat_cast, ← real.rpow_mul (map_nonneg f _), nat.cast_mul, 
       ← one_div_mul_one_div, mul_comm (1 / (m : ℝ)), mul_assoc, one_div_mul_cancel hm', mul_one] },
   simp_rw h_eq,
-  exact smoothing_seminorm_seq_lim_is_limit hf1 _
+  exact smoothing_seminorm_def_is_limit hf1 _
 end
 
 lemma smoothing_seminorm_of_pow_mult {x : R} (hx : ∀ (n : ℕ) (hn : 1 ≤ n), f (x ^ n) = f x ^ n) :
   smoothing_seminorm_def hf1 x = f x :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hf1 x)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_def_is_limit hf1 x)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -751,7 +749,7 @@ end
 lemma smoothing_seminorm_apply_of_is_mult' {x : R} (hx : ∀ y : R, f (x * y) = f x * f y) :
   smoothing_seminorm_def hf1 x = f x :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hf1 x)
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_def_is_limit hf1 x)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
@@ -781,8 +779,8 @@ begin
   have hlim : filter.tendsto (λ n, f x * smoothing_seminorm_seq f y n) filter.at_top
     (𝓝 (smoothing_seminorm_def hf1 x * smoothing_seminorm_def hf1 y)),
   { rw [smoothing_seminorm_apply_of_is_mult' hf1 hx],
-    exact filter.tendsto.const_mul _ (smoothing_seminorm_seq_lim_is_limit hf1 y), },
-  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_seq_lim_is_limit hf1 (x * y))
+    exact filter.tendsto.const_mul _ (smoothing_seminorm_def_is_limit hf1 y), },
+  apply tendsto_nhds_unique_of_eventually_eq (smoothing_seminorm_def_is_limit hf1 (x * y))
     hlim,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   use 1,
