@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
 import data.polynomial.laurent
+import field_theory.is_alg_closed.algebraic_closure
 import linear_algebra.adic_completion
 import ring_theory.witt_vector.basic
 import ring_theory.perfection
@@ -14,15 +15,20 @@ noncomputable theory
 
 variables (p : ℕ)  [fact p.prime]
 
-/- Fontaine period rings -/
+/- Fontaine's period rings -/
 
 open mv_polynomial
 
-@[derive comm_ring]
-def Cp_x_y := mv_polynomial (fin 2) ℂ_[p]
+-- The first example is `K^alg`, for `K` a `p`-adic field.#check
 
-def B_HT := laurent_polynomial (Cp_x_y p)
+@[nolint unused_arguments]
+def K_alg {K : Type*} [field K] [algebra ℚ_[p] K]  (h_fin : finite_dimensional ℚ_[p] K) := 
+algebraic_closure K 
 
+-- B_HT
+def B_HT := laurent_polynomial ℂ_[p]
+
+-- We know present the structure for the formalization of B_dR
 instance : fact ((C_p.valued_field p).v ↑p ≠ 1) := 
 ⟨by simp only [C_p.valuation_p, one_div, ne.def, inv_eq_one, nat.cast_eq_one,
       nat.prime.ne_one _inst_1.1, not_false_iff]⟩
@@ -51,3 +57,5 @@ def B_dR_plus := uniform_space.completion (B_inf_plus p)
 instance : comm_ring (B_dR_plus p) := uniform_space.completion.comm_ring (B_inf_plus p)
 
 def B_dR := fraction_ring (B_dR_plus p)
+
+#lint
