@@ -10,8 +10,25 @@ import topology.metric_space.basic
 import topology.algebra.order.monotone_convergence
 import topology.instances.nnreal
 
+/-!
+# Limits of monotone and antitone sequences
+
+We prove some auxiliary results about limits of `ℝ`-valued and `ℝ≥0`-valued sequences.
+
+## Main Results
+
+* `real.tendsto_of_is_bounded_antitone` : an antitone, bounded below sequence `f : ℕ → ℝ` has a 
+  finite limit.
+* `nnreal.tendsto_of_is_bounded_antitone` : an antitone sequence `f : ℕ → ℝ≥0` has a finite limit.
+
+## Tags
+
+glb, monotone, antitone, tendsto
+-/
+
 open_locale filter topological_space
 
+/-- A nonempty, bounded below set of real numbers has a greatest lower bound. -/
 theorem real.exists_is_glb {S : set ℝ} (hne : S.nonempty) (hbdd : bdd_below S) :
   ∃ x, is_glb S x :=
 begin
@@ -22,24 +39,25 @@ begin
   simpa [← is_lub_neg] using (classical.some_spec (real.exists_is_lub T hT_ne hT_bdd)),
 end
 
+/-- An monotone, bounded above sequence `f : ℕ → ℝ` has a finite limit. -/
 lemma filter.tendsto_of_is_bounded_monotone {f : ℕ → ℝ} (h_bdd : bdd_above (set.range f))
   (h_mon : monotone f) : ∃ r : ℝ, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
   obtain ⟨B, hB⟩ := (real.exists_is_lub ((set.range f)) (set.range_nonempty f) h_bdd),
-  use B,
-  exact tendsto_at_top_is_lub h_mon hB,
+  exact ⟨B, tendsto_at_top_is_lub h_mon hB⟩
 end
 
+/-- An antitone, bounded below sequence `f : ℕ → ℝ` has a finite limit. -/
 lemma real.tendsto_of_is_bounded_antitone {f : ℕ → ℝ} (h_bdd : bdd_below (set.range f)) 
   (h_ant : antitone f) : ∃ r : ℝ, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
   obtain ⟨B, hB⟩ := (real.exists_is_glb (set.range_nonempty f) h_bdd),
-  use B,
-  exact tendsto_at_top_is_glb h_ant hB,
+  exact ⟨B, tendsto_at_top_is_glb h_ant hB⟩,
 end
 
-lemma nnreal.tendsto_of_is_bounded_antitone {f : ℕ → nnreal} (h_bdd : bdd_below (set.range f)) 
-  (h_ant : antitone f) : ∃ r : nnreal, filter.tendsto f filter.at_top (𝓝 r) :=
+/-- An antitone sequence `f : ℕ → ℝ≥0` has a finite limit. -/
+lemma nnreal.tendsto_of_is_bounded_antitone {f : ℕ → nnreal} (h_ant : antitone f) : 
+  ∃ r : nnreal, filter.tendsto f filter.at_top (𝓝 r) :=
 begin
   have h_bdd_0 : (0 : ℝ) ∈ lower_bounds (set.range (λ (n : ℕ), (f n : ℝ))),
   { intros r hr,
@@ -55,4 +73,3 @@ begin
   rw ← nnreal.tendsto_coe,
   exact hL,
 end
-
