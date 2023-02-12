@@ -3,10 +3,7 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import analysis.normed.field.unit_ball
-import field_theory.is_alg_closed.algebraic_closure
 import ring_theory.valuation.integers
-import number_theory.padics.padic_numbers
 import topology.metric_space.cau_seq_filter
 import topology.algebra.valued_field
 import spectral_norm_unique
@@ -32,9 +29,9 @@ padic_norm_e.nonarchimedean
 
 namespace Q_p_alg
 
-noncomputable! instance normed_field : normed_field (Q_p_alg p) := 
+instance normed_field : normed_field (Q_p_alg p) := 
 @spectral_norm_to_normed_field ℚ_[p] _ padic.complete_space _ _ _ (Q_p_alg.is_algebraic p) 
-  (padic.is_nonarchimedean p)
+  padic_norm_e.nonarchimedean
 -- The old proof now times out
 --spectral_norm_to_normed_field (Q_p_alg.is_algebraic p) (padic.is_nonarchimedean p)
 
@@ -42,6 +39,9 @@ lemma is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
 spectral_norm_is_nonarchimedean (Q_p_alg.is_algebraic p) (padic_norm_e.nonarchimedean)
 
 lemma norm_def (x : Q_p_alg p) : ‖ x ‖ = spectral_norm (Q_p_alg.is_algebraic p) x := rfl
+
+lemma Q_p.norm_extends (x : ℚ_[p]) : ‖ (x : Q_p_alg p) ‖ = ‖ x ‖ := 
+spectral_alg_norm_extends _ _ (padic.is_nonarchimedean p)
 
 
 instance valued_field : valued (Q_p_alg p) ℝ≥0 :=
@@ -63,7 +63,9 @@ notation `ℂ_[`p`]` := C_p p
 
 instance : field ℂ_[p] := uniform_space.completion.field
 
-noncomputable! instance C_p.valued_field : valued (ℂ_[p]) ℝ≥0 := valued.valued_completion 
+instance C_p.valued_field : valued (ℂ_[p]) ℝ≥0 := valued.valued_completion 
+
+instance C_p.complete_space : complete_space (ℂ_[p]) := uniform_space.completion.complete_space _
 
 instance : has_coe_t (Q_p_alg p) ℂ_[p] := uniform_space.completion.has_coe_t _
 
@@ -144,3 +146,6 @@ end
 def C_p_integers : subring ℂ_[p] := (C_p.valued_field p).v.integer
 
 notation `𝓞_ℂ_[`p`]` := C_p_integers p
+
+lemma C_p.integers : valuation.integers (C_p.valued_field p).v  𝓞_ℂ_[p] := 
+valuation.integer.integers _
