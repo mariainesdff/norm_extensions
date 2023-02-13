@@ -8,9 +8,13 @@ import data.fintype.order
 import field_theory.fixed
 import field_theory.normal
 
+open_locale nnreal
 
 noncomputable theory
 
+
+/-! ## supr
+In this section we prove some lemmas about `supr`, most of them for real-valued functions. -/
 section supr
 
 lemma lt_csupr_of_lt {α : Type*} {ι : Sort*} [conditionally_complete_lattice α] {a : α} {f : ι → α}
@@ -19,36 +23,61 @@ lt_of_lt_of_le h (le_csupr H c)
 
 lemma csupr_univ {α β : Type*} [fintype β] [conditionally_complete_lattice α] {f : β → α} :
   (⨆ (x : β) (H : x ∈ (finset.univ : finset β)), f x) = ⨆ (x : β), f x := 
-by simp
+by simp only [finset.mem_univ, csupr_pos]
 
-theorem finset.sup_eq_csupr {α : Type*} [nonempty α] (s : finset α) [nonempty s]
-  (f : α → nnreal) : s.sup f = ⨆ (a : α) (H : a ∈ s), f a :=
+lemma csupr₂_le {ι : Sort*} [nonempty ι] {κ : ι → Prop} {α : Type*}
+  [conditionally_complete_linear_order_bot α] 
+  {f : Π i, κ i →  α} {a : α} (h : ∀ i j, f i j ≤ a) : (⨆ i j, f i j) ≤ a :=
+begin
+  apply csupr_le,
+  intro x,
+  by_cases hx : κ x,
+  { haveI : nonempty (κ x) := ⟨hx⟩,
+    exact csupr_le (λ hx',  h _ _),  },
+  {  simp only [(iff_false _).mpr hx, csupr_false, bot_le], },
+end
+
+lemma le_csupr₂_of_le' {ι : Sort*} [finite ι] {κ : ι → Prop} {α : Type*}
+  [conditionally_complete_linear_order_bot α] {f : Π i, κ i → α} {a : α} (i : ι) (j : κ i) 
+  (h : a ≤ f i j) : a ≤ ⨆ i j, f i j :=
+begin
+  apply le_csupr_of_le _ i,
+  { apply le_csupr_of_le (set.finite.bdd_above (set.finite_range (λ (j : κ i), f i j))) j h, },
+  { exact set.finite.bdd_above (set.finite_range _) },
+end
+
+lemma le_csupr₂_of_le {ι : Sort*} {κ : ι → Prop} {α : Type*}
+  [conditionally_complete_linear_order_bot α] {f : Π i, κ i → α} 
+  (h_fin : (set.range (λ (i : ι), ⨆ (j : κ i), f i j)).finite)
+  {a : α} (i : ι) (j : κ i) 
+  (h : a ≤ f i j) : a ≤ ⨆ i j, f i j :=
+begin
+  apply le_csupr_of_le _ i,
+  { apply le_csupr_of_le (set.finite.bdd_above (set.finite_range (λ (j : κ i), f i j))) j h, },
+  { apply set.finite.bdd_above h_fin }
+end
+
+theorem finset.sup_eq_csupr {α  β : Type*} [nonempty α] [conditionally_complete_linear_order_bot β] 
+  (s : finset α) (f : α → β) : s.sup f = ⨆ (a : α) (H : a ∈ s), f a := 
 begin
   apply le_antisymm,
   { apply finset.sup_le,
-    intros a ha, apply le_csupr_of_le _ a,
-    { exact le_csupr_of_le (set.finite.bdd_above (set.finite_range (λ (ha : a ∈ s), f a)))
-        ha (le_refl _) },
-    { apply set.finite.bdd_above,
-      have hrange: set.range (λ (a : α), ⨆ (H : a ∈ s), f a) ⊆
-        set.range (λ (a : s), f a) ∪ {⊥},
-      { rintros y ⟨x, hxy⟩, 
-        simp only [set.mem_range, bot_eq_zero', set.union_singleton, set.mem_insert_iff] at y ⊢,
-        by_cases hx : x ∈ s,
-        { right, simp only [hx, csupr_pos] at hxy, exact ⟨⟨x, hx⟩, hxy⟩, },
-        { left, simp only [hx, csupr_false, bot_eq_zero'] at hxy, exact hxy.symm }},
-      exact set.finite.subset (set.range (λ (a : ↥s), f ↑a) ∪ {⊥}).to_finite hrange, }},
-  { apply csupr_le,
-    intro x,
-    by_cases hx : x ∈ s,
-    { haveI : nonempty (x ∈ s) := ⟨hx⟩,
-      apply csupr_le, intro hx', exact finset.le_sup hx, },
-    { simp only [(iff_false _).mpr hx, csupr_false, bot_eq_zero', zero_le'], }}
+    intros a ha,
+    apply le_csupr₂_of_le _ a ha (le_refl _),
+    have hrange: set.range (λ (a : α), ⨆ (H : a ∈ s), f a) ⊆ set.range (λ (a : s), f a) ∪ {⊥},
+    { rintros y ⟨x, hxy⟩, 
+      simp only [set.mem_range, bot_eq_zero', set.union_singleton, set.mem_insert_iff] at y ⊢,
+      by_cases hx : x ∈ s,
+      { right, simp only [hx, csupr_pos] at hxy, exact ⟨⟨x, hx⟩, hxy⟩, },
+      { left, simp only [hx, csupr_false] at hxy, exact hxy.symm }},
+    exact set.finite.subset (set.range (λ (a : ↥s), f ↑a) ∪ {⊥}).to_finite hrange,  },
+  { exact csupr₂_le (λ x, finset.le_sup) }
 end
 
-lemma nnreal.supr_pow {ι : Type*} [nonempty ι] [fintype ι] (f : ι → nnreal) (n : ℕ) :
+lemma nnreal.supr_pow {ι : Type*} [nonempty ι] [finite ι] (f : ι → nnreal) (n : ℕ) :
   (⨆ (i : ι), f i)^n = ⨆ (i : ι), (f i)^n :=
 begin
+  casesI nonempty_fintype ι,
   induction n with n hn,
   { simp only [pow_zero, csupr_const], },
   { rw [pow_succ, hn],
@@ -65,8 +94,8 @@ begin
         exact le_trans hi (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) i
           (le_refl _)), }},
     { haveI : nonempty (finset.univ : finset ι),
-     { exact finset.nonempty_coe_sort.mpr finset.univ_nonempty },
-       simp only [← csupr_univ, ← finset.sup_eq_csupr, pow_succ],
+      { exact finset.nonempty_coe_sort.mpr finset.univ_nonempty },
+      simp only [← csupr_univ, ← finset.sup_eq_csupr, pow_succ],
       apply finset.sup_mul_le_mul_sup_of_nonneg;
       rintros i -; exact zero_le _ }},
 end
@@ -78,8 +107,7 @@ begin
   { set i : ι := nonempty.some (by apply_instance),
     exact le_csupr_of_le hf i (hf_nn i), },
   { simp only [supr, Sup],
-    rw dif_neg,
-    exact not_and_of_not_right _ hf }
+    rw dif_neg (not_and_of_not_right _ hf) }
 end
 
 lemma real.supr_mul_supr_le {ι : Type*} [nonempty ι] {a : ℝ} {g h : ι → ℝ} (hg_nn : ∀ i, 0 ≤ g i)
@@ -92,18 +120,20 @@ begin
   exact csupr_le (λ j, H i j), 
 end
 
-lemma real.supr_mul_le_mul_supr_of_nonneg {ι : Type*} [nonempty ι] [fintype ι] {f g : ι → ℝ} 
+lemma real.supr_mul_le_mul_supr_of_nonneg {ι : Type*} [nonempty ι] [finite ι] {f g : ι → ℝ} 
   (hf_nn : ∀ i, 0 ≤ f i) (hg_nn : ∀ i, 0 ≤ g i) : (⨆ (i : ι), f i * g i) ≤ supr f * supr g := 
 begin
+  casesI nonempty_fintype ι,
   have hf : bdd_above (set.range f) := fintype.bdd_above_range f,
   have hg : bdd_above (set.range g) := fintype.bdd_above_range g,
   exact csupr_le (λ x, mul_le_mul (le_csupr hf x) (le_csupr hg x) (hg_nn x) 
       (real.supr_nonneg hf_nn)),
 end
 
-lemma real.supr_pow {ι : Type*} [nonempty ι] [fintype ι] {f : ι → ℝ} (hf_nn : ∀ i, 0 ≤ f i)
+lemma real.supr_pow {ι : Type*} [nonempty ι] [finite ι] {f : ι → ℝ} (hf_nn : ∀ i, 0 ≤ f i)
   (n : ℕ) : (⨆ (i : ι), f i)^n = ⨆ (i : ι), (f i)^n :=
 begin
+  casesI nonempty_fintype ι,  
   induction n with n hn,
   { simp only [pow_zero, csupr_const], },
   { rw [pow_succ, hn],
@@ -190,9 +220,9 @@ def alg_norm_of_galois (hna : is_nonarchimedean (norm : K → ℝ)) :
         (le_csupr_of_le (set.finite.bdd_above (set.finite_range _)) σ (map_nonneg _ _))),
   eq_zero_of_map_eq_zero' := λ x, 
   begin
-    contrapose!, 
+    contrapose!,
     exact λ hx, ne_of_gt (lt_csupr_of_lt  (set.finite.bdd_above (set.range (λ (σ : L ≃ₐ[K] L),
-      alg_norm_of_auto h_fin σ hna x)).to_finite) (alg_equiv.refl) (map_pos_of_ne_zero _ hx)),
+      alg_norm_of_auto h_fin σ hna x)).to_finite) (alg_equiv.refl) (map_pos_of_ne_zero _ hx)), 
   end,
   smul'    := λ r x, by simp only [algebra_norm_class.map_smul_eq_mul, 
     normed_ring.to_ring_norm_apply, real.mul_supr_of_nonneg (norm_nonneg _)] }
@@ -225,3 +255,5 @@ lemma alg_norm_of_galois_extends (hna : is_nonarchimedean (norm : K → ℝ)) :
 end
 
 end alg_norm_of_galois
+
+--#lint
