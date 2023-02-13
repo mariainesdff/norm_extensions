@@ -3,10 +3,10 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import normed_space
+
 import data.fintype.order
 import field_theory.fixed
-import field_theory.normal
+import normed_space 
 
 /-!
 # alg_norm_of_auto and alg_norm_of_galois
