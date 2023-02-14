@@ -6,10 +6,10 @@ Authors: María Inés de Frutos-Fernández
 import Cp_def
 
 /-!
-# The `p`-adic complex numbers.
+# The Galois action on the `p`-adic complex numbers.
 
-In this file, we show that the  action of the absolute galois of `ℚ_[p]` on `Q_p_alg p` extends to 
-an action on `ℂ_[p]`.
+In this file, we show that the action of the absolute Galois group of `ℚ_[p]` on `Q_p_alg p` 
+extends to an action on `ℂ_[p]`.
 
 ## Tags
 
@@ -19,7 +19,6 @@ p-adic, p adic, padic, galois action, galois
 noncomputable theory
 
 variables {p : ℕ} [fact (nat.prime p)]
-
 
 /-- The elements of the Galois group Gal((Q_p_alg p)/ℚ_[p]) are isometries. -/
 lemma galois_map_isometry (σ : (Q_p_alg p) ≃ₐ[ℚ_[p]] (Q_p_alg p)) : isometry σ :=
