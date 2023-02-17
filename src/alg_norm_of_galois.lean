@@ -25,7 +25,6 @@ extending the norm  on `K`.
 * `alg_norm_of_galois` : the function `L → ℝ` sending `x : L` to the maximum of `‖ σ x ‖` over
   all `σ : L ≃ₐ[K] L` is an algebra norm on `L`. 
 
-
 ## Main Results
 * `alg_norm_of_auto_is_pow_mul` : `alg_norm_of_auto` is power-multiplicative.
 * `alg_norm_of_auto_is_nonarchimedean` : `alg_norm_of_auto` is nonarchimedean.
@@ -33,6 +32,9 @@ extending the norm  on `K`.
 * `alg_norm_of_galois_is_pow_mul` : `alg_norm_of_galois` is power-multiplicative.
 * `alg_norm_of_galois_is_nonarchimedean` : `alg_norm_of_galois` is nonarchimedean.
 * `alg_norm_of_galois_extends` : `alg_norm_of_galois` extends the norm on `K`.
+
+## References
+* [S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert]
 
 ## Tags
 
