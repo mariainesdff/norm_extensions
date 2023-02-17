@@ -11,9 +11,22 @@ import field_theory.normal
 
 We prove some auxiliary lemmas about minimal polynomials.
 
+## Main Definitions
+
+* `minpoly.alg_equiv` : the canonical `alg_equiv` between `K⟮x⟯`and `K⟮y⟯`, sending `x` to `y`, where
+  `x` and `y` have the same minimal polynomial over `K`, sending `x` to `y`.
+
+
+## Main Results
+
+* `minpoly.eq_of_conj` : For any `σ : L ≃ₐ[K] L` and `x : L`, the minimal polynomials of `x` and 
+  `σ x` are equal.
+* `minpoly.conj_of_root` :If `y : L` is a root of `minpoly K x`, then we can find `σ : L ≃ₐ[K] L)` 
+   with `σ x = y`. That is, `x` and `y` are Galois conjugates.
+
 ## Tags
 
-p-adic, p adic, padic, galois action, galois
+minpoly, adjoin_root, conj
 -/
 
 noncomputable theory
@@ -28,6 +41,8 @@ variables {K : Type*} [normed_field K] {L : Type*} [field L] [algebra K L]
 
 namespace adjoin_root
 
+/-- The canonical algebraic equivalence between `adjoin_root p` and `adjoin_root q`, where
+  the two polynomial `p q : K[X]` are equal.-/
 def id_alg_equiv {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
   adjoin_root p ≃ₐ[K] adjoin_root q :=
 of_alg_hom (lift_hom p (root q) (by rw [h_eq, aeval_eq, mk_self])) 
@@ -41,6 +56,7 @@ lemma id_alg_equiv_def {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q)
   (id_alg_equiv hp hq h_eq).to_fun = (lift_hom p (root q) (by rw [h_eq, aeval_eq, mk_self])) :=
 rfl
 
+/-- `id_alg_equiv` sends `adjoin_root.root p` to `adjoin_root.root q`. -/
 lemma id_alg_equiv_apply_root {p q : K[X]} (hp : p ≠ 0) (hq : q ≠ 0) (h_eq : p = q) :
   id_alg_equiv hp hq h_eq (root p) = root q := 
 by rw [← to_fun_eq_coe, id_alg_equiv_def, lift_hom_root]
@@ -49,9 +65,11 @@ end adjoin_root
 
 namespace minpoly
 
+/-- Given any `σ : L ≃ₐ[K] L` and any `x : L`, the minimal polynomial of `x` vanishes at `σ x`. -/
 @[simp] lemma aeval_conj (σ : L ≃ₐ[K] L) (x : L) : (polynomial.aeval (σ x)) (minpoly K x) = 0 :=
 by rw [polynomial.aeval_alg_equiv, alg_hom.coe_comp, function.comp_app, aeval, map_zero]
 
+/-- For any `σ : L ≃ₐ[K] L` and `x : L`, the minimal polynomials of `x` and `σ x` are equal. -/
 @[simp] lemma eq_of_conj (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) :
   minpoly K (σ x) = minpoly K x := 
 begin
@@ -68,6 +86,8 @@ begin
     (monic (is_algebraic_iff_is_integral.mp (h_alg _))) h_dvd h_deg,
 end
 
+/-- The canonical `alg_equiv` between `K⟮x⟯`and `K⟮y⟯`, sending `x` to `y`, where `x` and `y` have 
+  the same minimal polynomial over `K`. -/
 def alg_equiv (h_alg : algebra.is_algebraic K L) {x y : L} (h_mp : minpoly K x = minpoly K y) :
   K⟮x⟯ ≃ₐ[K] K⟮y⟯ := 
 trans ((adjoin_root_equiv_adjoin K (is_algebraic_iff_is_integral.mp (h_alg _))).symm)
@@ -75,8 +95,9 @@ trans ((adjoin_root_equiv_adjoin K (is_algebraic_iff_is_integral.mp (h_alg _))).
     (ne_zero (is_algebraic_iff_is_integral.mp (h_alg _))) h_mp)
     (adjoin_root_equiv_adjoin K(is_algebraic_iff_is_integral.mp (h_alg _))))
 
+/-- `minpoly.alg_equiv` sends the generator of `K⟮x⟯` to the generator of `K⟮y⟯`. -/
 lemma alg_equiv_apply (h_alg : algebra.is_algebraic K L) {x y : L} 
-(h_mp : minpoly K x = minpoly K y) :
+  (h_mp : minpoly K x = minpoly K y) :
   alg_equiv h_alg h_mp ((adjoin_simple.gen K x)) = (adjoin_simple.gen K y) := 
 begin
   simp only [alg_equiv],
@@ -86,6 +107,7 @@ begin
     adjoin_root_equiv_adjoin_apply_root K (is_algebraic_iff_is_integral.mp (h_alg _))],
 end
 
+/-- If `y : L` is a root of `minpoly K x`, then `minpoly K y = minpoly K x`. -/
 lemma eq_of_root (h_alg : algebra.is_algebraic K L) {x y : L}
  (h_ev : (polynomial.aeval y) (minpoly K x) = 0) : minpoly K y = minpoly K x  := 
 polynomial.eq_of_monic_of_associated (monic (is_algebraic_iff_is_integral.mp (h_alg _)))
@@ -93,6 +115,8 @@ polynomial.eq_of_monic_of_associated (monic (is_algebraic_iff_is_integral.mp (h_
   (irreducible.associated_of_dvd (irreducible (is_algebraic_iff_is_integral.mp (h_alg _)))
     (irreducible (is_algebraic_iff_is_integral.mp (h_alg _))) (dvd K y h_ev))
 
+/-- If `y : L` is a root of `minpoly K x`, then we can find `σ : L ≃ₐ[K] L)` with `σ x = y`.
+  That is, `x` and `y` are Galois conjugates. -/
 lemma conj_of_root (h_alg : algebra.is_algebraic K L) (hn : normal K L) {x y : L}
  (h_ev : (polynomial.aeval x) (minpoly K y) = 0) : ∃ (σ : L ≃ₐ[K] L), σ x = y  := 
 begin
@@ -102,10 +126,12 @@ begin
   rw [lift_normal_commutes f L, alg_equiv_apply, adjoin_simple.algebra_map_gen K y],
 end
 
+/-- If `y : L` is a root of `minpoly K x`, then we can find `σ : L ≃ₐ[K] L)` with `σ y = x`.
+  That is, `x` and `y` are Galois conjugates. -/
 lemma conj_of_root' (h_alg : algebra.is_algebraic K L) (hn : normal K L) {x y : L}
  (h_ev : (polynomial.aeval x) (minpoly K y) = 0) : ∃ (σ : L ≃ₐ[K] L), σ y = x  := 
 begin
-  obtain ⟨σ, hσ⟩ := conj_of_root  h_alg hn h_ev,
+  obtain ⟨σ, hσ⟩ := conj_of_root h_alg hn h_ev,
   use σ.symm,
   rw [← hσ, symm_apply_apply],
 end
@@ -113,5 +139,3 @@ end
 end minpoly
 
 end minpoly
-
---#lint
