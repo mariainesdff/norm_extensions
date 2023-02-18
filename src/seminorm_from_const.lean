@@ -3,15 +3,42 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import analysis.special_functions.pow
 import filter
 import ring_seminorm
+
+/-!
+# seminorm_from_const
+
+In this file, we prove [BGR, Proposition 1.3.2/2] : 
+
+
+## Main Definitions
+
+* `seminorm_from_const` : the real-valued function sending `x ∈ R` to the limit of 
+  `(f (x * c^n))/((f c)^n)`.
+* `seminorm_from_const_ring_seminorm` : the function `seminorm_from_const` is a `ring_seminorm` 
+  on `R`.
+
+
+## Main Results
+* `seminorm_from_const_is_nonarchimedean` : the function `seminorm_from_const hf1 hc hpm`
+  is nonarchimedean.
+* `seminorm_from_const_is_pow_mul` : the function `seminorm_from_const hf1 hc hpm`
+  is power-multiplicative.
+* `seminorm_from_const_c_is_mul` : for every `x : R`, `seminorm_from_const hf1 hc hpm (c * x)`
+  equals the product `seminorm_from_const hf1 hc hpm c * seminorm_from_const hf1 hc hpm x`.
+
+## References
+* [S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert]
+
+## Tags
+
+seminorm_from_const, seminorm, nonarchimedean
+-/
 
 noncomputable theory
 
 open_locale topological_space
-
--- Proposition 1.3.2/2 in BGR
 
 section ring
 
@@ -22,9 +49,11 @@ variables {R : Type*} [comm_ring R] (c : R) (f : ring_seminorm R) (hf1 : f 1 ≤
 def seminorm_from_const_seq (x : R) : ℕ → ℝ :=
 λ n, (f (x * c^n))/((f c)^n)
 
-lemma seminorm_from_const_nonneg (x : R) (n : ℕ) : 0 ≤ seminorm_from_const_seq c f x n :=
+/-- The terms in the sequence `seminorm_from_const_seq c f x` are nonnegative. -/
+lemma seminorm_from_const_seq_nonneg (x : R) (n : ℕ) : 0 ≤ seminorm_from_const_seq c f x n :=
 div_nonneg (map_nonneg f (x * c ^ n)) (pow_nonneg (map_nonneg f c) n)
 
+/-- The image of `seminorm_from_const_seq c f x` is bounded below by zero. -/
 lemma seminorm_from_const_is_bounded (x : R) :
   bdd_below (set.range (seminorm_from_const_seq c f x)) := 
 begin
@@ -33,11 +62,12 @@ begin
   intros r hr,
   obtain ⟨n, hn⟩ := hr,
   rw ← hn,
-  exact seminorm_from_const_nonneg c f x n,
+  exact seminorm_from_const_seq_nonneg c f x n,
 end
 
 variable {f}
 
+/-- `seminorm_from_const_seq c f 0` is the constant sequence zero. -/
 lemma seminorm_from_const_seq_zero (hf : f 0 = 0) : 
   seminorm_from_const_seq c f 0 = 0 := 
 begin
@@ -51,6 +81,7 @@ variable {c}
 
 include hc hpm
 
+/-- If `1 ≤ n`, then `seminorm_from_const_seq c f 1 n = 1`. -/
 lemma seminorm_from_const_seq_one (n : ℕ) (hn : 1 ≤ n) : 
   seminorm_from_const_seq c f 1 n = 1 := 
 begin
@@ -60,6 +91,7 @@ end
 
 include hf1
 
+/-- `seminorm_from_const_seq c f x` is antitone. -/
 lemma seminorm_from_const_seq_antitone (x : R) :
   antitone (seminorm_from_const_seq c f x) := 
 begin
@@ -83,45 +115,47 @@ begin
       one_mul, div_eq_mul_inv] } 
 end
 
-/-- The limit of the sequence `seminorm_from_const`. -/
-def seminorm_from_const_seq_lim (x : R) : ℝ :=
+/-- The real-valued function sending `x ∈ R` to the limit of `(f (x * c^n))/((f c)^n)`. -/
+def seminorm_from_const (x : R) : ℝ :=
 classical.some (real.tendsto_of_is_bounded_antitone (seminorm_from_const_is_bounded c f x) 
   (seminorm_from_const_seq_antitone hf1 hc hpm x))
 
-lemma seminorm_from_const_seq_lim_is_limit (x : R) :
+/-- We prove that `seminorm_from_const hf1 hc hpm x` is the limit of the sequence 
+  `seminorm_from_const_seq c f x` as `n` tends to infinity. -/
+lemma seminorm_from_const_is_limit (x : R) :
   filter.tendsto ((seminorm_from_const_seq c f x)) filter.at_top
-    (𝓝 (seminorm_from_const_seq_lim hf1 hc hpm x)) :=
+    (𝓝 (seminorm_from_const hf1 hc hpm x)) :=
 classical.some_spec (real.tendsto_of_is_bounded_antitone (seminorm_from_const_is_bounded c f x) 
   (seminorm_from_const_seq_antitone hf1 hc hpm x))
 
-/-- The real-valued function sending `x ∈ R` to the limit of `(f (x * c^n))/((f c)^n)`. -/
-def seminorm_from_const : R → ℝ := λ x, seminorm_from_const_seq_lim hf1 hc hpm x
-
+/-- `seminorm_from_const hf1 hc hpm 0 = 0`. -/
 lemma seminorm_from_const_zero : seminorm_from_const hf1 hc hpm 0 = 0 :=
-tendsto_nhds_unique (seminorm_from_const_seq_lim_is_limit hf1 hc hpm 0) 
+tendsto_nhds_unique (seminorm_from_const_is_limit hf1 hc hpm 0) 
   (by simpa [seminorm_from_const_seq_zero c (map_zero _)] using tendsto_const_nhds)
 
+/-- `seminorm_from_const hf1 hc hpm 1 = 1`. -/
 lemma seminorm_from_const_is_norm_one_class : seminorm_from_const hf1 hc hpm 1 = 1 :=
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (seminorm_from_const_seq_lim_is_limit hf1 hc hpm 1)
+  apply tendsto_nhds_unique_of_eventually_eq (seminorm_from_const_is_limit hf1 hc hpm 1)
     tendsto_const_nhds,
   simp only [filter.eventually_eq, filter.eventually_at_top, ge_iff_le],
   exact ⟨1,  seminorm_from_const_seq_one hc hpm⟩,
 end
 
+/-- `seminorm_from_const hf1 hc hpm` is submultiplicative. -/
 lemma seminorm_from_const_mul (x y : R) :
   seminorm_from_const hf1 hc hpm (x * y) ≤
     seminorm_from_const hf1 hc hpm x * seminorm_from_const hf1 hc hpm y :=
 begin
   have hlim : filter.tendsto (λ n, seminorm_from_const_seq c f (x * y) (2 *n)) filter.at_top
-    (𝓝 (seminorm_from_const_seq_lim hf1 hc hpm (x * y) )),
-  { refine filter.tendsto.comp (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (x * y)) _,
+    (𝓝 (seminorm_from_const hf1 hc hpm (x * y) )),
+  { refine filter.tendsto.comp (seminorm_from_const_is_limit hf1 hc hpm (x * y)) _,
     apply filter.tendsto_at_top_at_top_of_monotone,
     { intros n m hnm, simp only [mul_le_mul_left, nat.succ_pos', hnm], },
     { rintro n, use n, linarith, }},
   apply le_of_tendsto_of_tendsto' hlim (filter.tendsto.mul
-    (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x)
-    (seminorm_from_const_seq_lim_is_limit hf1 hc hpm y)),
+    (seminorm_from_const_is_limit hf1 hc hpm x)
+    (seminorm_from_const_is_limit hf1 hc hpm y)),
   intro n,
   simp only [seminorm_from_const_seq],
   rw [div_mul_div_comm, ← pow_add, two_mul, div_le_div_right
@@ -130,11 +164,12 @@ begin
   exact map_mul_le_mul f (x * c ^ n) (y * c ^ n), 
 end
 
+/-- `seminorm_from_const hf1 hc hpm` is invariant under negation of `x`. -/
 lemma seminorm_from_const_neg (x : R)  :
   seminorm_from_const hf1 hc hpm (-x) = seminorm_from_const hf1 hc hpm x  := 
 begin
-  apply tendsto_nhds_unique_of_eventually_eq (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (-x))
-    (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x),
+  apply tendsto_nhds_unique_of_eventually_eq (seminorm_from_const_is_limit hf1 hc hpm (-x))
+    (seminorm_from_const_is_limit hf1 hc hpm x),
   simp only [filter.eventually_eq, filter.eventually_at_top],
   use 0,
   intros n hn,
@@ -142,13 +177,14 @@ begin
   rw [neg_mul, map_neg_eq_map],
 end
 
+/-- `seminorm_from_const hf1 hc hpm` satisfies the triangle inequality. -/
 lemma seminorm_from_const_add (x y : R)  :
   seminorm_from_const hf1 hc hpm (x + y) ≤
     seminorm_from_const hf1 hc hpm x +  seminorm_from_const hf1 hc hpm y :=
 begin
-  apply le_of_tendsto_of_tendsto' (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (x + y))
-    (filter.tendsto.add (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x)
-    (seminorm_from_const_seq_lim_is_limit hf1 hc hpm y)),
+  apply le_of_tendsto_of_tendsto' (seminorm_from_const_is_limit hf1 hc hpm (x + y))
+    (filter.tendsto.add (seminorm_from_const_is_limit hf1 hc hpm x)
+    (seminorm_from_const_is_limit hf1 hc hpm y)),
   intro n,
   have h_add : f ((x + y) * c ^ n) ≤ (f (x * c ^ n)) + (f (y * c ^ n)),
   { rw add_mul, exact map_add_le_add f _ _ },
@@ -169,17 +205,19 @@ def seminorm_from_const_ring_seminorm :
 lemma seminorm_from_const_ring_seminorm_def (x : R) :
   seminorm_from_const_ring_seminorm hf1 hc hpm x =  seminorm_from_const hf1 hc hpm x := rfl
 
+/-- `seminorm_from_const hf1 hc hpm 1 ≤ 1`. -/
 lemma seminorm_from_const_is_norm_le_one_class :
   seminorm_from_const hf1 hc hpm 1 ≤ 1 :=
 le_of_eq (seminorm_from_const_is_norm_one_class hf1 hc hpm) 
 
+/-- The function `seminorm_from_const hf1 hc hpm` is nonarchimedean. -/
 lemma seminorm_from_const_is_nonarchimedean (hna : is_nonarchimedean f) :
   is_nonarchimedean (seminorm_from_const hf1 hc hpm)  :=
 begin
   intros x y,
-  apply le_of_tendsto_of_tendsto' (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (x + y))
-    (filter.tendsto.max (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x)
-    (seminorm_from_const_seq_lim_is_limit hf1 hc hpm y)),
+  apply le_of_tendsto_of_tendsto' (seminorm_from_const_is_limit hf1 hc hpm (x + y))
+    (filter.tendsto.max (seminorm_from_const_is_limit hf1 hc hpm x)
+    (seminorm_from_const_is_limit hf1 hc hpm y)),
   intro n,
   have hmax : f ((x + y) * c ^ n) ≤ max (f (x * c ^ n)) (f (y * c ^ n)),
   { rw add_mul, exact hna _ _ },
@@ -188,27 +226,29 @@ begin
   exact (div_le_div_right (pow_pos (lt_of_le_of_ne (map_nonneg f c) hc) _)).mpr hmax,
 end
 
+/-- The function `seminorm_from_const hf1 hc hpm` is power-multiplicative. -/
 lemma seminorm_from_const_is_pow_mul : is_pow_mul (seminorm_from_const hf1 hc hpm) :=
 begin
   intros x m hm,
   simp only [seminorm_from_const],
-  have hpow := filter.tendsto.pow (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x) m,
+  have hpow := filter.tendsto.pow (seminorm_from_const_is_limit hf1 hc hpm x) m,
   have hlim : filter.tendsto (λ n, seminorm_from_const_seq c f (x^m) (m*n)) filter.at_top
-    (𝓝 (seminorm_from_const_seq_lim hf1 hc hpm (x^m) )),
-  { refine filter.tendsto.comp (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (x^m)) _,
+    (𝓝 (seminorm_from_const hf1 hc hpm (x^m) )),
+  { refine filter.tendsto.comp (seminorm_from_const_is_limit hf1 hc hpm (x^m)) _,
     apply filter.tendsto_at_top_at_top_of_monotone,
     { intros n k hnk, exact mul_le_mul_left' hnk m, },
     { rintro n, use n, exact le_mul_of_one_le_left' hm, }},
   apply tendsto_nhds_unique hlim,
-  convert filter.tendsto.pow (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x) m,
+  convert filter.tendsto.pow (seminorm_from_const_is_limit hf1 hc hpm x) m,
   ext n,
   simp only [seminorm_from_const_seq],
   rw [div_pow, ← hpm _ hm, ← pow_mul, mul_pow, ← pow_mul, mul_comm m n],
 end
 
+/-- The function `seminorm_from_const hf1 hc hpm` is bounded above by `x`. -/
 lemma seminorm_from_const_le_seminorm (x : R) : seminorm_from_const hf1 hc hpm x ≤ f x :=
 begin
-  apply le_of_tendsto (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x),
+  apply le_of_tendsto (seminorm_from_const_is_limit hf1 hc hpm x),
   simp only [filter.eventually_at_top, ge_iff_le],
   use 1,
   rintros n hn,
@@ -217,6 +257,7 @@ begin
   rw [hpm c hn, mul_div_assoc, div_self (pow_ne_zero n hc.symm), mul_one],
 end
 
+/-- If `x : R` is multiplicative for `f`, then `seminorm_from_const hf1 hc hpm x = f x`. -/
 lemma seminorm_from_const_apply_of_is_mul {x : R} (hx : ∀ y : R, f (x * y) = f x * f y) :
   seminorm_from_const hf1 hc hpm x = f x :=
 begin
@@ -230,9 +271,11 @@ begin
         rw [hx (c ^n), hpm _ (nat.one_le_iff_ne_zero.mpr hn), mul_div_assoc,
           div_self (pow_ne_zero n hc.symm), mul_one], }},
     simpa [hseq] using tendsto_const_nhds, },
-  exact tendsto_nhds_unique (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x) hlim,
+  exact tendsto_nhds_unique (seminorm_from_const_is_limit hf1 hc hpm x) hlim,
 end
 
+/-- If `x : R` is multiplicative for `f`, then it is multiplicative for 
+  `seminorm_from_const hf1 hc hpm`. -/
 lemma seminorm_from_const_is_mul_of_is_mul {x : R} (hx : ∀ y : R, f (x * y) = f x * f y) (y : R) :
   seminorm_from_const hf1 hc hpm (x * y) =
     seminorm_from_const hf1 hc hpm x * seminorm_from_const hf1 hc hpm y :=
@@ -245,10 +288,11 @@ begin
       simp only [seminorm_from_const_seq],
       rw [mul_assoc, hx, mul_div_assoc], },
     simpa [hseq]
-      using filter.tendsto.const_mul _(seminorm_from_const_seq_lim_is_limit hf1 hc hpm y) },
-  exact tendsto_nhds_unique (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (x * y)) hlim,
+      using filter.tendsto.const_mul _(seminorm_from_const_is_limit hf1 hc hpm y) },
+  exact tendsto_nhds_unique (seminorm_from_const_is_limit hf1 hc hpm (x * y)) hlim,
 end
 
+/-- `seminorm_from_const hf1 hc hpm c = f c`. -/
 lemma seminorm_from_const_apply_c : seminorm_from_const hf1 hc hpm c = f c :=
 begin
   have hlim : filter.tendsto (seminorm_from_const_seq c f c) filter.at_top (𝓝 (f c)),
@@ -258,22 +302,24 @@ begin
       rw [← pow_succ, hpm _ le_add_self, pow_succ, mul_div_assoc, div_self (pow_ne_zero n hc.symm),
         mul_one], },
     simpa [hseq] using tendsto_const_nhds },
-    exact tendsto_nhds_unique (seminorm_from_const_seq_lim_is_limit hf1 hc hpm c) hlim,
+    exact tendsto_nhds_unique (seminorm_from_const_is_limit hf1 hc hpm c) hlim,
 end
 
+/-- For every `x : R`, `seminorm_from_const hf1 hc hpm (c * x)` equals the product
+  `seminorm_from_const hf1 hc hpm c * seminorm_from_const hf1 hc hpm x`. -/
 lemma seminorm_from_const_c_is_mul (x : R) :
   seminorm_from_const hf1 hc hpm (c * x) =
     seminorm_from_const hf1 hc hpm c * seminorm_from_const hf1 hc hpm x :=
 begin
   have hlim : filter.tendsto (λ n, seminorm_from_const_seq c f x (n + 1)) filter.at_top
-    (𝓝 (seminorm_from_const_seq_lim hf1 hc hpm x)),
-  { refine filter.tendsto.comp (seminorm_from_const_seq_lim_is_limit hf1 hc hpm x) _,
+    (𝓝 (seminorm_from_const hf1 hc hpm x)),
+  { refine filter.tendsto.comp (seminorm_from_const_is_limit hf1 hc hpm x) _,
     apply filter.tendsto_at_top_at_top_of_monotone,
     { intros n m hnm, 
       exact add_le_add_right hnm 1, },
     { rintro n, use n, linarith, }}, 
   rw seminorm_from_const_apply_c hf1 hc hpm,
-  apply tendsto_nhds_unique (seminorm_from_const_seq_lim_is_limit hf1 hc hpm (c * x)),
+  apply tendsto_nhds_unique (seminorm_from_const_is_limit hf1 hc hpm (c * x)),
   have hterm : seminorm_from_const_seq c f (c * x) =
     (λ n, f c * (seminorm_from_const_seq c f x (n + 1))),
   { simp only [seminorm_from_const_seq],
