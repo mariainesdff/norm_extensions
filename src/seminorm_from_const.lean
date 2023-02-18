@@ -17,8 +17,7 @@ which `c` is multiplicative.
 
 * `seminorm_from_const'` : the real-valued function sending `x ∈ R` to the limit of 
   `(f (x * c^n))/((f c)^n)`.
-* `seminorm_from_const` : the function `seminorm_from_const'` is a `ring_seminorm` 
-  on `R`.
+* `seminorm_from_const` : the function `seminorm_from_const'` is a `ring_seminorm` on `R`.
 
 
 ## Main Results
