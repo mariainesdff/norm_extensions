@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
 import analysis.normed_space.bounded_linear_maps
-import ring_seminorm
 import seminorm_from_bounded
 import smoothing_seminorm
 
@@ -19,13 +18,7 @@ power-multiplicative `K`-algebra norm on `L` extending the norm on `K`.
 * `basis.norm` : the function sending an element `x : L` to the maximum of the norms of its 
   coefficients with respect to the `K`-basis `B` of `L`.
 
-
 ## Main Results
-* `alg_norm_of_auto_is_pow_mul` : `alg_norm_of_auto` is power-multiplicative.
-* `alg_norm_of_auto_is_nonarchimedean` : `alg_norm_of_auto` is nonarchimedean.
-* `alg_norm_of_auto_extends` : `alg_norm_of_auto` extends the norm on `K`.
-* `alg_norm_of_galois_is_pow_mul` : `alg_norm_of_galois` is power-multiplicative.
-* `alg_norm_of_galois_is_nonarchimedean` : `alg_norm_of_galois` is nonarchimedean.
 * `finite_extension_pow_mul_seminorm` : the proof of [BGR, Lemma 3.2.1./3].
 
 ## References
