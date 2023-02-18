@@ -3,8 +3,23 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import analysis.special_functions.pow --TODO: minimize
-import order.filter.countable_Inter
+
+import order.liminf_limsup
+import topology.instances.nnreal
+
+/-!
+# Limsup
+
+We prove some auxiliary results about limsups, infis, and suprs.
+
+## Main Results
+
+* `asdf` : asfd.
+* `asdf` : asfd.
+## Tags
+
+limsup, 
+-/
 
 noncomputable theory
 
