@@ -9,8 +9,9 @@ import ring_seminorm
 /-!
 # seminorm_from_const
 
-In this file, we prove [BGR, Proposition 1.3.2/2] : 
-
+In this file, we prove [BGR, Proposition 1.3.2/2] : starting from a power-multiplicative seminorm
+on a commutative ring `R` and a nonzero `c : R`, we create a new power-multiplicative seminorm for
+which `c` is multiplicative.
 
 ## Main Definitions
 
