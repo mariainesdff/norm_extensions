@@ -5,8 +5,26 @@ Authors: María Inés de Frutos-Fernández
 -/
 import rank_one_valuation
 import ring_seminorm
-import analysis.special_functions.pow
 import topology.algebra.valuation
+
+/-!
+# Correspondence between nontrivial nonarchimedean norms and rank one valuations
+
+Nontrivial nonarchimedean norms correspond to rank one valuations.
+
+## Main Definitions
+* `normed_field.to_valued` : the valued field structure on a nonarchimedean normed field `K`,
+  determined by the norm.
+* `valued_field.to_normed_field` : the normed field structure determined by a rank one valuation.
+
+## Main Results
+* `real.exists_strict_mono_lt` : if `Γ₀ˣ` is nontrivial and `f : Γ₀ →*₀ ℝ≥0` is a strict 
+  monomorphism, then for any positive real `r`, there exists `d : Γ₀ˣ` with `f d < r`. 
+
+## Tags
+
+norm, nonarchimedean, nontrivial, valuation, rank one
+-/
 
 noncomputable theory
 
@@ -15,6 +33,7 @@ open_locale nnreal
 variables {K : Type*} [hK : normed_field K]
 include hK
 
+/-- The valuation on a nonarchimedean normed field `K` defined as `nnnorm`. -/
 def valuation_from_norm (h : is_nonarchimedean (norm : K → ℝ)) : valuation K ℝ≥0 := 
 { to_fun    := nnnorm,
   map_zero' := nnnorm_zero,
@@ -25,6 +44,7 @@ def valuation_from_norm (h : is_nonarchimedean (norm : K → ℝ)) : valuation K
 lemma valuation_from_norm_apply (h : is_nonarchimedean (norm : K → ℝ)) (x : K):
   valuation_from_norm h x = ‖ x ‖₊ := rfl
 
+/-- The valued field structure on a nonarchimedean normed field `K`, determined by the norm. -/
 def normed_field.to_valued (h : is_nonarchimedean (norm : K → ℝ)) : valued K ℝ≥0 :=
 { v := valuation_from_norm h,
   is_topological_valuation := λ U,
@@ -48,6 +68,8 @@ omit hK
 variables {L : Type*} [hL : field L] {Γ₀ : Type*} [linear_ordered_comm_group_with_zero Γ₀]
   [val : valued L Γ₀] [hv : is_rank_one val.v]
 
+/-- If `Γ₀ˣ` is nontrivial and `f : Γ₀ →*₀ ℝ≥0` is a strict monomorphism, then for any positive
+  `r : ℝ≥0`, there exists `d : Γ₀ˣ` with `f d < r`. -/
 lemma nnreal.exists_strict_mono_lt {g : Γ₀ˣ} (hg1 : g ≠ 1) {f : Γ₀ →*₀ ℝ≥0} (hf : strict_mono f) 
   {r : ℝ≥0} (hr : 0 < r) :  ∃ d : Γ₀ˣ, f d < r :=
 begin
@@ -70,6 +92,8 @@ begin
   exact hn,
 end
 
+/-- If `Γ₀ˣ` is nontrivial and `f : Γ₀ →*₀ ℝ≥0` is a strict monomorphism, then for any positive
+  real `r`, there exists `d : Γ₀ˣ` with `f d < r`. -/
 lemma real.exists_strict_mono_lt {g : Γ₀ˣ} (hg1 : g ≠ 1) {f : Γ₀ →*₀ ℝ≥0} (hf : strict_mono f) 
   {r : ℝ} (hr : 0 < r) :  ∃ d : Γ₀ˣ, (f d : ℝ) < r :=
 begin
@@ -78,19 +102,11 @@ begin
   exact nnreal.exists_strict_mono_lt hg1 hf hs,
 end
 
-lemma nnreal.exists_strict_mono_lt' {g : Γ₀ˣ} (hg1 : g < 1) {f : Γ₀ →*₀ ℝ≥0} (hf : strict_mono f) 
-  {r : ℝ≥0} (hr : 0 < r) :  ∃ d : Γ₀ˣ, f d < r :=
-begin
-  have hg : f g < 1, 
-  { rw ← map_one f, exact hf hg1, },
-  obtain ⟨n, hn⟩ := nnreal.exists_pow_lt_of_lt_one hr hg,
-  use g^n, 
-  rw [units.coe_pow, map_pow],
-  exact hn,
-end
-
 include hL val hv
 
+namespace rank_one_valuation
+
+/-- The norm function determined by a rank one valuation on a field `L`. -/
 def norm_def : L → ℝ := λ x : L, hv.hom (valued.v x)
 
 lemma norm_def_nonneg (x : L) : 0 ≤ norm_def x := by simp only [norm_def, nnreal.zero_le_coe]
@@ -98,15 +114,14 @@ lemma norm_def_nonneg (x : L) : 0 ≤ norm_def x := by simp only [norm_def, nnre
 lemma norm_def_add_le  (x y : L) : 
   norm_def (x + y) ≤ max (norm_def x) (norm_def y) := 
 begin
-  simp only [norm_def, nnreal.coe_le_coe, le_max_iff, 
-    strict_mono.le_iff_le hv.strict_mono],
+  simp only [norm_def, nnreal.coe_le_coe, le_max_iff, strict_mono.le_iff_le hv.strict_mono],
   exact le_max_iff.mp (valuation.map_add_le_max' val.v _ _),
 end
 
 lemma norm_def_eq_zero {x : L} (hx : norm_def x = 0) : x = 0 :=
 by simpa [norm_def, nnreal.coe_eq_zero, is_rank_one_hom_eq_zero_iff, valuation.zero_iff] using hx
 
-
+/-- The normed field structure determined by a rank one valuation. -/
 def valued_field.to_normed_field : normed_field L := 
 { norm               := norm_def,
   dist               := λ x y, norm_def (x - y),
@@ -161,3 +176,5 @@ def valued_field.to_normed_field : normed_field L :=
         λ a b hab, lt_of_lt_of_le hab (min_le_right _ _)⟩ }
   end,
   ..hL, }
+
+  end rank_one_valuation
