@@ -3,6 +3,7 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
+import number_theory.padics.padic_numbers
 import ring_theory.valuation.integers
 import topology.metric_space.cau_seq_filter
 import topology.algebra.valued_field
@@ -63,7 +64,8 @@ namespace Q_p_alg
 /-- `Q_p_alg p` is a normed field, where the norm is the `p`-adic norm, that is, the spectral norm
 induced by the `p`-adic norm on `ℚ_[p]`. -/
 instance normed_field : normed_field (Q_p_alg p) := 
-spectral_norm_to_normed_field (Q_p_alg.is_algebraic p) padic_norm_e.nonarchimedean
+@spectral_norm_to_normed_field ℚ_[p] _ padic.complete_space _ _ _ (Q_p_alg.is_algebraic p) 
+  padic_norm_e.nonarchimedean
 
 /-- The norm on `Q_p_alg p` is nonarchimedean. -/
 lemma is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
