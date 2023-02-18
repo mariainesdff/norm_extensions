@@ -22,7 +22,7 @@ which `c` is multiplicative.
 
 ## Main Results
 * `seminorm_from_const_is_nonarchimedean` : the function `seminorm_from_const' hf1 hc hpm`
-  is nonarchimedean.
+  is nonarchimedean when f is nonarchimedean.
 * `seminorm_from_const_is_pow_mul` : the function `seminorm_from_const' hf1 hc hpm`
   is power-multiplicative.
 * `seminorm_from_const_c_is_mul` : for every `x : R`, `seminorm_from_const' hf1 hc hpm (c * x)`
