@@ -8,7 +8,7 @@ import seminorm_from_bounded
 import smoothing_seminorm
 
 /-!
-# 
+# Basis.norm
 
 In this file, we prove [BGR, Lemma 3.2.1./3]: if `K` is a normed field with a nonarchimedean 
 power-multiplicative norm and `L/K` is a finite extension, then there exists at least one
