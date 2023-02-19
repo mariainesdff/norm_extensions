@@ -72,11 +72,11 @@ lemma is_nonarchimedean : is_nonarchimedean (norm : (Q_p_alg p) → ℝ) :=
 spectral_norm_is_nonarchimedean (Q_p_alg.is_algebraic p) (padic_norm_e.nonarchimedean)
 
 /-- The norm on `Q_p_alg p` is the spectral norm induced by the `p`-adic norm on `ℚ_[p]`. -/
-lemma norm_def (x : Q_p_alg p) : ‖ x ‖ = spectral_norm (Q_p_alg.is_algebraic p) x := rfl
+lemma norm_def (x : Q_p_alg p) : ‖ x ‖ = spectral_norm ℚ_[p] (Q_p_alg p) x := rfl
 
 /-- The norm on `Q_p_alg p` extends the `p`-adic norm on `ℚ_[p]`. -/
 lemma Q_p.norm_extends (x : ℚ_[p]) : ‖ (x : Q_p_alg p) ‖ = ‖ x ‖ := 
-spectral_alg_norm_extends _ _ (padic_norm_e.nonarchimedean)
+spectral_alg_norm_extends (Q_p_alg.is_algebraic p) _ (padic_norm_e.nonarchimedean)
 
 /-- `Q_p_alg p` is a valued field, with the valuation corresponding to the `p`-adic norm. -/
 instance valued_field : valued (Q_p_alg p) ℝ≥0 :=
@@ -87,7 +87,7 @@ lemma v_def (x : Q_p_alg p) : valued.v x = ‖ x ‖₊ := rfl
 
 /-- The coercion of the valuation of `x : Q_p_alg p` to `ℝ` agrees with its norm. -/
 lemma v_def_coe (x : Q_p_alg p) : 
-  ((valued.v x : ℝ≥0) : ℝ) = spectral_norm (Q_p_alg.is_algebraic p) x := rfl
+  ((valued.v x : ℝ≥0) : ℝ) = spectral_norm ℚ_[p] (Q_p_alg p) x := rfl
 
 /-- The valuation of `p : Q_p_alg p` is `1/p`. -/
 lemma valuation_p (p : ℕ) [fact p.prime] : valued.v (p : Q_p_alg p) = 1/(p : ℝ≥0) :=

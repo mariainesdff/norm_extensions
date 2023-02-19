@@ -37,20 +37,20 @@ begin
     map_add' := λ x y, rfl,
     map_smul' := λ r x, rfl },
 
-  set hs_norm : ring_norm E:=
-  { to_fun    := (λ y : E, spectral_norm h_alg (id2 y : L)),
+  set hs_norm : ring_norm E :=
+  { to_fun    := (λ y : E, spectral_norm K L (id2 y : L)),
     map_zero' := by rw [map_zero, subfield.coe_zero, spectral_norm_zero],
     add_le'   := λ a b, 
-    by simp only [← spectral_alg_norm_def _ hna,subfield.coe_add]; exact map_add_le_add _ _ _, 
+    by simp only [← spectral_alg_norm_def h_alg hna, subfield.coe_add]; exact map_add_le_add _ _ _,
     neg'      := λ a, 
-      by simp only [← spectral_alg_norm_def _ hna, subfield.coe_neg, map_neg, map_neg_eq_map],
-    mul_le'  := λ a b, 
-    by simp only [← spectral_alg_norm_def _ hna, subfield.coe_mul]; exact map_mul_le_mul _ _ _,
+    by simp only [← spectral_alg_norm_def h_alg hna, subfield.coe_neg, map_neg, map_neg_eq_map],
+    mul_le'  := λ a b,
+    by simp only [← spectral_alg_norm_def h_alg hna, subfield.coe_mul]; exact map_mul_le_mul _ _ _,
     eq_zero_of_map_eq_zero' := λ a ha,
     begin
-      simp only [←spectral_alg_norm_def _ hna, linear_map.coe_mk, id.def, map_eq_zero_iff_eq_zero,
+      simp only [←spectral_alg_norm_def h_alg hna, linear_map.coe_mk, id.def, map_eq_zero_iff_eq_zero,
         algebra_map.lift_map_eq_zero_iff] at ha,
-      exact ha,
+      exact ha
     end },
 
   letI n1 : normed_ring E := norm_to_normed_ring hs_norm,
@@ -110,10 +110,10 @@ begin
   { intro y, exact hC1 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
 end
 
-lemma spectral_norm.unique_field_norm_ext {f : mul_ring_norm L} 
-  (hf_ext : function_extends (norm : K → ℝ) f) (hf_na : is_nonarchimedean f) 
+lemma spectral_norm.unique_field_norm_ext (h_alg : algebra.is_algebraic K L)
+  {f : mul_ring_norm L} (hf_ext : function_extends (norm : K → ℝ) f) (hf_na : is_nonarchimedean f) 
   (hna : is_nonarchimedean (norm : K → ℝ)) (x : L) :
-  f x = spectral_norm h_alg x := 
+  f x = spectral_norm K L x := 
 begin
   set g : algebra_norm K L := 
   { smul' := λ k x, by simp only [mul_ring_norm.to_fun_eq_coe, algebra.smul_def, map_mul, hf_ext k],
@@ -130,17 +130,17 @@ def alg_norm_from_const (hna : is_nonarchimedean (norm : K → ℝ))
   algebra_norm K L  :=
 { smul' := λ k y,
   begin
-    have h_mul : ∀ (y : L), spectral_norm h_alg ((algebra_map K L k) * y) = 
-      spectral_norm h_alg (algebra_map K L k) * spectral_norm h_alg y,
+    have h_mul : ∀ (y : L), spectral_norm K L ((algebra_map K L k) * y) = 
+      spectral_norm K L (algebra_map K L k) * spectral_norm K L y,
     { intro y, 
-      rw [spectral_norm.extends h_alg, ← algebra.smul_def,
+      rw [spectral_norm.extends, ← algebra.smul_def,
         ← spectral_alg_norm_def h_alg hna, map_smul_eq_mul _ _ _],
       refl, },
-    have h : spectral_norm h_alg (algebra_map K L k) = 
-      seminorm_from_const h1 hx (spectral_norm_is_pow_mul h_alg hna) (algebra_map K L k),
+    have h : spectral_norm K L (algebra_map K L k) = 
+      seminorm_from_const' h1 hx (spectral_norm_is_pow_mul h_alg hna) (algebra_map K L k),
     {  rw seminorm_from_const_apply_of_is_mul h1 hx _ h_mul, refl, }, 
     simp only [ring_norm.to_fun_eq_coe, seminorm_from_const_ring_norm_of_field_def],
-    rw [← spectral_norm.extends h_alg, algebra.smul_def, h],
+    rw [← spectral_norm.extends k, algebra.smul_def, h],
     exact seminorm_from_const_is_mul_of_is_mul _ _ _ h_mul _,
   end,
   ..(seminorm_from_const_ring_norm_of_field h1 hx.symm (spectral_alg_norm_is_pow_mul h_alg hna)) }
@@ -152,51 +152,57 @@ lemma alg_norm_from_const_def (hna : is_nonarchimedean (norm : K → ℝ))
     seminorm_from_const h1 hx (spectral_norm_is_pow_mul h_alg hna) y := 
 rfl
 
+lemma spectral_norm_is_mul (hna : is_nonarchimedean (norm : K → ℝ)) (x y : L) : 
+  spectral_alg_norm h_alg hna (x * y) = 
+    spectral_alg_norm h_alg hna x * spectral_alg_norm h_alg hna y := 
+begin
+  by_cases hx : spectral_alg_norm h_alg hna x = 0,
+  { rw [hx, zero_mul],
+    rw [map_eq_zero_iff_eq_zero] at hx ⊢,
+    rw [hx, zero_mul],  },
+  { have hf1 : (spectral_alg_norm h_alg hna).to_ring_seminorm 1 ≤ 1 := 
+    spectral_alg_norm_is_norm_le_one_class h_alg hna,
+    set f : algebra_norm K L := alg_norm_from_const h_alg hna hf1 (ne.symm hx) with hf,
+    have hf_pow : is_pow_mul f := seminorm_from_const_is_pow_mul hf1 (ne.symm hx)
+      (spectral_norm_is_pow_mul h_alg hna),
+    have hf_na : is_nonarchimedean f := 
+    seminorm_from_const_is_nonarchimedean _ _ _ (spectral_norm_is_nonarchimedean h_alg hna),
+    rw [← spectral_norm.unique' h_alg hf_pow hf_na, hf],
+    simp only [alg_norm_from_const_def],
+    exact seminorm_from_const_c_is_mul _ _ _ _, }
+  end
+
 def spectral_mul_alg_norm (hna : is_nonarchimedean (norm : K → ℝ)) : 
   mul_algebra_norm K L  :=
 { map_one' := spectral_alg_norm_is_norm_one_class h_alg hna,
-  map_mul' := λ x y, begin
-  simp only [algebra_norm.to_fun_eq_coe],
-    by_cases hx : spectral_alg_norm h_alg hna x = 0,
-    { rw [hx, zero_mul],
-      rw [map_eq_zero_iff_eq_zero] at hx ⊢,
-      rw [hx, zero_mul],  },
-    { have hf1 : (spectral_alg_norm h_alg hna).to_ring_seminorm 1 ≤ 1 := 
-      spectral_alg_norm_is_norm_le_one_class h_alg hna,
-      set f : algebra_norm K L := alg_norm_from_const h_alg hna hf1 (ne.symm hx) with hf,
-      have hf_pow : is_pow_mul f := seminorm_from_const_is_pow_mul hf1 (ne.symm hx)
-        (spectral_norm_is_pow_mul h_alg hna),
-      have hf_na : is_nonarchimedean f := 
-      seminorm_from_const_is_nonarchimedean _ _ _ (spectral_norm_is_nonarchimedean h_alg hna),
-      rw [← spectral_norm.unique' h_alg hf_pow hf_na, hf],
-      simp only [alg_norm_from_const_def],
-      exact seminorm_from_const_c_is_mul _ _ _ _, }
-  end,
+  map_mul' := spectral_norm_is_mul h_alg hna,
   ..spectral_alg_norm h_alg hna }
 
 lemma spectral_mul_ring_norm_def (hna : is_nonarchimedean (norm : K → ℝ)) (x : L) : 
-  spectral_mul_alg_norm h_alg hna x = spectral_norm h_alg x := 
+  spectral_mul_alg_norm h_alg hna x = spectral_norm K L x := 
 rfl
 
-def spectral_norm_to_normed_field (h : is_nonarchimedean (norm : K → ℝ)) : normed_field L := 
-{ norm      := λ (x : L), (spectral_norm h_alg x : ℝ),
-  dist      := λ (x y : L), (spectral_norm h_alg (x - y) : ℝ),
+def spectral_norm_to_normed_field (h_alg : algebra.is_algebraic K L) 
+  (h : is_nonarchimedean (norm : K → ℝ)) : normed_field L := 
+{ norm      := λ (x : L), (spectral_norm K L x : ℝ),
+  dist      := λ (x y : L), (spectral_norm K L (x - y) : ℝ),
   dist_self := λ x, by { simp only [sub_self, spectral_norm_zero] },
   dist_comm := λ x y, by { simp only [dist], rw [← neg_sub, spectral_norm_neg h_alg h] },
   dist_triangle := λ x y z, begin
     simp only [dist_eq_norm],
     rw ← sub_add_sub_cancel x y z,
-    exact add_le_of_is_nonarchimedean (spectral_norm_nonneg h_alg)
+    exact add_le_of_is_nonarchimedean spectral_norm_nonneg 
       (spectral_norm_is_nonarchimedean h_alg h) _ _, 
   end,
   eq_of_dist_eq_zero := λ x y hxy,
   begin
-    simp only [← spectral_mul_ring_norm_def _ h] at hxy,
+    simp only [← spectral_mul_ring_norm_def h_alg h] at hxy,
     rw ← sub_eq_zero,
     exact mul_algebra_norm.eq_zero_of_map_eq_zero' _ _ hxy,
   end,
   dist_eq := λ x y, by refl,
-  norm_mul' := λ x y, by { simp only [← spectral_mul_ring_norm_def _ h], exact map_mul _ _ _ },
+  norm_mul' := λ x y, 
+  by simp only [← spectral_mul_ring_norm_def h_alg h]; exact map_mul _ _ _,
   ..hL }
 
 def spectral_norm_to_normed_add_comm_group (h_alg : algebra.is_algebraic K L)
@@ -233,3 +239,5 @@ noncomputable! instance spectral_norm_complete_space (h : is_nonarchimedean (nor
   (h_fin : finite_dimensional K L) : @complete_space L (us h_alg h) := 
 @finite_dimensional.complete K _ L (spectral_norm_to_normed_add_comm_group h_alg h) 
     (spectral_norm_to_normed_space h_alg h) _ h_fin
+
+--#lint
