@@ -325,12 +325,12 @@ begin
     exact seminorm_from_bounded_of_mul_apply hg_nonneg hg_bdd (hg_mul k) },
   -- Using BGR Prop. 1.3.2/1, we obtain from f  a power multiplicative K-algebra norm on L 
   -- extending the norm on K.
-  set F' := smoothing_seminorm hf_1 hf_na with hF',
+  set F' := smoothing_seminorm f hf_1 hf_na with hF',
   have hF'_ext : ∀ k : K,  F' ((algebra_map K L) k) = ‖k‖,
   { intro k,
     rw ← hf_ext _,
-    exact smoothing_seminorm_apply_of_is_mult hf_1 
-      (seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k)) hf_na },
+    exact smoothing_seminorm_apply_of_is_mul f hf_1 hf_na
+      (seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k)) },
   have hF'_1 : F' 1 = 1,
   { have h1 : (1 : L) = (algebra_map K L) 1 := by rw map_one,
     simp only [h1, hF'_ext (1 : K), norm_one], },
@@ -342,10 +342,10 @@ begin
       simp only [ring_norm.to_fun_eq_coe],
       have hk : ∀ y : L, f ((algebra_map K L k) * y) = f (algebra_map K L k) * f y,
       { exact seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k), },
-      have hfk : ‖k‖  = (smoothing_seminorm hf_1 hf_na)((algebra_map K L) k),
-      { rw [← hf_ext k, eq_comm, smoothing_seminorm_apply_of_is_mult hf_1 hk] },
+      have hfk : ‖k‖  = (smoothing_seminorm f hf_1 hf_na)((algebra_map K L) k),
+      { rw [← hf_ext k, eq_comm, smoothing_seminorm_apply_of_is_mul f hf_1 hf_na hk] },
       simp only [hfk, hF'],
-      erw [← smoothing_seminorm_of_mult hf_1 hk hf_na y, algebra.smul_def],
+      erw [← smoothing_seminorm_of_mul f hf_1 hf_na hk y, algebra.smul_def],
       refl,
     end,
     ..(ring_seminorm.to_ring_norm F' hF'_0) },
@@ -353,11 +353,11 @@ begin
     have hF_ext : ∀ k : K,  F ((algebra_map K L) k) = ‖k‖,
     { intro k,
       rw ← hf_ext _,
-      exact smoothing_seminorm_apply_of_is_mult hf_1 
-        (seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k)) hf_na },
+      exact smoothing_seminorm_apply_of_is_mul f hf_1 hf_na
+        (seminorm_from_bounded_of_mul_is_mul hg_nonneg hg_bdd (hg_mul k)) },
     have hF_1 : F 1 = 1,
     { have h1 : (1 : L) = (algebra_map K L) 1 := by rw map_one,
       simp only [h1, hF_ext (1 : K), norm_one], },
-    exact ⟨F, smoothing_seminorm_is_pow_mul hf_1, hF_ext, 
-      smoothing_seminorm_is_nonarchimedean hf_1 hf_na⟩,
+    exact ⟨F, smoothing_seminorm_is_pow_mul f hf_1, hF_ext, 
+      smoothing_seminorm_is_nonarchimedean f hf_1 hf_na⟩,
 end
