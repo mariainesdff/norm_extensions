@@ -11,14 +11,13 @@ noncomputable theory
 
 open_locale nnreal
 
-variables {K : Type*} [nontrivially_normed_field K] [complete_space K] {L : Type*} [hL: field L]
+variables {K : Type*} [nontrivially_normed_field K] {L : Type*} [hL: field L]
   [algebra K L] (h_alg : algebra.is_algebraic K L)
 
 include hL
 
-lemma spectral_norm.unique' {f : algebra_norm K L} (hf_pm : is_pow_mul f)
-  (hf_na : is_nonarchimedean f) (hna : is_nonarchimedean (norm : K → ℝ)) :
-  f = spectral_alg_norm h_alg hna := 
+lemma spectral_norm.unique' [complete_space K] {f : algebra_norm K L} (hf_pm : is_pow_mul f)
+  (hna : is_nonarchimedean (norm : K → ℝ)) : f = spectral_alg_norm h_alg hna := 
 begin
   apply eq_of_pow_mult_faithful f hf_pm _
     (spectral_alg_norm_is_pow_mul h_alg hna),
@@ -110,8 +109,8 @@ begin
   { intro y, exact hC1 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
 end
 
-lemma spectral_norm.unique_field_norm_ext (h_alg : algebra.is_algebraic K L)
-  {f : mul_ring_norm L} (hf_ext : function_extends (norm : K → ℝ) f) (hf_na : is_nonarchimedean f) 
+lemma spectral_norm.unique_field_norm_ext [complete_space K] (h_alg : algebra.is_algebraic K L)
+  {f : mul_ring_norm L} (hf_ext : function_extends (norm : K → ℝ) f)
   (hna : is_nonarchimedean (norm : K → ℝ)) (x : L) :
   f x = spectral_norm K L x := 
 begin
@@ -121,7 +120,7 @@ begin
     ..f },
   have hg_pow : is_pow_mul g := mul_ring_norm.is_pow_mul _,
   have hgx : f x = g x := rfl,
-  rw [hgx, spectral_norm.unique' h_alg hg_pow hf_na hna], refl,
+  rw [hgx, spectral_norm.unique' h_alg hg_pow hna], refl,
 end
 
 def alg_norm_from_const (hna : is_nonarchimedean (norm : K → ℝ)) 
@@ -152,8 +151,8 @@ lemma alg_norm_from_const_def (hna : is_nonarchimedean (norm : K → ℝ))
     seminorm_from_const h1 hx (spectral_norm_is_pow_mul h_alg hna) y := 
 rfl
 
-lemma spectral_norm_is_mul (hna : is_nonarchimedean (norm : K → ℝ)) (x y : L) : 
-  spectral_alg_norm h_alg hna (x * y) = 
+lemma spectral_norm_is_mul [complete_space K] (hna : is_nonarchimedean (norm : K → ℝ))
+  (x y : L) : spectral_alg_norm h_alg hna (x * y) = 
     spectral_alg_norm h_alg hna x * spectral_alg_norm h_alg hna y := 
 begin
   by_cases hx : spectral_alg_norm h_alg hna x = 0,
@@ -167,22 +166,22 @@ begin
       (spectral_norm_is_pow_mul h_alg hna),
     have hf_na : is_nonarchimedean f := 
     seminorm_from_const_is_nonarchimedean _ _ _ (spectral_norm_is_nonarchimedean h_alg hna),
-    rw [← spectral_norm.unique' h_alg hf_pow hf_na, hf],
+    rw [← spectral_norm.unique' h_alg hf_pow, hf],
     simp only [alg_norm_from_const_def],
     exact seminorm_from_const_c_is_mul _ _ _ _, }
   end
 
-def spectral_mul_alg_norm (hna : is_nonarchimedean (norm : K → ℝ)) : 
+def spectral_mul_alg_norm [complete_space K] (hna : is_nonarchimedean (norm : K → ℝ)) : 
   mul_algebra_norm K L  :=
 { map_one' := spectral_alg_norm_is_norm_one_class h_alg hna,
   map_mul' := spectral_norm_is_mul h_alg hna,
   ..spectral_alg_norm h_alg hna }
 
-lemma spectral_mul_ring_norm_def (hna : is_nonarchimedean (norm : K → ℝ)) (x : L) : 
-  spectral_mul_alg_norm h_alg hna x = spectral_norm K L x := 
+lemma spectral_mul_ring_norm_def [complete_space K] (hna : is_nonarchimedean (norm : K → ℝ))
+  (x : L) : spectral_mul_alg_norm h_alg hna x = spectral_norm K L x := 
 rfl
 
-def spectral_norm_to_normed_field (h_alg : algebra.is_algebraic K L) 
+def spectral_norm_to_normed_field [complete_space K] (h_alg : algebra.is_algebraic K L) 
   (h : is_nonarchimedean (norm : K → ℝ)) : normed_field L := 
 { norm      := λ (x : L), (spectral_norm K L x : ℝ),
   dist      := λ (x y : L), (spectral_norm K L (x - y) : ℝ),
@@ -205,21 +204,21 @@ def spectral_norm_to_normed_field (h_alg : algebra.is_algebraic K L)
   by simp only [← spectral_mul_ring_norm_def h_alg h]; exact map_mul _ _ _,
   ..hL }
 
-def spectral_norm_to_normed_add_comm_group (h_alg : algebra.is_algebraic K L)
+def spectral_norm_to_normed_add_comm_group [complete_space K] (h_alg : algebra.is_algebraic K L)
   (h : is_nonarchimedean (norm : K → ℝ)) : normed_add_comm_group L := 
 begin
   haveI : normed_field L := spectral_norm_to_normed_field h_alg h,
   apply_instance,
 end
 
-def spectral_norm_to_seminormed_add_comm_group (h_alg : algebra.is_algebraic K L)
+def spectral_norm_to_seminormed_add_comm_group [complete_space K] (h_alg : algebra.is_algebraic K L)
   (h : is_nonarchimedean (norm : K → ℝ)) : seminormed_add_comm_group L := 
 begin
   haveI : normed_field L := spectral_norm_to_normed_field h_alg h,
   apply_instance,
 end
 
-noncomputable! def spectral_norm_to_normed_space (h_alg : algebra.is_algebraic K L)
+noncomputable! def spectral_norm_to_normed_space [complete_space K] (h_alg : algebra.is_algebraic K L)
   (h : is_nonarchimedean (norm : K → ℝ)) : 
   @normed_space K L _ (spectral_norm_to_seminormed_add_comm_group h_alg h) := 
 { norm_smul_le := λ r x,
@@ -229,15 +228,16 @@ noncomputable! def spectral_norm_to_normed_space (h_alg : algebra.is_algebraic K
   end,
   ..(infer_instance : module K L) }
 
-def ms (h : is_nonarchimedean (norm : K → ℝ)) : metric_space L := 
+def ms [complete_space K] (h : is_nonarchimedean (norm : K → ℝ)) : metric_space L := 
 (spectral_norm_to_normed_field h_alg h).to_metric_space
 
-def us (h : is_nonarchimedean (norm : K → ℝ)) : 
+def us [complete_space K] (h : is_nonarchimedean (norm : K → ℝ)) : 
   uniform_space L := (ms h_alg h).to_uniform_space -- normed_field.to_uniform_space
 
-noncomputable! instance spectral_norm_complete_space (h : is_nonarchimedean (norm : K → ℝ)) 
-  (h_fin : finite_dimensional K L) : @complete_space L (us h_alg h) := 
+@[priority 100] instance spectral_norm_complete_space [complete_space K]
+  (h : is_nonarchimedean (norm : K → ℝ)) [h_fin : finite_dimensional K L] :
+  @complete_space L (us h_alg h) := 
 @finite_dimensional.complete K _ L (spectral_norm_to_normed_add_comm_group h_alg h) 
-    (spectral_norm_to_normed_space h_alg h) _ h_fin
+  (spectral_norm_to_normed_space h_alg h) _ h_fin
 
---#lint
+#lint

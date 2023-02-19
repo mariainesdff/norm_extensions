@@ -64,7 +64,7 @@ namespace Q_p_alg
 /-- `Q_p_alg p` is a normed field, where the norm is the `p`-adic norm, that is, the spectral norm
 induced by the `p`-adic norm on `ℚ_[p]`. -/
 instance normed_field : normed_field (Q_p_alg p) := 
-@spectral_norm_to_normed_field ℚ_[p] _ padic.complete_space _ _ _ (Q_p_alg.is_algebraic p) 
+@spectral_norm_to_normed_field ℚ_[p] _ _ _ _ padic.complete_space (Q_p_alg.is_algebraic p) 
   padic_norm_e.nonarchimedean
 
 /-- The norm on `Q_p_alg p` is nonarchimedean. -/
