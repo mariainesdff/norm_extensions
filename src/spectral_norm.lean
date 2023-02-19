@@ -3,13 +3,41 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import data.list.min_max
-import analysis.special_functions.pow
-import ring_theory.mv_polynomial.symmetric
 import ring_theory.polynomial.vieta
 import minpoly
 import normal_closure
 import alg_norm_of_galois
+
+/-!
+# smoothing_seminorm
+In this file, we prove [BGR, Proposition 1.3.2/1] : if `f` is a nonarchimedean seminorm on `R`, 
+then `infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ)))` is a power-multiplicative nonarchimedean
+seminorm on `R`.
+
+## Main Definitions
+
+* `smoothing_seminorm_seq` : the `ℝ`-valued sequence sending `n` to `(f (x ^ n))^(1/n : ℝ)`.
+* `smoothing_seminorm_def` : The infi of the sequence `f(x^(n : ℕ)))^(1/(n : ℝ)`. 
+* `smoothing_seminorm` : iIf `f 1 ≤ 1` and `f` is nonarchimedean, then `smoothing_seminorm_def`
+  is a ring seminorm. 
+
+## Main Results
+
+* `smoothing_seminorm_def_is_limit` :if `f 1 ≤ 1`, then `smoothing_seminorm_def f x` is the limit
+  of `smoothing_seminorm_seq f x` as `n` tends to infinity. 
+* `smoothing_seminorm_is_nonarchimedean` : if `f 1 ≤ 1` and `f` is nonarchimedean, then
+  `smoothing_seminorm_def` is nonarchimedean.
+* `smoothing_seminorm_is_pow_mul` : if `f 1 ≤ 1` and `f` is nonarchimedean, then
+  `smoothing_seminorm_def f` is power-multiplicative. 
+
+## References
+* [S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert]
+
+## Tags
+
+spectral, spectral norm, spectral value, seminorm, norm, nonarchimedean
+-/
+
 
 noncomputable theory
 
@@ -815,7 +843,7 @@ lemma spectral_norm.max_of_fd_normal (h_fin : finite_dimensional K L) (hn : norm
   spectral_norm h_alg x = supr (λ (σ : L ≃ₐ[K] L), f (σ x)) :=
 begin
   refine le_antisymm _ (csupr_le (λ σ, root_norm_le_spectral_value hf_pm hf_na
-      (extends_is_norm_le_one_class hf_ext) _ (minpoly.aeval_conj h_alg _ _))),
+      (extends_is_norm_le_one_class hf_ext) _ (minpoly.aeval_conj _ _))),
 { set p := minpoly K x with hp_def,
   have hp_sp : polynomial.splits (algebra_map K L) (minpoly K x) := hn.splits x,
   obtain ⟨s, hs⟩ := (polynomial.splits_iff_exists_multiset _).mp hp_sp,
@@ -839,7 +867,7 @@ begin
   { exact real.supr_nonneg (λ σ, map_nonneg _ _) }},
 end
 
-lemma spectral_norm.eq_seminorm_of_galois (h_fin : finite_dimensional K L) (hn : normal K L) 
+lemma spectral_norm.eq_alg_norm_of_galois (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ)) :
   spectral_norm h_alg = alg_norm_of_galois h_fin hna := 
 begin
@@ -858,7 +886,7 @@ end
 lemma spectral_norm.is_pow_mul_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ)) : is_pow_mul (spectral_norm h_alg) :=
 begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna,
   exact alg_norm_of_galois_is_pow_mul h_fin hna,
 end
 
@@ -866,14 +894,14 @@ def spectral_alg_norm_of_fd_normal (h_fin : finite_dimensional K L) (hn : normal
   (hna : is_nonarchimedean (norm : K → ℝ)) :
   algebra_norm K L :=
 { to_fun    := spectral_norm h_alg,
-  map_zero' := by {rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, exact map_zero _ },
-  add_le'   := by {rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, exact map_add_le_add _ },
-  neg'      := by {rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, exact map_neg_eq_map _ },
-  mul_le'   := by {rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, exact map_mul_le_mul _ },
+  map_zero' := by {rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, exact map_zero _ },
+  add_le'   := by {rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, exact map_add_le_add _ },
+  neg'      := by {rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, exact map_neg_eq_map _ },
+  mul_le'   := by {rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, exact map_mul_le_mul _ },
   eq_zero_of_map_eq_zero' := λ x,
-  by {rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, exact eq_zero_of_map_eq_zero _ },
+  by {rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, exact eq_zero_of_map_eq_zero _ },
   smul'     := 
-  by { rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna, 
+  by { rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna, 
        exact algebra_norm_class.map_smul_eq_mul _  }}
 
 lemma spectral_alg_norm_of_fd_normal_def (h_fin : finite_dimensional K L) (hn : normal K L) 
@@ -885,7 +913,7 @@ lemma spectral_norm.is_nonarchimedean_of_fd_normal (h_fin : finite_dimensional K
   (hna : is_nonarchimedean (norm : K → ℝ))  :
   is_nonarchimedean (spectral_norm h_alg) :=
 begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna,
   exact alg_norm_of_galois_is_nonarchimedean h_fin hna,
 end
 
@@ -893,7 +921,7 @@ lemma spectral_norm.extends_norm_of_fd (h_fin : finite_dimensional K L) (hn : no
   (hna : is_nonarchimedean (norm : K → ℝ)) :
   function_extends (norm : K → ℝ) (spectral_norm h_alg) :=
 begin
-  rw spectral_norm.eq_seminorm_of_galois _ h_fin hn hna,
+  rw spectral_norm.eq_alg_norm_of_galois _ h_fin hn hna,
   exact alg_norm_of_galois_extends h_fin hna,
 end
 
@@ -1181,7 +1209,6 @@ def norm_to_normed_ring {A : Type*} [ring A] (f : ring_norm A):
   eq_of_dist_eq_zero := λ x y hxy, eq_of_sub_eq_zero (ring_norm.eq_zero_of_map_eq_zero' _ _ hxy),
   dist_eq := λ x y, rfl,
   norm_mul := λ x y, by simp only [map_mul_le_mul], }
-
 end
 
 def mul_norm_to_normed_field (f : mul_ring_norm L) :
@@ -1201,7 +1228,5 @@ def mul_norm_to_normed_field (f : mul_ring_norm L) :
 
 lemma mul_norm_to_normed_field.norm (f : mul_ring_norm L) /- (hf_neg : ∀ x, f (-x) = f x) -/:
   (mul_norm_to_normed_field f).norm = λ x, (f x : ℝ) := rfl
-
-
 
 end spectral_valuation
