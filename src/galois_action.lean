@@ -26,7 +26,7 @@ begin
   rw isometry_iff_dist_eq,
   intros x y,
   simp only [dist_eq_norm, ← map_sub, Q_p_alg.norm_def,
-    spectral_norm.aut_isom (Q_p_alg.is_algebraic p) σ (x - y)],
+    spectral_norm_aut_isom (Q_p_alg.is_algebraic p) σ (x - y)],
 end
 
 /-- Any `σ` in `Q_p_alg p ≃ₐ[ℚ_[p]] Q_p_alg p` acts uniformly continuously on `Q_p_alg p`. -/

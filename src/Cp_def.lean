@@ -94,7 +94,7 @@ lemma valuation_p (p : ℕ) [fact p.prime] : valued.v (p : Q_p_alg p) = 1/(p : �
 begin
   rw [← map_nat_cast (algebra_map  ℚ_[p] (Q_p_alg p)), ← coe_eq],
   ext,
-  rw [v_def_coe, coe_eq, spectral_norm.extends,padic_norm_e.norm_p, one_div, nonneg.coe_inv,
+  rw [v_def_coe, coe_eq, spectral_norm_extends,padic_norm_e.norm_p, one_div, nonneg.coe_inv,
     nnreal.coe_nat_cast],
 end
 

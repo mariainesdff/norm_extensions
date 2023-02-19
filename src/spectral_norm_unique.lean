@@ -16,7 +16,7 @@ variables {K : Type*} [nontrivially_normed_field K] {L : Type*} [hL: field L]
 
 include hL
 
-lemma spectral_norm.unique' [complete_space K] {f : algebra_norm K L} (hf_pm : is_pow_mul f)
+lemma spectral_norm_unique' [complete_space K] {f : algebra_norm K L} (hf_pm : is_pow_mul f)
   (hna : is_nonarchimedean (norm : K → ℝ)) : f = spectral_alg_norm h_alg hna := 
 begin
   apply eq_of_pow_mult_faithful f hf_pm _
@@ -109,7 +109,7 @@ begin
   { intro y, exact hC1 ⟨y, (intermediate_field.algebra_adjoin_le_adjoin K _) y.2⟩ },
 end
 
-lemma spectral_norm.unique_field_norm_ext [complete_space K] (h_alg : algebra.is_algebraic K L)
+lemma spectral_norm_unique_field_norm_ext [complete_space K] (h_alg : algebra.is_algebraic K L)
   {f : mul_ring_norm L} (hf_ext : function_extends (norm : K → ℝ) f)
   (hna : is_nonarchimedean (norm : K → ℝ)) (x : L) :
   f x = spectral_norm K L x := 
@@ -120,7 +120,7 @@ begin
     ..f },
   have hg_pow : is_pow_mul g := mul_ring_norm.is_pow_mul _,
   have hgx : f x = g x := rfl,
-  rw [hgx, spectral_norm.unique' h_alg hg_pow hna], refl,
+  rw [hgx, spectral_norm_unique' h_alg hg_pow hna], refl,
 end
 
 def alg_norm_from_const (hna : is_nonarchimedean (norm : K → ℝ)) 
@@ -132,14 +132,14 @@ def alg_norm_from_const (hna : is_nonarchimedean (norm : K → ℝ))
     have h_mul : ∀ (y : L), spectral_norm K L ((algebra_map K L k) * y) = 
       spectral_norm K L (algebra_map K L k) * spectral_norm K L y,
     { intro y, 
-      rw [spectral_norm.extends, ← algebra.smul_def,
+      rw [spectral_norm_extends, ← algebra.smul_def,
         ← spectral_alg_norm_def h_alg hna, map_smul_eq_mul _ _ _],
       refl, },
     have h : spectral_norm K L (algebra_map K L k) = 
       seminorm_from_const' h1 hx (spectral_norm_is_pow_mul h_alg hna) (algebra_map K L k),
     {  rw seminorm_from_const_apply_of_is_mul h1 hx _ h_mul, refl, }, 
     simp only [ring_norm.to_fun_eq_coe, seminorm_from_const_ring_norm_of_field_def],
-    rw [← spectral_norm.extends k, algebra.smul_def, h],
+    rw [← spectral_norm_extends k, algebra.smul_def, h],
     exact seminorm_from_const_is_mul_of_is_mul _ _ _ h_mul _,
   end,
   ..(seminorm_from_const_ring_norm_of_field h1 hx.symm (spectral_alg_norm_is_pow_mul h_alg hna)) }
@@ -166,7 +166,7 @@ begin
       (spectral_norm_is_pow_mul h_alg hna),
     have hf_na : is_nonarchimedean f := 
     seminorm_from_const_is_nonarchimedean _ _ _ (spectral_norm_is_nonarchimedean h_alg hna),
-    rw [← spectral_norm.unique' h_alg hf_pow, hf],
+    rw [← spectral_norm_unique' h_alg hf_pow, hf],
     simp only [alg_norm_from_const_def],
     exact seminorm_from_const_c_is_mul _ _ _ _, }
   end
@@ -240,4 +240,4 @@ def us [complete_space K] (h : is_nonarchimedean (norm : K → ℝ)) :
 @finite_dimensional.complete K _ L (spectral_norm_to_normed_add_comm_group h_alg h) 
   (spectral_norm_to_normed_space h_alg h) _ h_fin
 
-#lint
+--#lint

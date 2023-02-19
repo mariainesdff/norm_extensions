@@ -829,7 +829,7 @@ begin
   exact (ne_of_gt (spectral_norm_zero_lt h_alg h0)) hx,
 end
 
-lemma spectral_norm.ge_norm (h_alg : algebra.is_algebraic K L) {f : algebra_norm K L}
+lemma spectral_norm_ge_norm (h_alg : algebra.is_algebraic K L) {f : algebra_norm K L}
   (hf_pm : is_pow_mul f) (hf_na : is_nonarchimedean f) (hf1 : f 1 ≤ 1) (x : L) : 
   f x ≤ spectral_norm K L x :=
 begin
@@ -838,7 +838,7 @@ begin
   rw [minpoly.aeval],
 end
 
-lemma spectral_norm.aut_isom (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) : 
+lemma spectral_norm_aut_isom (h_alg : algebra.is_algebraic K L) (σ : L ≃ₐ[K] L) (x : L) : 
   spectral_norm K L x = spectral_norm K L (σ x) :=
 by simp only [spectral_norm, minpoly.eq_of_conj h_alg]
 
@@ -857,7 +857,7 @@ lemma extends_is_norm_one_class {f : L → ℝ}
   (hf_ext : function_extends (norm : K → ℝ) f) : f 1 = 1 := 
 by rw [← (algebra_map K L).map_one, hf_ext, norm_one]
 
-lemma spectral_norm.max_of_fd_normal (h_alg : algebra.is_algebraic K L)
+lemma spectral_norm_max_of_fd_normal (h_alg : algebra.is_algebraic K L)
   (h_fin : finite_dimensional K L) (hn : normal K L) 
   {f : algebra_norm K L} (hf_pm : is_pow_mul f) (hf_na : is_nonarchimedean f)
   (hf_ext : function_extends (λ x : K, ‖ x ‖₊) f) (x : L) :
@@ -888,7 +888,7 @@ begin
     { exact real.supr_nonneg (λ σ, map_nonneg _ _) }},
 end
 
-lemma spectral_norm.eq_alg_norm_of_galois (h_alg : algebra.is_algebraic K L) 
+lemma spectral_norm_eq_alg_norm_of_galois (h_alg : algebra.is_algebraic K L) 
   (h_fin : finite_dimensional K L) (hn : normal K L) (hna : is_nonarchimedean (norm : K → ℝ)) :
   spectral_norm K L = alg_norm_of_galois h_fin hna := 
 begin
@@ -900,14 +900,14 @@ begin
   (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.1,
   have hf_na : is_nonarchimedean f :=
   (classical.some_spec (finite_extension_pow_mul_seminorm h_fin hna)).2.2,
-  rw spectral_norm.max_of_fd_normal h_alg h_fin hn hf_pow hf_na hf_ext,
+  rw spectral_norm_max_of_fd_normal h_alg h_fin hn hf_pow hf_na hf_ext,
   refl,
 end
 
-lemma spectral_norm.is_pow_mul_of_fd_normal (h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
+lemma spectral_norm_is_pow_mul_of_fd_normal (h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ)) : is_pow_mul (spectral_norm K L) :=
 begin
-  rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna,
+  rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna,
   exact alg_norm_of_galois_is_pow_mul h_fin hna,
 end
 
@@ -915,14 +915,14 @@ def spectral_alg_norm_of_fd_normal (h_alg : algebra.is_algebraic K L)
   (h_fin : finite_dimensional K L) (hn : normal K L) (hna : is_nonarchimedean (norm : K → ℝ)) :
   algebra_norm K L :=
 { to_fun    := spectral_norm K L,
-  map_zero' := by {rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_zero _ },
-  add_le'   := by {rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_add_le_add _ },
-  neg'      := by {rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_neg_eq_map _ },
-  mul_le'   := by {rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_mul_le_mul _ },
+  map_zero' := by {rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_zero _ },
+  add_le'   := by {rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_add_le_add _ },
+  neg'      := by {rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_neg_eq_map _ },
+  mul_le'   := by {rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, exact map_mul_le_mul _ },
   eq_zero_of_map_eq_zero' := λ x,
-  by {rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, exact eq_zero_of_map_eq_zero _ },
+  by {rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, exact eq_zero_of_map_eq_zero _ },
   smul'     := 
-  by { rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna, 
+  by { rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna, 
        exact algebra_norm_class.map_smul_eq_mul _  }}
 
 lemma spectral_alg_norm_of_fd_normal_def (h_alg : algebra.is_algebraic K L) 
@@ -930,23 +930,23 @@ lemma spectral_alg_norm_of_fd_normal_def (h_alg : algebra.is_algebraic K L)
   spectral_alg_norm_of_fd_normal h_alg h_fin hn hna x = spectral_norm K L x := 
 rfl
 
-lemma spectral_norm.is_nonarchimedean_of_fd_normal(h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
+lemma spectral_norm_is_nonarchimedean_of_fd_normal(h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ))  :
   is_nonarchimedean (spectral_norm K L) :=
 begin
-  rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna,
+  rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna,
   exact alg_norm_of_galois_is_nonarchimedean h_fin hna,
 end
 
-lemma spectral_norm.extends_norm_of_fd (h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
+lemma spectral_norm_extends_norm_of_fd (h_alg : algebra.is_algebraic K L) (h_fin : finite_dimensional K L) (hn : normal K L) 
   (hna : is_nonarchimedean (norm : K → ℝ)) :
   function_extends (norm : K → ℝ) (spectral_norm K L) :=
 begin
-  rw spectral_norm.eq_alg_norm_of_galois h_alg h_fin hn hna,
+  rw spectral_norm_eq_alg_norm_of_galois h_alg h_fin hn hna,
   exact alg_norm_of_galois_extends h_fin hna,
 end
 
-lemma spectral_norm.unique_of_fd_normal (h_alg : algebra.is_algebraic K L)
+lemma spectral_norm_unique_of_fd_normal (h_alg : algebra.is_algebraic K L)
   (h_fin : finite_dimensional K L) (hn : normal K L) {f : algebra_norm K L} 
   (hf_pm : is_pow_mul f) (hf_na : is_nonarchimedean f) 
   (hf_ext : function_extends (λ x : K, ‖ x ‖₊) f)
@@ -956,7 +956,7 @@ begin
   have h_sup : supr (λ (σ : L ≃ₐ[K] L), f (σ x)) = f x,
   { rw ← @csupr_const _ (L ≃ₐ[K] L) _ _ (f x),
     exact supr_congr (λ σ, by rw hf_iso σ x), },
-  rw [spectral_norm.max_of_fd_normal h_alg h_fin hn hf_pm  hf_na hf_ext, h_sup]
+  rw [spectral_norm_max_of_fd_normal h_alg h_fin hn hf_pm  hf_na hf_ext, h_sup]
 end
 
 end normal
@@ -991,7 +991,7 @@ begin
   intermediate_field.adjoin_simple.alg_closure_normal h_alg x,
   rw [← spectral_value.eq_normal' h_alg  _ (intermediate_field.adjoin_simple.algebra_map_gen K x),
     ← spectral_value.eq_normal' h_alg (g^n) h_map, map_pow],
-  exact spectral_norm.is_pow_mul_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
+  exact spectral_norm_is_pow_mul_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
     (normal_closure.is_finite_dimensional K E _) (normal_closure.normal K E _) hna _ hn,
 end
 
@@ -1078,7 +1078,7 @@ begin
     ← spectral_value.eq_normal' h_alg gx (intermediate_field.adjoin_adjoin.algebra_map_gen_1
     K x y), ← spectral_value.eq_normal' h_alg gy (intermediate_field.adjoin_adjoin.algebra_map_gen_2
     K x y), _root_.map_add],
-  exact spectral_norm.is_nonarchimedean_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
+  exact spectral_norm_is_nonarchimedean_of_fd_normal (normal_closure.is_algebraic K E h_alg_E)
     (normal_closure.is_finite_dimensional K E _)  (normal_closure.normal K E _) h _ _, 
 end
 
@@ -1105,7 +1105,7 @@ begin
   exact map_mul_le_mul _ _ _
 end
 
-lemma spectral_norm.extends (k : K) : spectral_norm K L (algebra_map K L k) = ‖ k ‖ :=
+lemma spectral_norm_extends (k : K) : spectral_norm K L (algebra_map K L k) = ‖ k ‖ :=
 begin
   simp_rw [spectral_norm, minpoly.eq_X_sub_C_of_algebra_map_inj _ (algebra_map K L).injective],
   exact spectral_value_X_sub_C k,
@@ -1146,12 +1146,6 @@ lemma spectral_alg_norm_def (h_alg : algebra.is_algebraic K L)
   spectral_alg_norm h_alg hna x = spectral_norm K L x := 
 rfl
 
-lemma spectral_norm_extends (k : K) : spectral_norm K L (algebra_map K L k) = ‖ k ‖ :=
-begin
-  simp_rw [spectral_norm, minpoly.eq_X_sub_C_of_algebra_map_inj _ (algebra_map K L).injective],
-  exact spectral_value_X_sub_C k,
-end
-
 lemma spectral_alg_norm_extends (h_alg : algebra.is_algebraic K L) (k : K)
   (hna : is_nonarchimedean (norm : K → ℝ)) :
   spectral_alg_norm h_alg hna (algebra_map K L k) = ‖ k ‖ :=
@@ -1160,7 +1154,7 @@ spectral_norm_extends k
 lemma spectral_norm_is_norm_le_one_class : spectral_norm K L 1 ≤ 1 :=
 begin
   have h1 : (1 : L) = (algebra_map K L 1) := by rw map_one,
-  rw [h1, spectral_norm.extends, norm_one],
+  rw [h1, spectral_norm_extends, norm_one],
 end
 
 lemma spectral_alg_norm_is_norm_le_one_class (h_alg : algebra.is_algebraic K L)
@@ -1170,7 +1164,7 @@ spectral_norm_is_norm_le_one_class
 lemma spectral_norm_is_norm_one_class : spectral_norm K L 1 = 1 :=
 begin
   have h1 : (1 : L) = (algebra_map K L 1) := by rw map_one,
-  rw [h1, spectral_norm.extends, norm_one],
+  rw [h1, spectral_norm_extends, norm_one],
 end
 
 lemma spectral_alg_norm_is_norm_one_class (h_alg : algebra.is_algebraic K L)
@@ -1250,4 +1244,4 @@ lemma mul_norm_to_normed_field.norm (f : mul_ring_norm L) /- (hf_neg : ∀ x, f 
 
 end spectral_valuation
 
-#lint
+--#lint
