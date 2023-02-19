@@ -10,8 +10,9 @@ import ring_seminorm
 
 /-!
 # smoothing_seminorm
-In this file, we prove [BGR, Proposition 1.3.2/1] : 
-
+In this file, we prove [BGR, Proposition 1.3.2/1] : if `f` is a nonarchimedean seminorm on `R`, 
+then `infi (λ (n : pnat), (f(x^(n : ℕ)))^(1/(n : ℝ)))` is a power-multiplicative nonarchimedean
+seminorm on `R`.
 
 ## Main Definitions
 
