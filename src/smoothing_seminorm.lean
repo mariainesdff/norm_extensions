@@ -3,13 +3,44 @@ Copyright (c) 2023 María Inés de Frutos-Fernández. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: María Inés de Frutos-Fernández
 -/
-import filter
+
+import analysis.special_functions.pow
+import limsup
 import ring_seminorm
 
-import algebra.order.pointwise
-import analysis.special_functions.pow
+/-!
+# seminorm_from_bounded
+In this file, we prove [BGR, Proposition 1.2.1/2] : given a nonzero additive group seminorm on a
+commutative ring `R` such that for some positive `c : ℝ`,and every `x y : R`, the inequality 
+`f (x * y) ≤ c * f x * f y)` is satisfied, we create a ring seminorm on `R`.
 
-import limsup
+In the file comments, we will use the expression `f is multiplicatively bounded` to indicate that
+`∃ (c : ℝ) (hc : 0 < c), ∀ (x y : R), f (x * y) ≤ c * f x * f y`.
+
+## Main Definitions
+
+* `seminorm_from_bounded'` : the real-valued function sending `x ∈ R` to the supremum of 
+  `f(x*y)/f(y)`, where `y` runs over the elements of `R`.
+* `seminorm_from_bounded` : the function `seminorm_from_bounded'` is a `ring_seminorm` on `R`.
+* `norm_from_bounded` :`seminorm_from_bounded' f` is a ring_norm on `R`, provided that `f` is
+  nonnegative, multiplicatively bounded and subadditive, that it preserves `0` and negation, and 
+  that `f` has trivial kernel.
+
+## Main Results
+
+* `seminorm_from_bounded_is_nonarchimedean` : if `f : R → ℝ` is a nonnegative, multiplicatively
+  bounded, nonarchimedean function, then `seminorm_from_bounded' f` is nonarchimedean.
+* `seminorm_from_bounded_of_mul_is_mul` : if `f : R → ℝ` is a nonnegative, multiplicatively bounded
+  function and `x : R` is multiplicative for `f`, then `x` is multiplicative for 
+  `seminorm_from_bounded' f`. 
+
+## References
+* [S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert]
+
+## Tags
+
+seminorm_from_const, seminorm, nonarchimedean
+-/
 
 noncomputable theory
 
@@ -675,7 +706,7 @@ begin
   have hex : ∃ n : pnat,
     (f (x ^ (mu (φ n))))^(1/(φ n : ℝ)) * f (y ^ (nu (φ n)))^(1/(φ n : ℝ)) <
     (smoothing_seminorm_def hf1 x)^a * (smoothing_seminorm_def hf1 y)^b + ε,
-  { exact exists_lt_of_limsup_le (set.range.bdd_above.mul (f_bdd_above hf1 hmu_le _ _) 
+  { exact exists_lt_of_limsup_le (real.range_bdd_above_mul (f_bdd_above hf1 hmu_le _ _) 
       (λ n, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _) (f_bdd_above hf1 hnu_le _ _)
       (λ n, real.rpow_nonneg_of_nonneg (map_nonneg _ _) _)).is_bounded_under hxy hε, },
   obtain ⟨N, hN⟩ := hex,
